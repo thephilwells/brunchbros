@@ -27,8 +27,10 @@ unless explicitly decided otherwise later (see `docs/DECISIONS.md`).
 - [SameBoy](https://sameboy.github.io/) — emulator/debugger
 - `make`
 
-Verified versions and a machine-environment caveat are recorded in
-`notes/2026-08-17-bootstrap-tooling-check.md`.
+Verified on the current dev machine (see `docs/DECISIONS.md`, "Dev machine
+retrofit"): RGBDS 1.0.1, GNU Make 3.81, git 2.50.1. SameBoy is installed
+(`~/Downloads/SameBoy.app`) but not yet on `PATH` or in `/Applications`.
+Verification history: `notes/2026-08-17-bootstrap-tooling-check.md`.
 
 ## Build / run
 

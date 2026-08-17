@@ -56,15 +56,19 @@ from.
 - Implementation language: RGBDS assembly. No other engine, framework,
   compiler, runtime, or language without discussing it first.
 
-## Dev machine (as described by Phil)
+## Dev machine
 
-- 2015 11-inch MacBook Air, Intel Core i5, 8 GB RAM, macOS Monterey 12.
-- Older OS that can't reliably use some current Homebrew packages.
-- Prefer tooling that works there without unsupported Homebrew configs.
+- MacBook Pro 18,2 (Apple M1 Max, arm64), 64 GB RAM, macOS 26.6.1 (Tahoe).
+- No known Homebrew or architecture constraints; current bottles (e.g.
+  `arm64_tahoe` RGBDS 1.0.1) install and run natively.
 
-See `notes/2026-08-17-bootstrap-tooling-check.md` for why this matters: the
-toolchain check during bootstrap ran on a *different* machine than this one,
-so its results aren't a substitute for verifying on the actual dev laptop.
+Superseded: the founding prompt originally described a 2015 11-inch
+MacBook Air (Intel i5, 8 GB RAM, macOS Monterey 12) as the dev machine. That
+machine became prohibitively slow for running LLM CLI agents, so development
+moved to the machine above. See the 2026-08-17 "Dev machine retrofit" entry
+in `docs/DECISIONS.md` for the full record, and
+`notes/2026-08-17-bootstrap-tooling-check.md` (now resolved) for the
+verification history.
 
 ## Engineering principles
 

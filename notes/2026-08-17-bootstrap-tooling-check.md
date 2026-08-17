@@ -3,6 +3,16 @@
 Exploratory note, not authoritative. Recorded during the initial
 documentation bootstrap.
 
+**Resolved 2026-08-17 (same day, follow-up):** the "different machine"
+turned out not to be a session artifact — Phil retired the originally
+described MacBook Air (too slow for LLM CLI agents) and this arm64/Tahoe
+machine is now the actual dev machine. The open question below is answered:
+RGBDS 1.0.1 and the other versions here are confirmed as running on the
+real dev machine, and SameBoy has since been installed
+(`~/Downloads/SameBoy.app`, not yet on `PATH`). See `docs/DECISIONS.md`,
+"Dev machine retrofit," for the authoritative record; the rest of this note
+is kept as history of how the mismatch was first noticed.
+
 ## What was actually verified, and where
 
 The bootstrap task asked to confirm tool versions. That check ran in

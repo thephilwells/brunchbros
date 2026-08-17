@@ -110,6 +110,8 @@ drifts toward reproducing something that is effectively a direct copy.
 ## Current state (as of 2026-08-17)
 
 Bootstrap only. No ROM source exists yet. See `docs/ROADMAP.md` for the next
-milestone and `notes/2026-08-17-bootstrap-tooling-check.md` for a toolchain
-verification caveat worth reading before assuming any tool is installed on
-Phil's actual dev machine.
+milestone. The dev machine changed from the one in the founding prompt to
+Phil's current machine (MacBook Pro 18,2 / M1 Max / 64 GB / macOS 26.6.1) —
+see the 2026-08-17 "Dev machine retrofit" entry in `docs/DECISIONS.md`.
+`notes/2026-08-17-bootstrap-tooling-check.md` documents the original
+verification mismatch and is now resolved/historical.
