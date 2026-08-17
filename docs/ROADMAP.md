@@ -8,7 +8,7 @@ everything else is upcoming.
 
 - [x] ROM builds
 - [x] ROM boots
-- [ ] Visible background
+- [x] Visible background
 - [ ] Input
 - [ ] Movable object
 - [ ] Player sprite
@@ -27,13 +27,20 @@ everything else is upcoming.
 
 ## Immediate next milestone
 
-**Visible background** — get something we control onto the screen. Will
-need VRAM layout, tiles vs. the background tile map, and the `LCDC`
-register (the LCD generally has to be off before writing VRAM outside of
-VBlank). Not yet explained in detail — covered when we start on it.
+**Input** — read the joypad register. Not yet explained in detail —
+covered when we start on it.
 
 ## Completed
 
+- **2026-08-17 — Visible background.** Extended `src/main.asm`'s `Start:`
+  routine: wrote a checkerboard tile into VRAM tile data (`$8000`), cleared
+  and filled the whole 32×32 background tile map (`$9800`) with that tile's
+  index, set `BGP` (`$FF47`) to the standard identity palette (`$E4`), and
+  re-enabled the LCD via `LCDC` (`$FF40`) with the matching tile-data/tile-map
+  addressing bits set. Confirmed in SameBoy: full-screen checkerboard,
+  verified both by hand-decoding the built ROM's bytes against the linker
+  map and by visual confirmation. See `docs/LEARNING.md` for the new
+  concepts (tile format, `LCDC`/`BGP`, 16-bit vs. 8-bit `inc`/`dec`).
 - **2026-08-17 — ROM builds, ROM boots.** Hand-wrote the smallest possible
   ROM (`src/main.asm`): fixed-address entry-point jump at `$100`, header
   padding via `ds`/`@`, and an infinite loop at `$150`. Assembled, linked,

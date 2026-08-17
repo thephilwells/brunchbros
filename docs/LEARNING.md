@@ -24,6 +24,29 @@ milestone) if useful.
   First hit while producing the smallest bootable ROM — see
   `docs/ROADMAP.md`.
 
+- **Tile data is 2bpp planar, not packed.** Each 8×8 tile is 16 bytes: 2
+  bytes per row, a "low bit-plane" and a "high bit-plane." A pixel's 2-bit
+  color index is `(high-plane bit << 1) | low-plane bit` — the two planes
+  are stored as whole separate bytes per row, not interleaved per pixel.
+  Tile data lives in VRAM at `$8000`–`$97FF`; `LCDC` bit 4 picks the
+  addressing mode (`1` = unsigned, tile 0 at `$8000`; `0` = signed, tile 0
+  at `$9000`). The background tile map (`$9800`–`$9BFF` or `$9C00`–`$9FFF`,
+  chosen by `LCDC` bit 3) is a separate 32×32 grid of tile *indices* — not
+  pixel data itself.
+
+- **`BGP` (`$FF47`) packs 4 palette entries into one byte,** 2 bits each:
+  bits `1:0` = shade for color index 0, `3:2` = index 1, `5:4` = index 2,
+  `7:6` = index 3. `$E4` (`%11100100`) is the near-universal "identity"
+  value (index N → shade N) used at startup by almost every commercial GB
+  game.
+
+- **16-bit `inc`/`dec` set no flags at all; 8-bit `inc`/`dec` do.** So a
+  16-bit register (e.g. `bc`) can't be used directly as a `jr nz`-driven
+  loop counter — only 8-bit registers can. To loop more than 255 times,
+  nest two 8-bit counters (e.g. an outer count of 4, inner starting at `0`
+  so `dec` wraps through all 256 values before hitting zero — `4 × 256 =
+  1024`, used to clear the background tile map).
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory
