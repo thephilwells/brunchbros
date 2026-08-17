@@ -9,7 +9,7 @@ everything else is upcoming.
 - [x] ROM builds
 - [x] ROM boots
 - [x] Visible background
-- [ ] Input
+- [x] Input
 - [ ] Movable object
 - [ ] Player sprite
 - [ ] Movement
@@ -27,11 +27,21 @@ everything else is upcoming.
 
 ## Immediate next milestone
 
-**Input** — read the joypad register. Not yet explained in detail —
-covered when we start on it.
+**Movable object** — get something represented via a sprite (OAM), not just
+background tiles. Not yet explained in detail — covered when we start on
+it.
 
 ## Completed
 
+- **2026-08-17 — Input.** Restructured `Start:`'s dead-end hang loop into a
+  real `MainLoop:` that synchronizes to VBlank once per frame (a two-phase
+  wait — waiting out any current VBlank before waiting for the next one —
+  since a single-phase check would fall through immediately on a repeat
+  visit). Reads the joypad (`$FF00`) and inverts `BGP` while A is held.
+  Hit two real bugs along the way: a `jr nc`/`jr c` mixup that broke the
+  frame-pacing wait, and a joypad select-bit transposition that made "A"
+  actually respond to "Right." Both found and fixed by reasoning through
+  the logic, not just by the assembler. See `docs/LEARNING.md`.
 - **2026-08-17 — Visible background.** Extended `src/main.asm`'s `Start:`
   routine: wrote a checkerboard tile into VRAM tile data (`$8000`), cleared
   and filled the whole 32×32 background tile map (`$9800`) with that tile's

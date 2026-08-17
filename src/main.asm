@@ -41,8 +41,32 @@ Start:
 	ld a, %10010001
 	ldh [$ff40], a
 
-.hang
-	jr .hang
+MainLoop:
+.waitNotVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr nc, .waitNotVBlank
+
+.waitVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr c, .waitVBlank
+
+	ld a, %00010000
+	ldh [$ff00], a
+	ldh a, [$ff00]
+	ldh a, [$ff00]
+
+	bit 0, a
+	jr nz, .aNotPressed
+	ld a, $1b
+	jr .setPalette
+.aNotPressed
+	ld a, $e4
+.setPalette
+	ldh [$ff47], a
+
+	jr MainLoop
 
 TileData:
     db $55, $55, $AA, $AA, $55, $55, $AA, $AA, $55, $55, $AA, $AA, $55, $55, $AA, $AA

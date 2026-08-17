@@ -4,5 +4,9 @@
 00:0163 Start.copyTile
 00:0170 Start.clearMapOuter
 00:0172 Start.clearMapInner
-00:0181 Start.hang
-00:0183 TileData
+00:0181 MainLoop
+00:0181 MainLoop.waitNotVBlank
+00:0187 MainLoop.waitVBlank
+00:019d MainLoop.aNotPressed
+00:019f MainLoop.setPalette
+00:01a3 TileData

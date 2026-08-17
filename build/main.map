@@ -1,16 +1,20 @@
 SUMMARY:
-	ROM0: 147 bytes used / 16237 free
+	ROM0: 179 bytes used / 16205 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$0192 ($0043 bytes) ["Main"]
+	SECTION: $0150-$01b2 ($0063 bytes) ["Main"]
 	         $0150 = Start
 	         $0150 = Start.waitVBlank
 	         $0163 = Start.copyTile
 	         $0170 = Start.clearMapOuter
 	         $0172 = Start.clearMapInner
-	         $0181 = Start.hang
-	         $0183 = TileData
-	EMPTY: $0193-$3fff ($3e6d bytes)
-	TOTAL EMPTY: $3f6d bytes
+	         $0181 = MainLoop
+	         $0181 = MainLoop.waitNotVBlank
+	         $0187 = MainLoop.waitVBlank
+	         $019d = MainLoop.aNotPressed
+	         $019f = MainLoop.setPalette
+	         $01a3 = TileData
+	EMPTY: $01b3-$3fff ($3e4d bytes)
+	TOTAL EMPTY: $3f4d bytes

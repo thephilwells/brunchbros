@@ -47,6 +47,24 @@ milestone) if useful.
   so `dec` wraps through all 256 values before hitting zero — `4 × 256 =
   1024`, used to clear the background tile map).
 
+- **`P1`/`JOYP` (`$FF00`) is active-low and multiplexed.** `0` means
+  *pressed*, `1` means released — backwards from the obvious guess. Only 4
+  of the 8 buttons are readable at once: bit 5 selects the **action**
+  group (A/B/Select/Start), bit 4 selects the **direction** group
+  (Right/Left/Up/Down), both also active-low (`0` = select that group).
+  **Easy to transpose which bit is which** — that exact mixup (writing
+  `%00100000`, which selects direction and deselects buttons, while
+  believing it selected buttons) made "A" actually read as "Right," since
+  bit 0 means A in one group and Right in the other. Correct value to
+  select only the action group: `%00010000`. Also: right after switching
+  the select bits, the hardware needs a moment to settle — read the
+  register a couple of times and discard the early read(s) before trusting
+  it.
+
+- **`BIT n, r` sets the zero flag to the *complement* of that bit** — `Z=1`
+  means the bit was `0`. Convenient for active-low input: `Z=1` directly
+  means "pressed," no inversion needed.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory
