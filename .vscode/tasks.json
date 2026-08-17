@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Assemble",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": ["-o", "build/main.o", "src/main.asm"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link",
+      "type": "shell",
+      "command": "rgblink",
+      "args": ["-o", "build/brunchbros.gb", "-m", "build/main.map", "-n", "build/main.sym", "build/main.o"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": ["-v", "-p", "0xFF", "build/brunchbros.gb"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Assemble", "Link", "Fix"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": ["-a", "/Users/phil.wells/Downloads/SameBoy.app", "${workspaceFolder}/build/brunchbros.gb"],
+      "dependsOn": "Build ROM",
+      "problemMatcher": []
+    }
+  ]
+}
