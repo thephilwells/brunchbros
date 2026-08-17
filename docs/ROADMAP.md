@@ -6,8 +6,8 @@ everything else is upcoming.
 
 ## Milestones
 
-- [ ] ROM builds
-- [ ] ROM boots
+- [x] ROM builds
+- [x] ROM boots
 - [ ] Visible background
 - [ ] Input
 - [ ] Movable object
@@ -27,14 +27,17 @@ everything else is upcoming.
 
 ## Immediate next milestone
 
-**Understand the minimum structure of a Game Boy ROM and manually write the
-smallest useful Brunch Bros ROM ourselves.**
-
-This means covering, before writing anything: ROM headers, memory sections,
-entry points, RGBDS syntax basics, linking, `rgbfix`, and the boot process —
-enough that Phil understands what he's typing before he types it. Tracked
-in `docs/LEARNING.md` as it happens.
+**Visible background** — get something we control onto the screen. Will
+need VRAM layout, tiles vs. the background tile map, and the `LCDC`
+register (the LCD generally has to be off before writing VRAM outside of
+VBlank). Not yet explained in detail — covered when we start on it.
 
 ## Completed
 
-_(nothing yet — bootstrap stage only)_
+- **2026-08-17 — ROM builds, ROM boots.** Hand-wrote the smallest possible
+  ROM (`src/main.asm`): fixed-address entry-point jump at `$100`, header
+  padding via `ds`/`@`, and an infinite loop at `$150`. Assembled, linked,
+  and fixed with `rgbasm`/`rgblink`/`rgbfix -v -p 0xFF`. Confirmed booting
+  in SameBoy: logo/chime plays, then holds a stable frame — expected, since
+  the PPU keeps redrawing whatever's in VRAM and our loop never touches it.
+  See `docs/LEARNING.md` for the `rgbfix` padding gotcha hit along the way.

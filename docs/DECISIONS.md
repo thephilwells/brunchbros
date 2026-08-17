@@ -4,6 +4,25 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-08-17 — Working agreement: skip sibling review branches
+
+**Decision:** Since Brunch Bros is a solo project, background/agent sessions
+no longer hand off worktree changes via a distinct sibling branch off
+`main`. Once isolated in a worktree (still required by the session
+harness), changes get copied directly onto `main` as uncommitted files for
+Phil to review and commit, and the worktree gets removed afterward. This
+supersedes the branch-per-handoff approach used earlier the same day (see
+the now-merged, now-deleted `docs/dev-machine-retrofit` branch).
+
+**Why:** the extra branch-off-main step exists to protect against other
+collaborators or parallel agents reviewing/working against a repo at the
+same time; neither applies here. As long as `main` has commit history, the
+worktree tool can always branch from it, so this only works post-bootstrap.
+
+**Status:** Active.
+
+---
+
 ## 2026-08-17 — Dev machine retrofit
 
 **Decision:** Development moves from the machine originally described in the

@@ -93,6 +93,22 @@ copy copyrighted art, audio, source code, dialogue, level layouts,
 distinctive written content, or other proprietary assets. Flag it if Phil
 drifts toward reproducing something that is effectively a direct copy.
 
+## Background-session worktree handling
+
+Brunch Bros is a solo project — no other collaborators or parallel agent
+sessions review this repo. When a background/agent session needs to write
+to `docs/`, `specs/`, or `notes/` (per the documentation exception above)
+and the session harness requires worktree isolation to do it, there is no
+need for a sibling review branch: enter the worktree, make the change, exit
+with `keep`, then copy the changed files straight onto whatever branch is
+checked out in the main checkout (normally `main`) as **uncommitted**
+changes, and remove the worktree once the copy is confirmed. Phil reviews
+and commits from his own checkout as usual. This only works because `main`
+always has commit history for the worktree tool to branch from — if it's
+ever empty again, the first commit still has to come from Phil. See the
+2026-08-17 "Working agreement: skip sibling review branches" entry in
+`docs/DECISIONS.md`.
+
 ## Where things live
 
 | Doc | Purpose |
