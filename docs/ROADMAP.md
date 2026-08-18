@@ -10,29 +10,99 @@ everything else is upcoming.
 - [x] ROM boots
 - [x] Visible background
 - [x] Input
-- [ ] Movable object
-- [ ] Player sprite
-- [ ] Movement
+- [x] Movable object
+- [x] Player sprite
+- [x] Movement
+- [ ] Player animation
 - [ ] Collision
 - [ ] Jumping
 - [ ] Camera / room traversal
+- [ ] Tileset backgrounds
 - [ ] Hazards
 - [ ] Enemies
+- [ ] HUD
 - [ ] Level generation
 - [ ] Gameplay systems
+- [ ] Inventory
 - [ ] Additional areas
 - [ ] Audio
+- [ ] Title / menu / game-over flow
 - [ ] Polish
 - [ ] Complete game
 
+## Milestone additions (2026-08-18)
+
+Expanded from the original list — the back half was too coarse, leaving
+several substantial, technically-distinct pieces buried inside vague
+buckets. None of these are explained in detail yet; each gets covered when
+we actually start on it.
+
+- **Player animation** — right after Movement, since it only depends on
+  movement existing, not on physics. General animation-timer mechanism,
+  proven with the walk cycle (`gfx/ChefA1.png`, already on hand). Jump-
+  specific animation frames get folded into the Jumping milestone itself
+  rather than needing their own line.
+- **Tileset backgrounds** — right before Level generation. Rolls up into
+  "Visible background" only in that the tile/tilemap *mechanism* is already
+  proven with the checkerboard; real diner art (via Tiled) is separate,
+  substantial work, and its payoff is much bigger once Level generation
+  actually needs tile variety to assemble rooms from.
+- **HUD** — after Hazards/Enemies, once there's an actual value (health)
+  worth displaying. Needs the **Window layer** (`LCDC` bit 5, `WY`/`WX`) —
+  hardware we haven't touched at all yet.
+- **Inventory** — right after Gameplay systems, where "items or
+  interactable objects" (see `docs/PROJECT.md`) already conceptually lives,
+  but substantial enough to name explicitly rather than leave buried.
+- **Title / menu / game-over flow** — closes a real gap: `docs/PROJECT.md`
+  names this in the original vision, but it had no roadmap line at all.
+  Placed late, near Polish, since it's most meaningful once there's an
+  actual win/lose condition to bookend. Open question, not yet decided:
+  title/game-over screens usually imply *some* game-state machine
+  (title → playing → game-over), and the code is currently one linear
+  `MainLoop` — whether to bake in minimal state-switching early or retrofit
+  it once Hazards/Enemies give us a real "you died" condition is worth
+  deciding deliberately when we get closer, not assumed now.
+
+See `notes/2026-08-18-spelunky-design-principles.md` for design-research
+notes (not yet authoritative) that informed some of this shape, particularly
+around Hazards/Enemies/Additional areas content design later.
+
 ## Immediate next milestone
 
-**Movable object** — get something represented via a sprite (OAM), not just
-background tiles. Not yet explained in detail — covered when we start on
-it.
+**Player animation** — get the walk-cycle spritesheet actually animating.
+Not yet explained in detail — covered when we start on it.
 
 ## Completed
 
+- **2026-08-18 — Player sprite, Movement.** Replaced the reused checkerboard
+  placeholder with a real 16×16 chef, composed of 4 hardware sprites (8×8
+  each, since the Game Boy has no native 16×16 sprite mode) driven by one
+  WRAM-backed authoritative position (`PlayerY`/`PlayerX`) and a shared
+  `UpdateSprites` subroutine (first use of `CALL`/`RET` and the stack).
+  Built a real asset pipeline: Aseprite → grayscale/no-alpha PNG →
+  `rgbgfx -c dmg=E4` → `INCBIN`, replacing hand-typed tile bytes. D-pad
+  movement is direct 1px/frame WRAM increment/decrement — checking all 4
+  direction bits independently, so diagonals work as a side effect of the
+  design, not extra code. **This is not final movement or a final look**:
+  no animation yet (a walk-cycle spritesheet, `gfx/ChefA1.png`, is already
+  on hand for later), and no platformer physics — jumping, falling/gravity,
+  climbing, ducking, punching are all still ahead, most immediately under
+  the "Jumping" milestone below. See `docs/LEARNING.md` for the new
+  concepts (WRAM, `CALL`/`RET`, the DMG-transparency-vs-alpha gotcha, the
+  multi-sprite composite pattern).
+- **2026-08-17 — Movable object.** Cleared all 40 OAM slots (`$FE00`–`$FE9F`)
+  before writing one sprite's 4 bytes, to avoid stray garbage sprites from
+  undefined power-on OAM contents. Set `LCDC` bit 1 (object display) and
+  gave the sprite its own palette (`OBP0`, deliberately different from
+  `BGP`, since sprites don't use the background palette — a fact made very
+  visible by two back-to-back rendering surprises, see `docs/LEARNING.md`).
+  Read the D-pad each frame and adjusted the sprite's OAM `Y`/`X` bytes
+  directly (no separate WRAM copy needed yet). Hit two real bugs: an `h1`
+  typo for the `hl` register, and — more instructively — a GUIDE step that
+  said "insert between X and Y" where X appeared twice in the file, landing
+  the movement code in one-time setup instead of the per-frame loop. That
+  one produced a new working agreement: GUIDE steps anchor with line
+  numbers now, see `AGENTS.md` and `docs/DECISIONS.md`.
 - **2026-08-17 — Input.** Restructured `Start:`'s dead-end hang loop into a
   real `MainLoop:` that synchronizes to VBlank once per frame (a two-phase
   wait — waiting out any current VBlank before waiting for the next one —

@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-08-17 — Working agreement: line-number anchors for GUIDE steps
+
+**Decision:** When telling Phil where to insert or move code, use line
+numbers as the anchor, not just surrounding source text.
+
+**Why:** A GUIDE step said to insert a block "between `ldh [$ff47], a` and
+`jr MainLoop`" — but `ldh [$ff47], a` appeared twice (once in `Start:`'s
+one-time setup, once in `MainLoop:`). The D-pad-handling code landed in
+`Start:`, ran exactly once at boot, and never moved the sprite again. The
+code was typed correctly; the instruction was just ambiguous. Line numbers
+don't have this failure mode the way repeated text does.
+
+**Status:** Active. See `AGENTS.md`'s Interaction loop section.
+
+---
+
 ## 2026-08-17 — Working agreement: skip sibling review branches
 
 **Decision:** Since Brunch Bros is a solo project, background/agent sessions

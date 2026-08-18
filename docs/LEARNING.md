@@ -65,6 +65,69 @@ milestone) if useful.
   means the bit was `0`. Convenient for active-low input: `Z=1` directly
   means "pressed," no inversion needed.
 
+- **OAM (`$FE00`–`$FE9F`) is a separate memory region from background
+  tiles/tile map** — 40 slots, 4 bytes each: `Y`, `X`, tile index,
+  attributes. A sprite can sit at any pixel, not locked to the 8×8 grid.
+  The stored `Y`/`X` are offset from the actual screen position — `Y =
+  screen row + 16`, `X = screen column + 8` — so a sprite can be given
+  byte values that place it fully off any edge of the screen without
+  needing negative numbers. OAM's contents aren't guaranteed zero at
+  power-on, so all 40 slots need clearing before use, or leftover slots
+  can render as stray garbage sprites.
+
+- **Sprite tiles always use unsigned `$8000` addressing**, regardless of
+  `LCDC` bit 4 (that bit only affects background/window tiles). And for
+  sprites specifically, color index `0` is *always* transparent, no matter
+  the palette — only indices 1–3 actually draw.
+
+- **Sprites use their own palette registers, `OBP0`/`OBP1` (`$FF48`/`$FF49`)
+  — never `BGP`.** This produced two back-to-back, fully-explainable visual
+  surprises: with `OBP0` left uninitialized (whatever it powered on with),
+  a sprite reusing the background's tile and sitting exactly tile-aligned
+  rendered identically to the background under it (invisible) normally,
+  then turned into a solid block once an unrelated `BGP`-only palette
+  change happened to make the background's colors match the sprite's
+  fixed, untouched `OBP0` rendering. Once `OBP0` was deliberately set to a
+  *different* value than `BGP`, the same mechanism ran in reverse: whenever
+  the two registers happened to hold the same value, the sprite blended
+  in and "vanished" — not because anything moved, but because `OBP0` and
+  `BGP` were numerically identical at that instant.
+
+- **`WRAM0` sections hold our own mutable state, and can't be pre-initialized.**
+  `SECTION "...", WRAM0` declares space in Work RAM; a bare `db` (no
+  arguments) there reserves 1 uninitialized byte, same as `ds 1` — unlike
+  ROM, there's no way to give a RAM byte a starting value in its
+  declaration. Values have to be set explicitly by code after boot. First
+  used for `PlayerY`/`PlayerX`, the authoritative position that gets
+  projected into OAM every frame.
+
+- **`CALL`/`RET` use the stack** — `CALL label` pushes the address of the
+  next instruction, then jumps; `RET` pops that address and returns to it.
+  This is what makes a reusable subroutine possible, as opposed to `jp`/`jr`
+  which never come back. The boot ROM already initializes `SP` to `$FFFE`
+  before handing off control, so `ld sp, $fffe` at the start of `Start` isn't
+  strictly required — but doing it explicitly is standard practice in real
+  GB games, and costs one line.
+
+- **Editor alpha transparency and DMG sprite transparency are unrelated.**
+  Aseprite's alpha channel is an editor-only concept; the hardware has no
+  alpha at all. Sprite transparency is entirely about color index `0`, which
+  is always see-through no matter what shade it maps to. Exporting art with
+  any actually-transparent (alpha `0`) pixels breaks `rgbgfx`'s DMG palette
+  mode (`-c dmg=...`), which requires "all colors in shades of gray, without
+  any transparent colors." Fix: fill "empty" areas with solid, opaque white
+  (the shade that maps to index 0 under `dmg=E4`) instead of leaving them
+  transparent.
+
+- **A 16×16 character is 4 coordinated 8×8 sprites, not one bigger sprite.**
+  The Game Boy has no native 16-pixel-wide sprite mode — only 8×8 or 8×16
+  *tall* (`LCDC` bit 2). A square 16×16 look means a 2×2 grid of independent
+  OAM entries (4 of the 40 slots), all repositioned together from one
+  authoritative WRAM position — the `UpdateSprites` pattern, reusable for
+  every future character/enemy. `rgbgfx`'s default (row-major, no `-u`/`-m`)
+  tile-slicing order for a multi-tile image is confirmed: left-to-right,
+  top-to-bottom — top-left, top-right, bottom-left, bottom-right.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

@@ -1,20 +1,36 @@
 SUMMARY:
-	ROM0: 179 bytes used / 16205 free
+	ROM0: 412 bytes used / 15972 free
+	WRAM0: 2 bytes used / 4094 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$01b2 ($0063 bytes) ["Main"]
+	SECTION: $0150-$029b ($014c bytes) ["Main"]
 	         $0150 = Start
-	         $0150 = Start.waitVBlank
-	         $0163 = Start.copyTile
-	         $0170 = Start.clearMapOuter
-	         $0172 = Start.clearMapInner
-	         $0181 = MainLoop
-	         $0181 = MainLoop.waitNotVBlank
-	         $0187 = MainLoop.waitVBlank
-	         $019d = MainLoop.aNotPressed
-	         $019f = MainLoop.setPalette
-	         $01a3 = TileData
-	EMPTY: $01b3-$3fff ($3e4d bytes)
-	TOTAL EMPTY: $3f4d bytes
+	         $0153 = Start.waitVBlank
+	         $0166 = Start.copyTile
+	         $0173 = Start.clearMapOuter
+	         $0175 = Start.clearMapInner
+	         $018b = Start.clearOAM
+	         $0197 = Start.copyPlayerTile
+	         $01ae = MainLoop
+	         $01ae = MainLoop.waitNotVBlank
+	         $01b4 = MainLoop.waitVBlank
+	         $01ca = MainLoop.aNotPressed
+	         $01cc = MainLoop.setPalette
+	         $01e2 = MainLoop.notRight
+	         $01ed = MainLoop.notLeft
+	         $01f8 = MainLoop.notUp
+	         $0203 = MainLoop.notDown
+	         $0208 = UpdateSprites
+	         $024c = TileData
+	         $025c = PlayerTileData
+	EMPTY: $029c-$3fff ($3d64 bytes)
+	TOTAL EMPTY: $3e64 bytes
+
+WRAM0 bank #0:
+	SECTION: $c000-$c001 ($0002 bytes) ["Player State"]
+	         $c000 = PlayerY
+	         $c001 = PlayerX
+	EMPTY: $c002-$cfff ($0ffe bytes)
+	TOTAL EMPTY: $0ffe bytes

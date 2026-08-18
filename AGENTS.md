@@ -73,6 +73,13 @@ subsystem at once:
 8. **CONTINUE** — hand off the next small step.
 
 Cite concrete file paths and line numbers when referring to existing code.
+When a GUIDE step tells Phil where to insert or move code, anchor it with
+line numbers, not just surrounding text — text anchors like "between X and
+Y" can be ambiguous if that text appears more than once in the file (e.g.
+`ldh [$ff47], a` showed up in both `Start:` and `MainLoop:`, and code meant
+for the loop landed in one-time setup instead). Line numbers referenced
+should be re-confirmed with a fresh `Read` if there's any chance prior
+edits shifted them.
 
 ## Documentation discipline
 
