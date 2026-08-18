@@ -128,6 +128,60 @@ milestone) if useful.
   tile-slicing order for a multi-tile image is confirmed: left-to-right,
   top-to-bottom — top-left, top-right, bottom-left, bottom-right.
 
+- **`OBP0`/`OBP1` are fully arbitrary mappings — nothing requires distinct
+  shades per index, and index 0's transparency can't be recovered.** Only 4
+  physical gray shades exist on DMG hardware at all (a fixed 2-bit-per-pixel
+  LCD, not a software limit), and for sprites index 0 is unconditionally
+  transparent no matter what's in the palette register — so it's permanently
+  unusable for any opaque content. That leaves exactly 3 free indices (1–3)
+  for a sprite's *entire* visible appearance. Hit this rebuilding the chef:
+  parts of the art that were meant to be an opaque *white* (a jacket) can't
+  be drawn as literal white in the source PNG, since that value maps to
+  index 0 and would be see-through. Fix (the "Kirby trick" — real GB sprites
+  like Kirby rely on exactly this): draw that content using a different gray
+  value in the editor (e.g. light gray, landing on index 1), then set that
+  index's `OBP0` field to shade 0 anyway. The editor shows a visibly
+  different (gray) color; in-game it renders identically to true white,
+  while staying opaque. Corollary: wanting 4+ distinct *opaque* tones on one
+  sprite isn't achievable — something has to merge, unless different OAM
+  entries are deliberately split across `OBP0` vs `OBP1` for more variety
+  across a multi-sprite composite (still capped at 3 within any single tile).
+
+- **Animation speed has to be decoupled from the game loop's 60fps.**
+  Changing the displayed frame every `MainLoop` iteration would blur past
+  too fast to see. Standard fix: a WRAM counter incremented every frame,
+  only acting once it crosses a threshold (then resetting to 0) — the
+  threshold *is* the animation speed, a single tunable number.
+
+- **`XOR A, n` toggles between two values that differ by exactly one bit.**
+  The idle animation's two tile bases (`1` and `5`) differ only in bit 2
+  (value `4`), so `xor a, 4` alternates between them with one instruction —
+  no separate "which frame" flag needed, since the tile-base value itself
+  encodes the state.
+
+- **Detecting a state transition vs. continuing the current state** is a
+  recurring shape: check whether the current value already belongs to the
+  *desired* mode's range; if not, snap directly to that mode's starting
+  value (and reset any per-mode timer) instead of blindly continuing
+  arithmetic that assumed the old mode. Needed once idle (`1`/`5`) and walk
+  (`9,13,17,21,25,29`) became different, non-adjacent ranges — naively
+  incrementing/toggling across a mode switch produced nonsense values.
+
+- **`JR`'s target is a signed 8-bit relative offset — max ±127 bytes.**
+  Unlike `JP` (full 16-bit absolute address, one byte bigger), `JR` can run
+  out of reach if the code between it and its label grows too much.
+  `rgbasm` errors rather than silently miscompiling it. Hit this when
+  `MainLoop` grew past `jr MainLoop`'s reach; fixed by switching to `jp
+  MainLoop`. Any loop that keeps growing can eventually outgrow `jr`.
+
+- **Flipping a multi-tile sprite needs the attribute bit *and* a position
+  swap.** `OAM` attribute bit 5 (`$20`) mirrors one tile's pixels
+  horizontally, but for a 2×2 composite that's not enough on its own — the
+  quadrant that was top-left also has to start rendering at the top-right
+  screen position (and vice versa for each pair), or the flip only mirrors
+  each tile in place rather than the whole character. Both pieces (bit +
+  swapped tile-offset assignment) are required together.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

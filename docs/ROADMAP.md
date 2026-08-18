@@ -13,7 +13,7 @@ everything else is upcoming.
 - [x] Movable object
 - [x] Player sprite
 - [x] Movement
-- [ ] Player animation
+- [x] Player animation
 - [ ] Collision
 - [ ] Jumping
 - [ ] Camera / room traversal
@@ -69,11 +69,25 @@ around Hazards/Enemies/Additional areas content design later.
 
 ## Immediate next milestone
 
-**Player animation** — get the walk-cycle spritesheet actually animating.
-Not yet explained in detail — covered when we start on it.
+**Collision** — stop the player from walking through solid tiles. Not yet
+explained in detail — covered when we start on it.
 
 ## Completed
 
+- **2026-08-18 — Player animation.** Full idle/walk animation, built in four
+  stages: bulk-loaded all 8 frames (`gfx/ChefA1.png`, cropped to individual
+  frames) into VRAM in one combined `INCBIN`+nested-loop pass; added a
+  WRAM frame-timer to alternate the 2-frame idle "bop" (decoupling
+  animation speed from the 60fps loop); switched to the 6-frame walk cycle
+  while any direction is held, with explicit transition-snapping between
+  the idle/walk tile ranges; added horizontal flip (`OAM` attribute bit 5)
+  for left-facing movement, which required swapping *which* quadrant each
+  tile renders in, not just setting the flip bit. `UpdateSprites` now reads
+  a dynamic `PlayerTileBase` instead of hardcoded literals. Hit a real `jr`
+  range-limit error as `MainLoop` grew (fixed with `jp`), and a missed
+  `ld a, 1` that left `PlayerTileBase` briefly wrong at boot (self-masked
+  by the transition logic, but fixed properly anyway). See
+  `docs/LEARNING.md` for the new concepts.
 - **2026-08-18 — Player sprite, Movement.** Replaced the reused checkerboard
   placeholder with a real 16×16 chef, composed of 4 hardware sprites (8×8
   each, since the Game Boy has no native 16×16 sprite mode) driven by one

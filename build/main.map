@@ -1,36 +1,46 @@
 SUMMARY:
-	ROM0: 412 bytes used / 15972 free
-	WRAM0: 2 bytes used / 4094 free
+	ROM0: 1083 bytes used / 15301 free
+	WRAM0: 5 bytes used / 4091 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$029b ($014c bytes) ["Main"]
+	SECTION: $0150-$053a ($03eb bytes) ["Main"]
 	         $0150 = Start
 	         $0153 = Start.waitVBlank
 	         $0166 = Start.copyTile
 	         $0173 = Start.clearMapOuter
 	         $0175 = Start.clearMapInner
 	         $018b = Start.clearOAM
-	         $0197 = Start.copyPlayerTile
-	         $01ae = MainLoop
-	         $01ae = MainLoop.waitNotVBlank
-	         $01b4 = MainLoop.waitVBlank
-	         $01ca = MainLoop.aNotPressed
-	         $01cc = MainLoop.setPalette
-	         $01e2 = MainLoop.notRight
-	         $01ed = MainLoop.notLeft
-	         $01f8 = MainLoop.notUp
-	         $0203 = MainLoop.notDown
-	         $0208 = UpdateSprites
-	         $024c = TileData
-	         $025c = PlayerTileData
-	EMPTY: $029c-$3fff ($3d64 bytes)
-	TOTAL EMPTY: $3e64 bytes
+	         $0197 = Start.copyChefOuter
+	         $0199 = Start.copyChefInner
+	         $01c2 = MainLoop
+	         $01c2 = MainLoop.waitNotVBlank
+	         $01c8 = MainLoop.waitVBlank
+	         $01f1 = MainLoop.walkContinue
+	         $020c = MainLoop.walkStore
+	         $0211 = MainLoop.doIdle
+	         $0224 = MainLoop.idleContinue
+	         $023c = MainLoop.animDone
+	         $024c = MainLoop.aNotPressed
+	         $024e = MainLoop.setPalette
+	         $0260 = MainLoop.notRight
+	         $0270 = MainLoop.notLeft
+	         $027b = MainLoop.notUp
+	         $0286 = MainLoop.notDown
+	         $028c = UpdateSprites
+	         $02e0 = UpdateSprites.flipped
+	         $032b = TileData
+	         $033b = ChefFrames
+	EMPTY: $053b-$3fff ($3ac5 bytes)
+	TOTAL EMPTY: $3bc5 bytes
 
 WRAM0 bank #0:
-	SECTION: $c000-$c001 ($0002 bytes) ["Player State"]
+	SECTION: $c000-$c004 ($0005 bytes) ["Player State"]
 	         $c000 = PlayerY
 	         $c001 = PlayerX
-	EMPTY: $c002-$cfff ($0ffe bytes)
-	TOTAL EMPTY: $0ffe bytes
+	         $c002 = PlayerTileBase
+	         $c003 = AnimTimer
+	         $c004 = FacingFlip
+	EMPTY: $c005-$cfff ($0ffb bytes)
+	TOTAL EMPTY: $0ffb bytes

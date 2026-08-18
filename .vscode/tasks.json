@@ -9,10 +9,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Convert Player Art",
+      "label": "Convert Chef Frames",
       "type": "shell",
-      "command": "rgbgfx",
-      "args": ["-c", "dmg=E4", "-o", "build/player.2bpp", "gfx/player.png"],
+      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
       "problemMatcher": []
     },
     {
@@ -39,7 +38,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Convert Background Art", "Convert Player Art", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Convert Background Art", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": []
     },
