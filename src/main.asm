@@ -24,7 +24,7 @@ Start:
 	ld hl, $ff40
 	res 7, [hl]
 
-; Copy the background checkerboard tile into VRAM tile 0
+; Copy the background tile into VRAM tile 0
 	ld de, TileData
 	ld hl, $8000
 	ld c, 16
@@ -49,10 +49,10 @@ Start:
 	dec b
 	jr nz, .clearMapOuter
 
-; BGP identity palette; OBP0 deliberately different so the sprite is visible
-	ld a, $e4
+; BGP and OBP0 both identity — sprite has its own art now, no need to diverge
+	ld a, $e0
 	ldh [$ff47], a
-	ld a, $1b
+	ld a, $e0
 	ldh [$ff48], a
 
 	; clear all of OAM
@@ -200,7 +200,7 @@ UpdateSprites:
 	ret
 
 TileData:
-	db $55, $55, $AA, $AA, $55, $55, $AA, $AA, $55, $55, $AA, $AA, $55, $55, $AA, $AA
+	INCBIN "build/background.2bpp"
 
 PlayerTileData:
 	INCBIN "build/player.2bpp"

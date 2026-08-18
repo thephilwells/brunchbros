@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Convert Background Art",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/background.2bpp", "gfx/background.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert Player Art",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/player.2bpp", "gfx/player.png"],
+      "problemMatcher": []
+    },
+    {
       "label": "Assemble",
       "type": "shell",
       "command": "rgbasm",
@@ -25,7 +39,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Assemble", "Link", "Fix"],
+      "dependsOn": ["Convert Background Art", "Convert Player Art", "Assemble", "Link", "Fix"],
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": []
     },
