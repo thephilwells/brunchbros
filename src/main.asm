@@ -5,6 +5,8 @@ PlayerX: db
 PlayerTileBase: db
 AnimTimer: db
 FacingFlip: db
+PlayerVelY: db
+PrevButtons: db
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
 SECTION "Entry Point", ROM0[$100]
@@ -63,10 +65,10 @@ Start:
 	dec b
 	jr nz, .clearMapOuter
 
-; Place a 4x4 wall block (test obstacle) at tile row 8, column 14
-	ld hl, $990e
+; Place a 4x2 wall block (test obstacle) at tile row 16, column 14 — 16px tall, flush with the ground
+	ld hl, $9a0e
 	ld a, 33
-	ld b, 4
+	ld b, 2
 .wallRow
 	ld c, 4
 .wallCol
@@ -119,6 +121,10 @@ Start:
 	ld [AnimTimer], a
 	ld a, 0
 	ld [FacingFlip], a
+	ld a, 0
+	ld [PlayerVelY], a
+	ld a, $ff
+	ld [PrevButtons], a
 	call UpdateSprites
 
 ; LCD on: BG + sprites enabled, tile data at $8000
@@ -147,8 +153,8 @@ MainLoop:
 
 ; Determine walking vs idle from the D-pad reading, advance animation accordingly
 	ld a, b
-	and a, %00001111
-	cp a, %00001111
+	and a, %00000011
+	cp a, %00000011
 	jr z, .doIdle
 
 ; --- Walking ---
@@ -209,20 +215,51 @@ MainLoop:
 
 .animDone
 
-; Demo: invert the background palette while A is held
+; Jump: A button, edge-detected, only while grounded (screen-bottom or standing on a solid tile)
 	ld a, %00010000
 	ldh [$ff00], a
 	ldh a, [$ff00]
 	ldh a, [$ff00]
+	ld d, a
 
+	cpl
+	ld e, a
+	ld a, [PrevButtons]
+	and e
+	ld e, a
+
+	ld a, d
+	ld [PrevButtons], a
+
+	ld a, e
 	bit 0, a
-	jr nz, .aNotPressed
-	ld a, $1b
-	jr .setPalette
-.aNotPressed
-	ld a, $e4
-.setPalette
-	ldh [$ff47], a
+	jr z, .noJump
+
+	ld a, [PlayerY]
+	cp a, 144
+	jr z, .grounded
+
+	ld a, [PlayerX]
+	sub a, 8
+	ld e, a
+	ld a, [PlayerY]
+	ld d, a
+	call IsWall
+	jr z, .grounded
+
+	ld a, [PlayerX]
+	add a, 7
+	ld e, a
+	ld a, [PlayerY]
+	ld d, a
+	call IsWall
+	jr nz, .noJump
+
+.grounded
+	ld a, -8
+	ld [PlayerVelY], a
+
+.noJump
 
 ; movement (uses the D-pad reading from the top of the loop)
 	bit 0, b
@@ -279,53 +316,50 @@ MainLoop:
 	ld [FacingFlip], a
 .notLeft
 
-	bit 2, b
-	jr nz, .notUp
+; Gravity: accelerate downward velocity
+	ld a, [PlayerVelY]
+	add a, 1
+	ld [PlayerVelY], a
+
+; Compute tentative new Y; skip the fall-collision check if rising
+	ld b, a
+	ld a, [PlayerY]
+	add a, b
+	ld b, a
+
+	ld a, [PlayerVelY]
+	bit 7, a
+	jr nz, .applyFall
+
+; Falling: check both bottom-edge points at the tentative Y
 	ld a, [PlayerX]
 	sub a, 8
 	ld e, a
-	ld a, [PlayerY]
-	sub a, 17
+	ld a, b
+	sub a, 1
 	ld d, a
 	call IsWall
-	jr z, .notUp
+	jr z, .landed
 
 	ld a, [PlayerX]
 	add a, 7
 	ld e, a
-	ld a, [PlayerY]
-	sub a, 17
+	ld a, b
+	sub a, 1
 	ld d, a
 	call IsWall
-	jr z, .notUp
+	jr z, .landed
 
-	ld a, [PlayerY]
-	dec a
+.applyFall
+	ld a, b
 	ld [PlayerY], a
-.notUp
+	jr .gravityDone
 
-	bit 3, b
-	jr nz, .notDown
-	ld a, [PlayerX]
-	sub a, 8
-	ld e, a
-	ld a, [PlayerY]
-	ld d, a
-	call IsWall
-	jr z, .notDown
+.landed
+	ld a, 0
+	ld [PlayerVelY], a
 
-	ld a, [PlayerX]
-	add a, 7
-	ld e, a
-	ld a, [PlayerY]
-	ld d, a
-	call IsWall
-	jr z, .notDown
-
-	ld a, [PlayerY]
-	inc a
-	ld [PlayerY], a
-.notDown
+.gravityDone
 
 ; Clamp player position to the screen (16x16 sprite, Y+16/X+8 OAM offset)
 	ld a, [PlayerX]
@@ -346,12 +380,16 @@ MainLoop:
 	jr nc, .yNotTooLow
 	ld a, 16
 	ld [PlayerY], a
+	ld a, 0
+	ld [PlayerVelY], a
 .yNotTooLow
 	ld a, [PlayerY]
 	cp a, 145
 	jr c, .yNotTooHigh
 	ld a, 144
 	ld [PlayerY], a
+	ld a, 0
+	ld [PlayerVelY], a
 .yNotTooHigh
 
 	call UpdateSprites

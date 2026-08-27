@@ -204,6 +204,19 @@ milestone) if useful.
   wall at the unchecked corner. Both relevant corners must come back clear
   before a move is allowed.
 
+- **Before reusing a register to hold a value across a `CALL`, check what
+  the callee clobbers.** Bit this twice in the same milestone: first, the
+  jump-trigger code stashed a scratch value in `B` — but `B` held the
+  D-pad reading needed right after, for the movement checks. Then, the
+  falling-collision code stashed the tentative new `Y` in `C` across two
+  calls to `IsWall` — but `IsWall` uses `C` internally (for the tile
+  column) and never restores it, so after the first call `C` held
+  leftover garbage instead of the real value, corrupting the second check
+  and the final applied position. Both bugs had the identical shape: a
+  register assumed to "just sit there" across a call that actually
+  touches it. The fix each time was the same — read the subroutine's body
+  for which registers it uses as scratch, and pick one it doesn't.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

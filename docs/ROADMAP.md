@@ -67,6 +67,22 @@ See `notes/2026-08-18-spelunky-design-principles.md` for design-research
 notes (not yet authoritative) that informed some of this shape, particularly
 around Hazards/Enemies/Additional areas content design later.
 
+## Polish backlog
+
+Running list of feel/tuning items noticed along the way but deliberately
+deferred to the Polish milestone rather than fixed in the moment. Append to
+this whenever one comes up — the goal is to stop relying on conversation
+history to remember them.
+
+- **Narrow the player's collision hitbox relative to the visual sprite.**
+  Currently the collision box is the full 16×16 bounding box, same as the
+  rendered sprite — but the chef's drawn silhouette doesn't fill that box
+  edge-to-edge, so he can visibly hang a few pixels off a platform edge
+  before falling. Standard platformer practice is a hitbox noticeably
+  smaller than the sprite. Touches four places consistently, once
+  addressed: the Right/Left movement checks, the falling-collision check,
+  and the grounded check (all in `src/main.asm`'s `MainLoop`).
+
 ## Immediate next milestone
 
 **Jumping** — gravity, velocity, and a jump arc. Not yet explained in

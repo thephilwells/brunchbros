@@ -1,11 +1,11 @@
 SUMMARY:
-	ROM0: 1348 bytes used / 15036 free
-	WRAM0: 5 bytes used / 4091 free
+	ROM0: 1391 bytes used / 14993 free
+	WRAM0: 7 bytes used / 4089 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$0643 ($04f4 bytes) ["Main"]
+	SECTION: $0150-$066e ($051f bytes) ["Main"]
 	         $0150 = Start
 	         $0153 = Start.waitVBlank
 	         $0166 = Start.copyTile
@@ -17,39 +17,42 @@ ROM0 bank #0:
 	         $01ad = Start.clearOAM
 	         $01b9 = Start.copyChefOuter
 	         $01bb = Start.copyChefInner
-	         $01e4 = MainLoop
-	         $01e4 = MainLoop.waitNotVBlank
-	         $01ea = MainLoop.waitVBlank
-	         $0213 = MainLoop.walkContinue
-	         $022e = MainLoop.walkStore
-	         $0233 = MainLoop.doIdle
-	         $0246 = MainLoop.idleContinue
-	         $025e = MainLoop.animDone
-	         $026e = MainLoop.aNotPressed
-	         $0270 = MainLoop.setPalette
-	         $02a4 = MainLoop.notRight
-	         $02d6 = MainLoop.notLeft
-	         $0303 = MainLoop.notUp
-	         $032c = MainLoop.notDown
-	         $0338 = MainLoop.xNotTooLow
-	         $0344 = MainLoop.xNotTooHigh
-	         $0350 = MainLoop.yNotTooLow
-	         $035c = MainLoop.yNotTooHigh
-	         $0362 = UpdateSprites
-	         $03b6 = UpdateSprites.flipped
-	         $0401 = IsWall
-	         $0424 = TileData
-	         $0434 = ChefFrames
-	         $0634 = WallTile
-	EMPTY: $0644-$3fff ($39bc bytes)
-	TOTAL EMPTY: $3abc bytes
+	         $01ee = MainLoop
+	         $01ee = MainLoop.waitNotVBlank
+	         $01f4 = MainLoop.waitVBlank
+	         $021d = MainLoop.walkContinue
+	         $0238 = MainLoop.walkStore
+	         $023d = MainLoop.doIdle
+	         $0250 = MainLoop.idleContinue
+	         $0268 = MainLoop.animDone
+	         $02a6 = MainLoop.grounded
+	         $02ab = MainLoop.noJump
+	         $02dd = MainLoop.notRight
+	         $030f = MainLoop.notLeft
+	         $0342 = MainLoop.applyFall
+	         $0348 = MainLoop.landed
+	         $034d = MainLoop.gravityDone
+	         $0359 = MainLoop.xNotTooLow
+	         $0365 = MainLoop.xNotTooHigh
+	         $0376 = MainLoop.yNotTooLow
+	         $0387 = MainLoop.yNotTooHigh
+	         $038d = UpdateSprites
+	         $03e1 = UpdateSprites.flipped
+	         $042c = IsWall
+	         $044f = TileData
+	         $045f = ChefFrames
+	         $065f = WallTile
+	EMPTY: $066f-$3fff ($3991 bytes)
+	TOTAL EMPTY: $3a91 bytes
 
 WRAM0 bank #0:
-	SECTION: $c000-$c004 ($0005 bytes) ["Player State"]
+	SECTION: $c000-$c006 ($0007 bytes) ["Player State"]
 	         $c000 = PlayerY
 	         $c001 = PlayerX
 	         $c002 = PlayerTileBase
 	         $c003 = AnimTimer
 	         $c004 = FacingFlip
-	EMPTY: $c005-$cfff ($0ffb bytes)
-	TOTAL EMPTY: $0ffb bytes
+	         $c005 = PlayerVelY
+	         $c006 = PrevButtons
+	EMPTY: $c007-$cfff ($0ff9 bytes)
+	TOTAL EMPTY: $0ff9 bytes
