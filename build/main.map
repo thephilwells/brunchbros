@@ -1,39 +1,48 @@
 SUMMARY:
-	ROM0: 1083 bytes used / 15301 free
+	ROM0: 1348 bytes used / 15036 free
 	WRAM0: 5 bytes used / 4091 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$053a ($03eb bytes) ["Main"]
+	SECTION: $0150-$0643 ($04f4 bytes) ["Main"]
 	         $0150 = Start
 	         $0153 = Start.waitVBlank
 	         $0166 = Start.copyTile
-	         $0173 = Start.clearMapOuter
-	         $0175 = Start.clearMapInner
-	         $018b = Start.clearOAM
-	         $0197 = Start.copyChefOuter
-	         $0199 = Start.copyChefInner
-	         $01c2 = MainLoop
-	         $01c2 = MainLoop.waitNotVBlank
-	         $01c8 = MainLoop.waitVBlank
-	         $01f1 = MainLoop.walkContinue
-	         $020c = MainLoop.walkStore
-	         $0211 = MainLoop.doIdle
-	         $0224 = MainLoop.idleContinue
-	         $023c = MainLoop.animDone
-	         $024c = MainLoop.aNotPressed
-	         $024e = MainLoop.setPalette
-	         $0260 = MainLoop.notRight
-	         $0270 = MainLoop.notLeft
-	         $027b = MainLoop.notUp
-	         $0286 = MainLoop.notDown
-	         $028c = UpdateSprites
-	         $02e0 = UpdateSprites.flipped
-	         $032b = TileData
-	         $033b = ChefFrames
-	EMPTY: $053b-$3fff ($3ac5 bytes)
-	TOTAL EMPTY: $3bc5 bytes
+	         $0174 = Start.copyWall
+	         $0181 = Start.clearMapOuter
+	         $0183 = Start.clearMapInner
+	         $0191 = Start.wallRow
+	         $0193 = Start.wallCol
+	         $01ad = Start.clearOAM
+	         $01b9 = Start.copyChefOuter
+	         $01bb = Start.copyChefInner
+	         $01e4 = MainLoop
+	         $01e4 = MainLoop.waitNotVBlank
+	         $01ea = MainLoop.waitVBlank
+	         $0213 = MainLoop.walkContinue
+	         $022e = MainLoop.walkStore
+	         $0233 = MainLoop.doIdle
+	         $0246 = MainLoop.idleContinue
+	         $025e = MainLoop.animDone
+	         $026e = MainLoop.aNotPressed
+	         $0270 = MainLoop.setPalette
+	         $02a4 = MainLoop.notRight
+	         $02d6 = MainLoop.notLeft
+	         $0303 = MainLoop.notUp
+	         $032c = MainLoop.notDown
+	         $0338 = MainLoop.xNotTooLow
+	         $0344 = MainLoop.xNotTooHigh
+	         $0350 = MainLoop.yNotTooLow
+	         $035c = MainLoop.yNotTooHigh
+	         $0362 = UpdateSprites
+	         $03b6 = UpdateSprites.flipped
+	         $0401 = IsWall
+	         $0424 = TileData
+	         $0434 = ChefFrames
+	         $0634 = WallTile
+	EMPTY: $0644-$3fff ($39bc bytes)
+	TOTAL EMPTY: $3abc bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c004 ($0005 bytes) ["Player State"]

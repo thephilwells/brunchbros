@@ -39,6 +39,17 @@ Start:
 	dec c
 	jr nz, .copyTile
 
+; Copy the wall tile into VRAM tile 33
+	ld de, WallTile
+	ld hl, $8210
+	ld c, 16
+.copyWall
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyWall
+
 ; Clear the whole 32x32 background tile map to tile 0
 	ld hl, $9800
 	ld a, 0
@@ -51,6 +62,21 @@ Start:
 	jr nz, .clearMapInner
 	dec b
 	jr nz, .clearMapOuter
+
+; Place a 4x4 wall block (test obstacle) at tile row 8, column 14
+	ld hl, $990e
+	ld a, 33
+	ld b, 4
+.wallRow
+	ld c, 4
+.wallCol
+	ld [hl+], a
+	dec c
+	jr nz, .wallCol
+	ld de, 28
+	add hl, de
+	dec b
+	jr nz, .wallRow
 
 ; BGP and OBP0 both identity — sprite has its own art now, no need to diverge
 	ld a, $e0
@@ -202,6 +228,24 @@ MainLoop:
 	bit 0, b
 	jr nz, .notRight
 	ld a, [PlayerX]
+	add a, 8
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 16
+	ld d, a
+	call IsWall
+	jr z, .notRight
+
+	ld a, [PlayerX]
+	add a, 8
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 1
+	ld d, a
+	call IsWall
+	jr z, .notRight
+
+	ld a, [PlayerX]
 	inc a
 	ld [PlayerX], a
 	ld a, 0
@@ -211,6 +255,24 @@ MainLoop:
 	bit 1, b
 	jr nz, .notLeft
 	ld a, [PlayerX]
+	sub a, 9
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 16
+	ld d, a
+	call IsWall
+	jr z, .notLeft
+
+	ld a, [PlayerX]
+	sub a, 9
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 1
+	ld d, a
+	call IsWall
+	jr z, .notLeft
+
+	ld a, [PlayerX]
 	dec a
 	ld [PlayerX], a
 	ld a, $20
@@ -219,6 +281,24 @@ MainLoop:
 
 	bit 2, b
 	jr nz, .notUp
+	ld a, [PlayerX]
+	sub a, 8
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 17
+	ld d, a
+	call IsWall
+	jr z, .notUp
+
+	ld a, [PlayerX]
+	add a, 7
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 17
+	ld d, a
+	call IsWall
+	jr z, .notUp
+
 	ld a, [PlayerY]
 	dec a
 	ld [PlayerY], a
@@ -226,10 +306,53 @@ MainLoop:
 
 	bit 3, b
 	jr nz, .notDown
+	ld a, [PlayerX]
+	sub a, 8
+	ld e, a
+	ld a, [PlayerY]
+	ld d, a
+	call IsWall
+	jr z, .notDown
+
+	ld a, [PlayerX]
+	add a, 7
+	ld e, a
+	ld a, [PlayerY]
+	ld d, a
+	call IsWall
+	jr z, .notDown
+
 	ld a, [PlayerY]
 	inc a
 	ld [PlayerY], a
 .notDown
+
+; Clamp player position to the screen (16x16 sprite, Y+16/X+8 OAM offset)
+	ld a, [PlayerX]
+	cp a, 8
+	jr nc, .xNotTooLow
+	ld a, 8
+	ld [PlayerX], a
+.xNotTooLow
+	ld a, [PlayerX]
+	cp a, 153
+	jr c, .xNotTooHigh
+	ld a, 152
+	ld [PlayerX], a
+.xNotTooHigh
+
+	ld a, [PlayerY]
+	cp a, 16
+	jr nc, .yNotTooLow
+	ld a, 16
+	ld [PlayerY], a
+.yNotTooLow
+	ld a, [PlayerY]
+	cp a, 145
+	jr c, .yNotTooHigh
+	ld a, 144
+	ld [PlayerY], a
+.yNotTooHigh
 
 	call UpdateSprites
 
@@ -335,6 +458,37 @@ UpdateSprites:
 
 	ret
 
+; Input: D=Y pixel, E=X pixel. Output: Z set if that tile is the wall (33).
+IsWall:
+	ld a, e
+	srl a
+	srl a
+	srl a
+	ld c, a
+
+	ld a, d
+	srl a
+	srl a
+	srl a
+	ld h, 0
+	ld l, a
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add hl, hl
+
+	ld de, $9800
+	add hl, de
+
+	ld d, 0
+	ld e, c
+	add hl, de
+
+	ld a, [hl]
+	cp a, 33
+	ret
+
 TileData:
 	INCBIN "build/background.2bpp"
 
@@ -347,3 +501,6 @@ ChefFrames:
 	INCBIN "build/chef_walk3.2bpp"
 	INCBIN "build/chef_walk4.2bpp"
 	INCBIN "build/chef_walk5.2bpp"
+
+WallTile:
+		db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF

@@ -14,7 +14,7 @@ everything else is upcoming.
 - [x] Player sprite
 - [x] Movement
 - [x] Player animation
-- [ ] Collision
+- [x] Collision
 - [ ] Jumping
 - [ ] Camera / room traversal
 - [ ] Tileset backgrounds
@@ -69,11 +69,27 @@ around Hazards/Enemies/Additional areas content design later.
 
 ## Immediate next milestone
 
-**Collision** — stop the player from walking through solid tiles. Not yet
-explained in detail — covered when we start on it.
+**Jumping** — gravity, velocity, and a jump arc. Not yet explained in
+detail — covered when we start on it.
 
 ## Completed
 
+- **2026-08-18 — Collision.** Two layers: screen-boundary clamping
+  (`PlayerX`/`PlayerY` snapped to valid ranges after movement, so the
+  player can no longer walk off any edge or wrap via 8-bit overflow), and
+  real tile-based wall collision against a hand-authored placeholder wall
+  tile (solid `$FF`, tile index 33) arranged as a 4×4 test block via a new
+  `IsWall` subroutine — converts a pixel coordinate to a tile-map address
+  (`SRL` ×3 for ÷8, `ADD HL,HL` ×5 for ×32) and compares against the wall
+  tile index, returning its answer in the zero flag. Checked from two
+  corners per direction (since the 16×16 sprite spans 2 tile rows/columns),
+  wired into all four movement directions. **The 4×4 black test block is
+  an arbitrary placeholder** — expect it to be removed or replaced once
+  real level content exists; it did its job proving the collision
+  mechanism works, nothing more. Hit a real linker error mid-step from an
+  ambiguously-worded GUIDE instruction (two line numbers named in one
+  sentence); see `docs/DECISIONS.md`. See `docs/LEARNING.md` for the new
+  concepts.
 - **2026-08-18 — Player animation.** Full idle/walk animation, built in four
   stages: bulk-loaded all 8 frames (`gfx/ChefA1.png`, cropped to individual
   frames) into VRAM in one combined `INCBIN`+nested-loop pass; added a

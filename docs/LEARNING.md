@@ -182,6 +182,28 @@ milestone) if useful.
   each tile in place rather than the whole character. Both pieces (bit +
   swapped tile-offset assignment) are required together.
 
+- **Pixel → tile coordinate is `SRL` ×3 (÷8); tile-map address needs
+  `ADD HL, HL` ×5 (×32).** No hardware divide or multiply, so both are
+  built from repeated shifts: `SRL A` three times converts a pixel
+  coordinate to a tile row/column; `ADD HL, HL` doubles a 16-bit value
+  (no direct 16-bit shift-left exists), and five doublings gives `row×32`
+  — the tile map's per-row byte stride — as a proper 16-bit value with no
+  overflow risk. Combined: `$9800 + row×32 + column`.
+
+- **A subroutine can take real parameters via registers, and return an
+  answer via a flag.** `IsWall` takes `D`=Y, `E`=X (pixel coordinates) and
+  returns its result in the zero flag (`Z`=1 means "this tile is solid"),
+  the same "flag as the answer" convention `BIT` established. It
+  deliberately avoids clobbering `B` (the caller's joypad reading, still
+  needed right after) while freely using `D`/`E`/`H`/`L` as working space —
+  fine, since those are exactly the inputs, expected to be fresh each call.
+
+- **A 16×16 sprite needs 2 collision-check points per direction, not 1.**
+  Since the chef spans 2 tile rows (moving horizontally) or 2 tile columns
+  (moving vertically), checking only one corner would let him clip past a
+  wall at the unchecked corner. Both relevant corners must come back clear
+  before a move is allowed.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

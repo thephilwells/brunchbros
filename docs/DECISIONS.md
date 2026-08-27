@@ -4,6 +4,30 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-08-18 — Working agreement: line-number anchors must still be written unambiguously
+
+**Decision:** Citing line numbers (per the 2026-08-17 agreement below) isn't
+sufficient on its own — a GUIDE step naming *two different* line numbers in
+one sentence is just as ambiguous as the original repeated-text problem it
+was meant to fix. Each insertion/move instruction should identify exactly
+one unambiguous destination, stated plainly, not woven into a sentence that
+also mentions a different line for context.
+
+**Why:** A step said to insert a new subroutine "right after line 342...
+i.e. leave `UpdateSprites` alone and instead add this after line 389" — two
+line numbers, one sentence. The code landed after line 342 (the first one
+named), splitting `UpdateSprites` in half: a new global label ended up
+between its normal-facing block and its `.flipped` local label, which
+silently rescoped `.flipped` to the new label instead of `UpdateSprites`.
+`rgblink` caught it (`Undefined symbol UpdateSprites.flipped`), but only
+after a full edit-and-build cycle — the rule was followed to the letter and
+still produced an ambiguous instruction.
+
+**Status:** Active. Supplements the 2026-08-17 entry below and
+`AGENTS.md`'s Interaction loop section.
+
+---
+
 ## 2026-08-17 — Working agreement: line-number anchors for GUIDE steps
 
 **Decision:** When telling Phil where to insert or move code, use line
