@@ -217,6 +217,98 @@ milestone) if useful.
   touches it. The fix each time was the same — read the subroutine's body
   for which registers it uses as scratch, and pick one it doesn't.
 
+- **The idle/walk tile-swap mechanism generalizes to any pose, not just
+  locomotion.** Jump/ascent/crouch reuse exactly the same trick — swap
+  `PlayerTileBase` to a different pre-drawn frame's tile index — just
+  driven by physics state (velocity sign/magnitude, a landing timer)
+  instead of D-pad input. No new hardware technique needed, only more art
+  frames and more conditions for picking one.
+
+- **A "just landed" check needs a magnitude guard, not just an edge.**
+  While resting on the ground, gravity nudges `PlayerY` down by 1 every
+  frame and collision immediately catches and resets it — meaning "did we
+  just land" would be true on literally every resting frame without a
+  guard. Fix: only treat it as a real landing (and trigger the settle
+  animation) if the velocity right before the reset was above a small
+  threshold (`>= 3`, since resting oscillates between 0 and 1).
+
+- **Two state machines sharing one variable must agree on every value's
+  meaning, not just the ones each one writes.** The walk-cycle animation
+  checked "is `PlayerTileBase >= 9`" to mean "already mid-walk-cycle" —
+  true when we only had idle (1/5) and walk (9-29) ranges. Once the jump
+  pose-override started also writing to `PlayerTileBase` (33-44), a
+  leftover pose value satisfied that same `>= 9` check, so the walk logic
+  treated it as "continue walking" and blindly did `+4`, landing on the
+  *wall tile's own index* by coincidence. Fix: validate both bounds (`9`
+  to `< 30`), not just the lower one — any value outside the true walk
+  range, for any reason, now correctly triggers a fresh snap-to-start
+  instead of being misread as a continuation.
+
+- **Rising and falling collision are symmetric, and can share their "no
+  collision" landing point.** `.checkRising` (top-edge points, on a hit:
+  zero velocity, no landing animation) mirrors the falling check
+  (bottom-edge points, on a hit: `.landed`) almost exactly — both simply
+  fall through to the same `.applyFall` when clear, rather than needing
+  two separate "commit the move" code paths.
+
+- **`SCX`/`SCY` (`$FF43`/`$FF42`) pick which 160×144 window of the 256×256px
+  background is shown** — the background tile map's hardware size never
+  changes, only the visible offset into it does. Scrolling is a camera, not
+  a bigger world; the map wraps at 256×256, so an unclamped scroll value
+  would eventually show the far edge of the map wrapping back into view.
+
+- **Sprites don't scroll with the background — OAM coordinates are always
+  screen-space.** Only `SCX`/`SCY` shift what the background shows; a
+  sprite's `Y`/`X` bytes are untouched by either register. Once the world
+  became bigger than one screen, `PlayerX`/`PlayerY` had to be treated as
+  *world* coordinates (used as-is for collision, since walls are placed in
+  world/map space), with `UpdateSprites` deriving the actual on-screen
+  position every frame as `world − scroll` right before writing to OAM.
+
+- **Camera-follow is "center on the player, then clamp to the world's
+  scrollable range," and that clamp is a different clamp from the
+  position clamp.** `SCX = PlayerX − 80` (half the 160px screen), then
+  clamped to `[0, world_width − 160]` so the camera never shows past the
+  map's edge. This is independent from the existing clamp on `PlayerX`
+  itself (which stops the player from walking off the world) — the two
+  can legitimately disagree near an edge (player pinned at the world's
+  edge while the camera has already hit its own clamp short of matching
+  exactly), which is normal, correct platformer behavior, not a bug.
+
+- **Extending the world's height resurfaced a dormant 8-bit overflow risk.**
+  `PlayerY` is a single byte; `PlayerY + PlayerVelY` can exceed 255 once
+  falls get long enough to matter, silently wrapping to a small,
+  nonsensical position instead of erroring. Fixed two ways together: a
+  velocity cap (falling `PlayerVelY` capped at 16, gated to only the
+  falling branch — rising never had a symmetric risk, since the jump
+  impulse is a fixed `-8` and `PlayerY` is always ≥16, so the worst case
+  is `16 − 8 = 8`, safely non-negative) plus reading `ADD`'s carry flag
+  (set precisely "on overflow from bit 7," confirmed via `man 7 gbz80`)
+  to detect a genuine wrap and land at the world's bottom edge directly
+  instead of trusting the wrapped value.
+
+- **Flags survive intervening instructions unless that instruction's own
+  documentation says it touches them — checked, not assumed.** The
+  overflow check above needed the carry flag from an `ADD` to survive an
+  intervening `LD`/`BIT`/conditional jump before being read. Verified via
+  `man 7 gbz80`'s per-instruction flag listings, not the coarser opcode
+  summary used earlier: `LD` affects no flags at all, and `BIT u3,r8`
+  only touches `Z`/`N`/`H` — `C` passes through untouched. This let the
+  same carry value be computed once, then checked later only inside the
+  falling branch (checking it before branching would misfire, since
+  adding a two's-complement-negative velocity to a small `PlayerY`
+  routinely sets carry as a normal encoding artifact of rising motion,
+  not a true overflow).
+
+- **The background tile map is a hard 32×32-tile (256×256px) hardware
+  ceiling, not a softly extensible size.** A world genuinely bigger than
+  that (Spelunky-scale, ~4 screens each direction) needs *streaming* —
+  dynamically rewriting map rows/columns near the scroll edges, exploiting
+  the map's hardware wraparound instead of fighting it. Deliberately
+  deferred: streaming needs real level content to stream from, so it
+  belongs paired with the future Level generation milestone, not built
+  against placeholder test blocks now.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

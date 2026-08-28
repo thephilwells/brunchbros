@@ -7,6 +7,7 @@ AnimTimer: db
 FacingFlip: db
 PlayerVelY: db
 PrevButtons: db
+LandTimer: db
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
 SECTION "Entry Point", ROM0[$100]
@@ -41,9 +42,9 @@ Start:
 	dec c
 	jr nz, .copyTile
 
-; Copy the wall tile into VRAM tile 33
+; Copy the wall tile into VRAM tile 45 (moved from 33 — chef now has 11 frames using tiles 1-44)
 	ld de, WallTile
-	ld hl, $8210
+	ld hl, $82d0
 	ld c, 16
 .copyWall
 	ld a, [de]
@@ -67,7 +68,7 @@ Start:
 
 ; Place a 4x2 wall block (test obstacle) at tile row 16, column 14 — 16px tall, flush with the ground
 	ld hl, $9a0e
-	ld a, 33
+	ld a, 45
 	ld b, 2
 .wallRow
 	ld c, 4
@@ -80,11 +81,45 @@ Start:
 	dec b
 	jr nz, .wallRow
 
+; Place a second 4x1 wall block (head-bump test), 16px above the first block's top
+	ld hl, $99a8
+	ld a, 45
+	ld b, 1
+.wallRow2
+	ld c, 4
+.wallCol2
+	ld [hl+], a
+	dec c
+	jr nz, .wallCol2
+	ld de, 28
+	add hl, de
+	dec b
+	jr nz, .wallRow2
+; Place a third 2x2 wall block (camera landmark, far right) at tile row 16, column 26
+	ld hl, $9a1a
+	ld a, 45
+	ld b, 2
+.wallRow3
+	ld c, 2
+.wallCol3
+	ld [hl+], a
+	dec c
+	jr nz, .wallCol3
+	ld de, 30
+	add hl, de
+	dec b
+	jr nz, .wallRow3
+
 ; BGP and OBP0 both identity — sprite has its own art now, no need to diverge
 	ld a, $e0
 	ldh [$ff47], a
 	ld a, $e0
 	ldh [$ff48], a
+
+; Camera scroll: no scrolling yet, start at (0,0)
+	ld a, 0
+	ldh [$ff42], a
+	ldh [$ff43], a
 
 	; clear all of OAM
 	ld hl, $fe00
@@ -95,12 +130,12 @@ Start:
 	dec c
 	jr nz, .clearOAM
 
-; Copy all 8 chef animation frames (4 tiles each = 512 bytes) into VRAM, starting at tile index 1
+; Copy all 11 chef animation frames (4 tiles each = 704 bytes) into VRAM, starting at tile index 1
 	ld de, ChefFrames
 	ld hl, $8010
-	ld b, 2
+	ld b, 11
 .copyChefOuter
-	ld c, 0
+	ld c, 64
 .copyChefInner
 	ld a, [de]
 	ld [hl+], a
@@ -125,6 +160,8 @@ Start:
 	ld [PlayerVelY], a
 	ld a, $ff
 	ld [PrevButtons], a
+	ld a, 0
+	ld [LandTimer], a
 	call UpdateSprites
 
 ; LCD on: BG + sprites enabled, tile data at $8000
@@ -160,7 +197,11 @@ MainLoop:
 ; --- Walking ---
 	ld a, [PlayerTileBase]
 	cp a, 9
-	jr nc, .walkContinue
+	jr c, .walkStart
+	cp a, 30
+	jr c, .walkContinue
+
+.walkStart
 
 	ld a, 9
 	ld [PlayerTileBase], a
@@ -236,7 +277,7 @@ MainLoop:
 	jr z, .noJump
 
 	ld a, [PlayerY]
-	cp a, 144
+	cp a, 255
 	jr z, .grounded
 
 	ld a, [PlayerX]
@@ -316,12 +357,18 @@ MainLoop:
 	ld [FacingFlip], a
 .notLeft
 
-; Gravity: accelerate downward velocity
+; Gravity: accelerate downward velocity, capped while falling
 	ld a, [PlayerVelY]
 	add a, 1
+	bit 7, a
+	jr nz, .velDone
+	cp a, 17
+	jr c, .velDone
+	ld a, 16
+.velDone
 	ld [PlayerVelY], a
 
-; Compute tentative new Y; skip the fall-collision check if rising
+; Compute tentative new Y; branch on rising vs falling
 	ld b, a
 	ld a, [PlayerY]
 	add a, b
@@ -329,7 +376,10 @@ MainLoop:
 
 	ld a, [PlayerVelY]
 	bit 7, a
-	jr nz, .applyFall
+	jr nz, .checkRising
+
+; Falling: if this overflowed past the world's bottom edge, land there directly
+	jr c, .worldBottom
 
 ; Falling: check both bottom-edge points at the tentative Y
 	ld a, [PlayerX]
@@ -350,18 +400,56 @@ MainLoop:
 	call IsWall
 	jr z, .landed
 
+	jr .applyFall
+
+.checkRising
+; Rising: check both top-edge points at the tentative Y
+	ld a, [PlayerX]
+	sub a, 8
+	ld e, a
+	ld a, b
+	sub a, 16
+	ld d, a
+	call IsWall
+	jr z, .headBump
+
+	ld a, [PlayerX]
+	add a, 7
+	ld e, a
+	ld a, b
+	sub a, 16
+	ld d, a
+	call IsWall
+	jr z, .headBump
+
 .applyFall
 	ld a, b
 	ld [PlayerY], a
 	jr .gravityDone
 
+.headBump
+	ld a, 0
+	ld [PlayerVelY], a
+	jr .gravityDone
+
+.worldBottom
+	ld a, 255
+	ld [PlayerY], a
+	jr .landed
+
 .landed
+	ld a, [PlayerVelY]
+	cp a, 3
+	jr c, .noLandFX
+	ld a, 8
+	ld [LandTimer], a
+.noLandFX
 	ld a, 0
 	ld [PlayerVelY], a
 
 .gravityDone
 
-; Clamp player position to the screen (16x16 sprite, Y+16/X+8 OAM offset)
+; Clamp player position: X to the 256px-wide world, Y to the screen (unchanged for now)
 	ld a, [PlayerX]
 	cp a, 8
 	jr nc, .xNotTooLow
@@ -369,9 +457,9 @@ MainLoop:
 	ld [PlayerX], a
 .xNotTooLow
 	ld a, [PlayerX]
-	cp a, 153
+	cp a, 249
 	jr c, .xNotTooHigh
-	ld a, 152
+	ld a, 248
 	ld [PlayerX], a
 .xNotTooHigh
 
@@ -383,21 +471,83 @@ MainLoop:
 	ld a, 0
 	ld [PlayerVelY], a
 .yNotTooLow
-	ld a, [PlayerY]
-	cp a, 145
-	jr c, .yNotTooHigh
-	ld a, 144
-	ld [PlayerY], a
+
+; Jump-pose override: takes priority over idle/walk when airborne or just landed
+	ld a, [LandTimer]
+	and a, a
+	jr z, .checkAirborne
+
+	dec a
+	ld [LandTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	jr .poseOverrideDone
+
+.checkAirborne
+	ld a, [PlayerVelY]
+	and a, a
+	jr z, .poseOverrideDone
+
+	bit 7, a
+	jr z, .showAscent
+
+	cp a, 252
+	jr nc, .showAscent
+
+	ld a, 33
+	ld [PlayerTileBase], a
+	jr .poseOverrideDone
+
+.showAscent
+	ld a, 37
+	ld [PlayerTileBase], a
+
+.poseOverrideDone
+
+; Camera: SCX follows PlayerX, centered, clamped to the world's scrollable range [0,96]
+	ld a, [PlayerX]
+	cp a, 80
+	jr c, .scxMin
+
+	sub a, 80
+	cp a, 97
+	jr c, .scxDone
+	ld a, 96
+	jr .scxDone
+
+.scxMin
 	ld a, 0
-	ld [PlayerVelY], a
-.yNotTooHigh
+
+.scxDone
+	ldh [$ff43], a
+
+; Camera: SCY follows PlayerY, centered, clamped to the world's scrollable range [0,112]
+	ld a, [PlayerY]
+	cp a, 72
+	jr c, .scyMin
+
+	sub a, 72
+	cp a, 113
+	jr c, .scyDone
+	ld a, 112
+	jr .scyDone
+
+.scyMin
+	ld a, 0
+
+.scyDone
+	ldh [$ff42], a
 
 	call UpdateSprites
 
 	jp MainLoop
 
-; Projects PlayerY/PlayerX into the 4 OAM entries (2x2 grid), offsetting by 8px per quadrant
+; Projects PlayerY/PlayerX (world coords) into the 4 OAM entries, converting to screen coords via SCX/SCY
 UpdateSprites:
+	ldh a, [$ff42]
+	ld b, a
+	ldh a, [$ff43]
+	ld c, a
 	ld hl, $fe00
 	ld a, [FacingFlip]
 	and a, a
@@ -405,8 +555,10 @@ UpdateSprites:
 
 ; --- Facing right (normal) ---
 	ld a, [PlayerY]
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	ld [hl+], a
@@ -414,9 +566,11 @@ UpdateSprites:
 	ld [hl+], a
 
 	ld a, [PlayerY]
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
 	add a, 8
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	add a, 1
@@ -426,8 +580,10 @@ UpdateSprites:
 
 	ld a, [PlayerY]
 	add a, 8
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	add a, 2
@@ -437,9 +593,11 @@ UpdateSprites:
 
 	ld a, [PlayerY]
 	add a, 8
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
 	add a, 8
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	add a, 3
@@ -452,8 +610,10 @@ UpdateSprites:
 ; --- Facing left (flipped): swap left/right tiles within each row, set flip bit ---
 .flipped
 	ld a, [PlayerY]
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	add a, 1
@@ -462,9 +622,11 @@ UpdateSprites:
 	ld [hl+], a
 
 	ld a, [PlayerY]
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
 	add a, 8
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	ld [hl+], a
@@ -473,8 +635,10 @@ UpdateSprites:
 
 	ld a, [PlayerY]
 	add a, 8
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	add a, 3
@@ -484,9 +648,11 @@ UpdateSprites:
 
 	ld a, [PlayerY]
 	add a, 8
+	sub a, b
 	ld [hl+], a
 	ld a, [PlayerX]
 	add a, 8
+	sub a, c
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	add a, 2
@@ -496,7 +662,7 @@ UpdateSprites:
 
 	ret
 
-; Input: D=Y pixel, E=X pixel. Output: Z set if that tile is the wall (33).
+; Input: D=Y pixel, E=X pixel. Output: Z set if that tile is the wall (45).
 IsWall:
 	ld a, e
 	srl a
@@ -524,7 +690,7 @@ IsWall:
 	add hl, de
 
 	ld a, [hl]
-	cp a, 33
+	cp a, 45
 	ret
 
 TileData:
@@ -539,6 +705,9 @@ ChefFrames:
 	INCBIN "build/chef_walk3.2bpp"
 	INCBIN "build/chef_walk4.2bpp"
 	INCBIN "build/chef_walk5.2bpp"
+	INCBIN "build/chef_jump.2bpp"
+	INCBIN "build/chef_ascent.2bpp"
+	INCBIN "build/chef_crouch.2bpp"
 
 WallTile:
 		db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF

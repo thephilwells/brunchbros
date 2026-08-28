@@ -15,8 +15,8 @@ everything else is upcoming.
 - [x] Movement
 - [x] Player animation
 - [x] Collision
-- [ ] Jumping
-- [ ] Camera / room traversal
+- [x] Jumping
+- [x] Camera / room traversal
 - [ ] Tileset backgrounds
 - [ ] Hazards
 - [ ] Enemies
@@ -85,11 +85,48 @@ history to remember them.
 
 ## Immediate next milestone
 
-**Jumping** — gravity, velocity, and a jump arc. Not yet explained in
-detail — covered when we start on it.
+**Tileset backgrounds** — real diner art assembled from tiles, replacing
+the checkerboard placeholder. Not yet explained in detail — covered when
+we start on it.
 
 ## Completed
 
+- **2026-08-27 — Camera / room traversal.** Explicit `SCX`/`SCY` init at
+  boot (closing a long-standing "never set, happens to read 0" gap), then
+  a `UpdateSprites` refactor to split world coordinates (`PlayerX`/
+  `PlayerY`, used as-is for collision) from screen coordinates (derived as
+  `world − scroll` right before writing OAM) — necessary because sprites
+  don't scroll with the background on real hardware. Horizontal
+  camera-follow shipped first (widened world, centered/clamped `SCX`, a
+  far-right landmark block to confirm scrolling), then vertical
+  camera-follow (`SCY`, same pattern) after a deliberate scope discussion:
+  Spelunky's real world is ~4 screens per axis, far beyond the hardware's
+  fixed 32×32-tile (256×256px) map ceiling, so true bigger-than-one-map
+  worlds need tile-map *streaming* — explicitly deferred to pair with the
+  future Level generation milestone, once there's real content to stream.
+  Extending the world's height ahead of that also resurfaced a dormant
+  8-bit overflow risk in long falls (`PlayerY + PlayerVelY` past 255),
+  fixed with a falling-only velocity cap plus a carry-flag-based overflow
+  check verified against `man 7 gbz80`'s per-instruction flag semantics.
+  See `docs/LEARNING.md` for the new concepts.
+- **2026-08-18 — Jumping.** Gravity (WRAM `PlayerVelY`, a signed
+  two's-complement value, incremented every frame) plus an edge-detected
+  A-button jump trigger, generalized to work from any grounded height (true
+  ground *or* standing on a solid tile — not just the screen-bottom
+  clamp). Vertical collision built symmetrically: `.checkRising` (head-bump,
+  checking top-edge points) mirrors the existing falling/landing check
+  (bottom-edge points), both converging on a shared `.applyFall`. Full
+  squash/stretch/settle animation — jump/ascent/crouch poses reusing the
+  same tile-swap mechanism as idle/walk, gated by velocity sign/magnitude
+  and a landing timer. Two second platform test tiles added for verifying
+  landing, head-bump, and platform-to-platform jumping together. Hit and
+  fixed three real bugs along the way: two register-clobbering bugs (`B`
+  holding the D-pad reading, `C` holding a tentative position, both
+  clobbered by unaccounted-for `IsWall` calls), and a bug where the
+  walk-cycle animation's range check didn't validate its upper bound,
+  letting a leftover jump-pose value be misread as "continuing the walk
+  cycle" and corrupted into the wall tile's own index. See
+  `docs/LEARNING.md` for the new concepts.
 - **2026-08-18 — Collision.** Two layers: screen-boundary clamping
   (`PlayerX`/`PlayerY` snapped to valid ranges after movement, so the
   player can no longer walk off any edge or wrap via 8-bit overflow), and
