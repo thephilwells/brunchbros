@@ -12,9 +12,13 @@ not an implementer. See `AGENTS.md` for the full operating rules, and
 
 ## Status
 
-Bootstrap stage. No ROM source exists yet. The first milestone is to
-understand the minimum structure of a Game Boy ROM and hand-write the
-smallest bootable Brunch Bros ROM — see `docs/ROADMAP.md`.
+Past bootstrap — a real, playable-so-far ROM exists (`src/main.asm`). Done:
+input, a 16×16 animated player sprite (idle/walk cycles, horizontal flip),
+tile-based wall collision, jumping/gravity with squash-stretch-settle
+animation, and scrolling camera follow (both axes) over a widened
+world. See `docs/ROADMAP.md` for the full milestone list and what's
+checked off, and `docs/LEARNING.md` for the concepts covered getting
+there. Next up: tileset backgrounds.
 
 ## Target platform
 
@@ -34,8 +38,20 @@ Verification history: `notes/2026-08-17-bootstrap-tooling-check.md`.
 
 ## Build / run
 
-Not yet applicable — no source exists yet. This section will be filled in
-once a build actually produces a ROM.
+```sh
+rgbgfx -c dmg=E4 -o build/background.2bpp gfx/background.png
+for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do
+  rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
+done
+rgbasm -o build/main.o src/main.asm
+rgblink -o build/brunchbros.gb -m build/main.map -n build/main.sym build/main.o
+rgbfix -v -p 0xFF build/brunchbros.gb
+```
+
+Produces `build/brunchbros.gb`. Open it in SameBoy to run. `.vscode/tasks.json`
+wires up the same steps as VS Code tasks, but is missing the three newer
+chef frames (`chef_jump`/`chef_ascent`/`chef_crouch`) in its "Convert Chef
+Frames" task — worth reconciling next time that file gets touched.
 
 ## Documentation map
 

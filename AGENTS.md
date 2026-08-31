@@ -130,11 +130,16 @@ ever empty again, the first commit still has to come from Phil. See the
 | `specs/` | Specs for substantial gameplay subsystems, written before building them |
 | `notes/` | Exploratory/investigation notes, not yet authoritative |
 
-## Current state (as of 2026-08-17)
+## Current state (as of 2026-08-27)
 
-Bootstrap only. No ROM source exists yet. See `docs/ROADMAP.md` for the next
-milestone. The dev machine changed from the one in the founding prompt to
-Phil's current machine (MacBook Pro 18,2 / M1 Max / 64 GB / macOS 26.6.1) —
-see the 2026-08-17 "Dev machine retrofit" entry in `docs/DECISIONS.md`.
-`notes/2026-08-17-bootstrap-tooling-check.md` documents the original
-verification mismatch and is now resolved/historical.
+Past bootstrap. `src/main.asm` is a real, playable-so-far ROM: input,
+animated player sprite, tile collision, jumping/gravity, and a scrolling
+camera (both axes) over a widened world. Check `docs/ROADMAP.md`'s checked
+items and "Immediate next milestone" line for exactly where things stand —
+that file is kept current every milestone, this section is not a substitute
+for reading it. `docs/LEARNING.md` has the full concept log; read it before
+assuming a hardware fact isn't already established. The dev machine changed
+from the one in the founding prompt to Phil's current machine (MacBook Pro
+18,2 / M1 Max / 64 GB / macOS 26.6.1) — see the 2026-08-17 "Dev machine
+retrofit" entry in `docs/DECISIONS.md`. `notes/2026-08-17-bootstrap-tooling-check.md`
+documents the original verification mismatch and is now resolved/historical.
