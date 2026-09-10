@@ -11,8 +11,7 @@
     {
       "label": "Convert Chef Frames",
       "type": "shell",
-      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
-      "problemMatcher": []
+  "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",      "problemMatcher": []
     },
     {
       "label": "Assemble",
@@ -46,7 +45,7 @@
       "label": "Run in SameBoy",
       "type": "shell",
       "command": "open",
-      "args": ["-a", "/Users/phil.wells/Downloads/SameBoy.app", "${workspaceFolder}/build/brunchbros.gb"],
+      "args": ["-a", "/Applications/SameBoy.app", "${workspaceFolder}/build/brunchbros.gb"],
       "dependsOn": "Build ROM",
       "problemMatcher": []
     }
