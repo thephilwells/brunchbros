@@ -5,47 +5,84 @@
       "label": "Convert Background Art",
       "type": "shell",
       "command": "rgbgfx",
-      "args": ["-c", "dmg=E4", "-o", "build/background.2bpp", "gfx/background.png"],
+      "args": [
+        "-c",
+        "dmg=E4",
+        "-o",
+        "build/background.2bpp",
+        "gfx/background.png"
+      ],
       "problemMatcher": []
     },
     {
       "label": "Convert Chef Frames",
       "type": "shell",
-  "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",      "problemMatcher": []
+      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
+      "problemMatcher": []
     },
     {
       "label": "Assemble",
       "type": "shell",
       "command": "rgbasm",
-      "args": ["-o", "build/main.o", "src/main.asm"],
+      "args": [
+        "-o",
+        "build/main.o",
+        "src/main.asm"
+      ],
       "problemMatcher": []
     },
     {
       "label": "Link",
       "type": "shell",
       "command": "rgblink",
-      "args": ["-o", "build/brunchbros.gb", "-m", "build/main.map", "-n", "build/main.sym", "build/main.o"],
+      "args": [
+        "-o",
+        "build/brunchbros.gb",
+        "-m",
+        "build/main.map",
+        "-n",
+        "build/main.sym",
+        "build/main.o"
+      ],
       "problemMatcher": []
     },
     {
       "label": "Fix",
       "type": "shell",
       "command": "rgbfix",
-      "args": ["-v", "-p", "0xFF", "build/brunchbros.gb"],
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros.gb"
+      ],
       "problemMatcher": []
     },
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Convert Background Art", "Convert Chef Frames", "Assemble", "Link", "Fix"],
-      "group": { "kind": "build", "isDefault": true },
+      "dependsOn": [
+        "Convert Background Art",
+        "Convert Chef Frames",
+        "Assemble",
+        "Link",
+        "Fix"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {
       "label": "Run in SameBoy",
       "type": "shell",
       "command": "open",
-      "args": ["-a", "/Applications/SameBoy.app", "${workspaceFolder}/build/brunchbros.gb"],
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros.gb"
+      ],
       "dependsOn": "Build ROM",
       "problemMatcher": []
     }
