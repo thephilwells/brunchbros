@@ -17,7 +17,7 @@ tile-based wall collision, jumping/gravity with squash-stretch-settle
 animation, and scrolling camera follow (both axes) over a widened world.
 The tileset milestone now has a 17-tile structural pilot plus shared rear
 surfaces, passable dining-room wall art, a one-way platform test strip, and
-a one-way dining table and chair in a Tiled map. See
+a one-way dining table, chair, booth, and counter in a Tiled map. See
 `docs/ROADMAP.md` for the full milestone list and `docs/LEARNING.md` for
 concepts covered so far.
 

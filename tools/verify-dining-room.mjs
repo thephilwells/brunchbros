@@ -50,4 +50,24 @@ for (const [x, id] of [[19, 57], [20, 58]]) {
   assert.equal(collision[map[27 * 32 + x]], 1);
 }
 
+for (const [x, id] of [[2, 59], [3, 60], [4, 60], [5, 61]]) {
+  assert.equal(collision[map[23 * 32 + x]], 0);
+  assert.equal(map[24 * 32 + x], id);
+  assert.equal(collision[id], 0);
+  assert.equal(map[25 * 32 + x], 62);
+  assert.equal(collision[62], 0);
+  assert.equal(map[26 * 32 + x], 63);
+  assert.equal(collision[63], 2);
+  assert.equal(collision[map[27 * 32 + x]], 1);
+}
+
+for (const [x, id] of [[21, 112], [22, 113], [23, 113], [24, 114]]) {
+  assert.equal(collision[map[24 * 32 + x]], 0);
+  assert.equal(map[25 * 32 + x], id);
+  assert.equal(collision[id], 2);
+  assert.equal(map[26 * 32 + x], 115);
+  assert.equal(collision[115], 0);
+  assert.equal(collision[map[27 * 32 + x]], 1);
+}
+
 console.log('Dining-room collision table and one-way furniture fixture verified.');

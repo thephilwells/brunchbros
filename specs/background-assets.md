@@ -1,8 +1,8 @@
 # Background assets — constrained specification
 
 Status: **Structural pilot, passable dining-room vocabulary, dining table,
-and dining chair implemented** on 2026-09-18. Chair visual review, remaining
-furniture, other biome art, and upper-pool allocation remain open. Companion:
+chair, booth, and counter implemented** on 2026-09-18. Counter visual
+review, other biome art, and upper-pool allocation remain open. Companion:
 [tile manifest](background-tile-manifest.md).
 
 ## Purpose and scope
@@ -161,8 +161,9 @@ For each biome, a PNG atlas and external TSX tileset using relative paths:
 
 The retained structural pilot assigns only IDs 0–16. The dining-room sheet
 adds shared IDs 17–24, passable dining IDs 32–49, 64–75, and 80, the
-one-way test surface at ID 50, dining-table IDs 51–55, and dining-chair
-IDs 56–58. Both TSX files mark all other slots reserved,
+one-way test surface at ID 50, dining-table IDs 51–55, dining-chair
+IDs 56–58, dining-booth IDs 59–63, and dining-counter IDs 112–115.
+Both TSX files mark all other slots reserved,
 even where the manifest budgets a later role.
 
 Future map export resolves Tiled GIDs using `firstgid`, rather than copying
@@ -189,8 +190,9 @@ not another VRAM tile block; its values match the TSX `collision` properties.
 2. **Done for pilot:** Set `BGP=$E4`, preserving `OBP0=$E0`.
 3. **Done for pilot:** Replace wall index 45 and its loader with the manifest's structural IDs.
 4. **Done for one-way pilot:** Collision checks read a generated type table.
-   IDs 1–16 are full solid; IDs 50–53 and 57–58 are one-way; table legs,
-   chair back, and decorative IDs are empty.
+   IDs 1–16 are full solid; IDs 50–53, 57–58, 63, and 112–114 are
+   one-way; table legs, chair back, booth back, counter front, and
+   decorative IDs are empty.
    Side/head checks use full solid, while grounded and downward swept checks
    accept both collidable types.
 5. **Done for pilot and passable dining-room groups:** Add atlas conversion and map export/build wiring.

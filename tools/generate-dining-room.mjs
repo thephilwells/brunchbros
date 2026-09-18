@@ -165,6 +165,27 @@ for (const [id, center] of [[57, 2], [58, 5]]) {
   for (let x = center - 1; x <= center + 2; x++) paint(id, x, 7, 3);
 }
 
+for (let id = 59; id <= 62; id++) fill(id, 2);
+for (let id = 59; id <= 61; id++) {
+  for (let x = 0; x < 8; x++) {
+    paint(id, x, 0, 3);
+    paint(id, x, 1, 0);
+  }
+  for (let x = 3; x <= 4; x++) paint(id, x, 4, 1);
+}
+for (let y = 0; y < 8; y++) {
+  paint(59, 0, y, 3);
+  paint(61, 7, y, 3);
+}
+for (const [x, y] of [[3, 2], [4, 2], [2, 3], [5, 3], [3, 4], [4, 4]]) paint(62, x, y, 1);
+fill(63, 2);
+for (let x = 0; x < 8; x++) {
+  paint(63, x, 0, 3);
+  paint(63, x, 1, 0);
+  paint(63, x, 4, 3);
+  paint(63, x, 7, 3);
+}
+
 for (let id = 64; id <= 75; id++) fill(id, 1);
 for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) {
   let shade = 1;
@@ -181,6 +202,22 @@ for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) {
 fill(80, 1);
 for (const [x, y] of [[3, 2], [2, 3], [4, 3], [3, 4]]) paint(80, x, y, 0);
 paint(80, 3, 3, 2);
+
+for (let id = 112; id <= 115; id++) fill(id, 2);
+for (let id = 112; id <= 114; id++) {
+  for (let x = 0; x < 8; x++) {
+    paint(id, x, 0, 3);
+    paint(id, x, 1, 0);
+    paint(id, x, 2, 0);
+    paint(id, x, 4, 3);
+  }
+}
+for (let y = 1; y < 8; y++) {
+  paint(112, 0, y, 3);
+  paint(114, 7, y, 3);
+}
+for (let y = 2; y < 6; y++) for (let x = 2; x < 6; x++) paint(115, x, y, 1);
+for (let x = 0; x < 8; x++) paint(115, x, 7, 3);
 
 const crcTable = Array.from({ length: 256 }, (_, index) => {
   let value = index;
@@ -264,6 +301,11 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     role = 'fixture';
     collision = id === 56 ? 'empty' : 'one_way';
     properties.push('<property name="component" value="dining_chair"/>');
+  } else if (id >= 59 && id <= 63) {
+    name = ['booth_back_left', 'booth_back_middle', 'booth_back_right', 'booth_back_lower', 'booth_seat'][id - 59];
+    role = 'fixture';
+    collision = id === 63 ? 'one_way' : 'empty';
+    properties.push('<property name="component" value="dining_booth"/>');
   } else if (id >= 64 && id <= 75) {
     name = `serving_hatch_${id - 64}`;
     role = 'landmark';
@@ -273,6 +315,11 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
   } else if (id === 80) {
     name = 'dining_wallpaper_motif';
     role = 'rear';
+  } else if (id >= 112 && id <= 115) {
+    name = ['counter_top_left', 'counter_top_middle', 'counter_top_right', 'counter_front'][id - 112];
+    role = 'fixture';
+    collision = id <= 114 ? 'one_way' : 'empty';
+    properties.push('<property name="component" value="dining_counter"/>');
   }
   properties.unshift(
     `<property name="name" value="${name}"/>`,
@@ -349,6 +396,13 @@ place(19, 25, 17);
 place(20, 25, 56);
 place(19, 26, 57);
 place(20, 26, 58);
+for (const [x, id] of [[2, 59], [3, 60], [4, 60], [5, 61]]) place(x, 24, id);
+for (let x = 2; x <= 5; x++) {
+  place(x, 25, 62);
+  place(x, 26, 63);
+}
+for (const [x, id] of [[21, 112], [22, 113], [23, 113], [24, 114]]) place(x, 25, id);
+for (let x = 21; x <= 24; x++) place(x, 26, 115);
 
 writeFileSync('gfx/dining_room_fixture.tmx', [
   '<?xml version="1.0" encoding="UTF-8"?>',

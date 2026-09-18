@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-18 — Counter extends the initial dining-room fixture allocation
+
+**Decision:** Assign dining-counter tiles to IDs 112–115 in the existing
+128-tile sheet. The counter is four tiles wide and two high, with a one-way
+top row and passable front row. IDs 116–127 remain unassigned.
+
+**Why:** The 32–63 fixture band is full, but the first sheet still has
+unassigned slots. Using four of them keeps the landmark, rear, and detail
+budgets intact without changing the ROM's tile loader or collision-table
+size.
+
+**Status:** Implemented; hands-on SameBoy review pending. See
+`specs/background-tile-manifest.md`.
+
+---
+
 ## 2026-09-18 — Furniture uses one-way seat and top surfaces
 
 **Decision:** Booths, chairs, tables, and counters will be passable from
@@ -12,15 +28,17 @@ designated top surface. For booths and chairs, that surface is the seat;
 backs and legs remain passable. A generated per-tile collision table uses
 `0=empty`, `1=full solid`, and `2=one-way top`. ID 50 is a repeatable test
 surface in the current dining-room fixture; IDs 51–55 form the dining
-table and IDs 56–58 form the chair. No drop-through input is specified.
+table, IDs 56–58 form the chair, IDs 59–63 form the booth, and IDs
+112–115 form the counter. No drop-through input is specified.
 
 **Why:** The existing full-solid structural tiles block all directions.
 Distinct collision types keep visual furniture parts separate from the
 surface the chef can stand on. Checking every crossed tile top avoids
 skipping an 8-pixel surface during a 16-pixel fall.
 
-**Status:** Mechanic, test surface, and table confirmed in SameBoy; chair
-awaits hands-on review. See `specs/background-assets.md` and
+**Status:** Mechanic, test surface, table, and chair confirmed in SameBoy;
+booth appearance reviewed, booth collision and counter await hands-on
+checks. See `specs/background-assets.md` and
 `specs/background-tile-manifest.md`.
 
 ---
