@@ -4,6 +4,44 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-18 — Furniture uses one-way seat and top surfaces
+
+**Decision:** Booths, chairs, tables, and counters will be passable from
+below and from either side, but will catch a descending chef at their
+designated top surface. For booths and chairs, that surface is the seat;
+backs and legs remain passable. A generated per-tile collision table uses
+`0=empty`, `1=full solid`, and `2=one-way top`. ID 50 is a repeatable test
+surface in the current dining-room fixture; furniture art is not assigned
+yet. No drop-through input is specified.
+
+**Why:** The existing full-solid structural tiles block all directions.
+Distinct collision types keep visual furniture parts separate from the
+surface the chef can stand on. Checking every crossed tile top avoids
+skipping an 8-pixel surface during a 16-pixel fall.
+
+**Status:** Mechanic and test surface implemented; hands-on SameBoy review
+pending. See `specs/background-assets.md` and
+`specs/background-tile-manifest.md`.
+
+---
+
+## 2026-09-18 — Adopt collaborative implementation with stepwise review
+
+**Decision:** Phil approves each meaningful step, and the assistant may edit
+code, assets, and documentation within that scope. The assistant builds and
+checks its work, then leaves the changes uncommitted for Phil to review.
+Commits and pushes require explicit requests. This supersedes the 2026-08-17
+Navigator Mode agreement below; manual line-number guidance still applies
+when Phil chooses to type a change himself.
+
+**Why:** Phil now prefers reviewing small implemented changes to transcribing
+every line, while retaining the learning value of hardware explanations and
+stepwise approval.
+
+**Status:** Active. See `AGENTS.md`.
+
+---
+
 ## 2026-09-18 — Structural pilot uses signed BG addressing and fixed tile IDs
 
 **Decision:** The first tileset pilot reserves BG IDs 0–127 at `$9000` with
@@ -125,7 +163,7 @@ development hands-on; the point of the project is understanding, not output.
 This needs to survive across sessions/tools (Codex, Claude Code, etc.), so
 it's encoded in the repo rather than left as conversational context.
 
-**Status:** Active.
+**Status:** Superseded by the 2026-09-18 collaborative implementation decision.
 
 ---
 

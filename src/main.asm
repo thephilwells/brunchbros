@@ -204,7 +204,6 @@ MainLoop:
 
 .animDone
 
-; Jump: A button, edge-detected, only while grounded (screen-bottom or standing on a solid tile)
 	ld a, %00010000
 	ldh [$ff00], a
 	ldh a, [$ff00]
@@ -233,7 +232,7 @@ MainLoop:
 	ld e, a
 	ld a, [PlayerY]
 	ld d, a
-	call IsWall
+	call IsSupport
 	jr z, .grounded
 
 	ld a, [PlayerX]
@@ -241,7 +240,7 @@ MainLoop:
 	ld e, a
 	ld a, [PlayerY]
 	ld d, a
-	call IsWall
+	call IsSupport
 	jr nz, .noJump
 
 .grounded
@@ -324,31 +323,52 @@ MainLoop:
 
 	ld a, [PlayerVelY]
 	bit 7, a
-	jr nz, .checkRising
+	jp nz, .checkRising
 
 ; Falling: if this overflowed past the world's bottom edge, land there directly
-	jr c, .worldBottom
+	jp c, .worldBottom
 
-; Falling: check both bottom-edge points at the tentative Y
+	ld a, [PlayerY]
+	add a, 7
+	jp c, .applyFall
+	and a, $f8
+	ld c, a
+
+; Check crossed tile tops so a fast fall cannot skip an 8px platform.
+.scanFall
+	ld a, c
+	cp b
+	jr z, .checkFallTop
+	jp nc, .applyFall
+.checkFallTop
 	ld a, [PlayerX]
 	sub a, 8
 	ld e, a
-	ld a, b
-	sub a, 1
-	ld d, a
-	call IsWall
-	jr z, .landed
+	ld d, c
+	push bc
+	call IsSupport
+	pop bc
+	jr z, .landedAtTop
 
 	ld a, [PlayerX]
 	add a, 7
 	ld e, a
-	ld a, b
-	sub a, 1
-	ld d, a
-	call IsWall
-	jr z, .landed
+	ld d, c
+	push bc
+	call IsSupport
+	pop bc
+	jr z, .landedAtTop
 
-	jr .applyFall
+	ld a, c
+	add a, 8
+	jp c, .applyFall
+	ld c, a
+	jr .scanFall
+
+.landedAtTop
+	ld a, c
+	ld [PlayerY], a
+	jp .landed
 
 .checkRising
 ; Rising: check both top-edge points at the tentative Y
@@ -610,8 +630,7 @@ UpdateSprites:
 
 	ret
 
-; Input: D=Y pixel, E=X pixel. Output: Z set for structural tile IDs 1-16.
-IsWall:
+ReadBgTile:
 	ld a, e
 	srl a
 	srl a
@@ -638,13 +657,29 @@ IsWall:
 	add hl, de
 
 	ld a, [hl]
+	ret
+
+CollisionAt:
+	call ReadBgTile
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	ret
+
+IsWall:
+	call CollisionAt
 	cp a, 1
-	jr c, .clear
-	cp a, 17
-	jr nc, .clear
+	ret
+
+IsSupport:
+	call CollisionAt
+	and a, a
+	jr z, .empty
 	xor a
 	ret
-.clear
+.empty
 	ld a, 1
 	or a
 	ret
@@ -654,6 +689,9 @@ TileData:
 
 FixtureMap:
 	INCBIN "build/dining_room_fixture.tilemap"
+
+CollisionTypes:
+	INCBIN "build/dining_room_collision.bin"
 
 ChefFrames:
 	INCBIN "build/chef_idle0.2bpp"

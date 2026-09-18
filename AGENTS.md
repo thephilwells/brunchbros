@@ -4,76 +4,47 @@ This file is the map. Deeper, longer-lived material lives under `docs/`,
 `specs/`, and `notes/` — read those when you need depth; this file just
 tells you the rules and where to look.
 
-## Navigator Mode (default, always on)
+## Collaborative implementation (default)
 
-This repository is worked in **Navigator Mode** unless Phil explicitly says
-**"exit navigator mode"** in the current session. If that phrase hasn't been
-said, Navigator Mode applies — including to documentation, after the initial
-bootstrap pass that created this file structure.
+Phil approves the scope of each meaningful step; the assistant may then edit
+source, assets, tools, tests, and documentation within that scope. Keep changes
+small enough to review, explain Game Boy-specific decisions, verify the build
+and behavior where possible, and hand the diff back for Phil's review before
+the next substantial step. Phil need not type the code himself.
 
-Phil is an experienced software engineer who is a beginner at Game Boy
-development, RGBDS, LR35902 assembly, and low-level game programming. The
-entire point of this project is that he types every meaningful line of game
-code himself and understands it. Do not shortcut that for the sake of speed.
+Do not silently expand an approved step into a different mechanic, engine, or
+hardware target. Surface material tradeoffs before committing to them. Do not
+commit or push unless Phil explicitly asks; never push to `main`/`master`
+without explicit approval for that push. Preserve unrelated worktree changes.
+Generated tables and converted assets may be automated when they are within
+the approved step and their source and output contract are clear.
 
-### You MAY
-- Read files, search the repo, inspect git history/diffs.
-- Run build/lint/test/disassemble/profile/emulator commands to verify state.
-- Explain Game Boy hardware, RGBDS syntax, and architecture tradeoffs.
-- Propose specific small changes and show short snippets for Phil to type.
-- Review code after Phil writes it; diagnose compiler/linker/emulator errors.
-- Point out mistakes directly and recommend refactors.
-- Reread repo documentation to refresh your understanding.
-
-### You MUST NOT
-- Edit or create source/implementation files yourself, by any means — direct
-  edit, shell redirect, sed/perl/python, `patch`, `git apply`, or any other
-  indirect route. The restriction is about **effect**, not tool name: if an
-  action would cause implementation code to appear without Phil typing it,
-  don't do it.
-- Commit changes on Phil's behalf.
-- Silently fix problems instead of explaining and letting Phil fix them.
-- Dump large boilerplate into the repo.
-
-Documentation is the one exception, and only for the initial bootstrap that
-produced this file tree. After bootstrap, writing to `docs/`, `specs/`, or
-`notes/` requires Phil's explicit go-ahead for that specific document.
-
-If something would be absurdly tedious to do by hand (generated binary
-tables, converted tile data, long repetitive declarations), explain why
-automation fits and ask permission first. Permission for one such case is not
-a standing permission for future cases.
+Keep code direct: no comments unless the reason is genuinely non-obvious, and
+no abstractions or error handling for hypothetical futures. Always make a new
+commit rather than amending unless Phil asks otherwise; never force-push or
+discard his work without approval.
 
 ## Teaching style
 
 - Assume ordinary programming fluency; don't over-explain general concepts.
-- Do explain Game Boy-specific concepts carefully, introduced as they become
-  relevant rather than front-loaded.
-- Explain *why* a technique exists on this hardware, and relate it to
-  higher-level concepts Phil likely already knows.
-- Say explicitly whether something is convention or a hardware requirement,
-  and flag when multiple reasonable approaches exist.
-- The first few times an instruction, register, flag, or memory region shows
-  up, explain it. Never let Phil transcribe a nontrivial chunk of assembly
-  without first explaining what it does.
+- Explain Game Boy-specific concepts as they become relevant, including why a
+  technique exists on this hardware and how it relates to familiar concepts.
+- Distinguish conventions from hardware requirements and flag meaningful
+  alternatives. Explain nontrivial assembly changes so Phil can review them.
 
 ## Interaction loop
 
-Work in small increments, one understandable unit per exchange — not a whole
-subsystem at once:
+Work in reviewable increments:
 
-1. **UNDERSTAND** — inspect relevant repo state, restate the immediate goal.
-2. **EXPLAIN** — teach the concept(s) this step needs.
-3. **PLAN** — describe the small change about to happen and why.
-4. **GUIDE** — say exactly which file, where in it, what to type, what it means.
-5. **WAIT** — stop; let Phil make the change.
-6. **VERIFY** — after Phil says it's done, inspect the file and run the
-   relevant build/verification commands.
-7. **REVIEW** — what worked, what didn't, what we learned.
-8. **CONTINUE** — hand off the next small step.
+1. **UNDERSTAND** — inspect repo state and agree on the immediate goal.
+2. **EXPLAIN** — state the key hardware/architecture implications and plan.
+3. **IMPLEMENT** — edit within the approved scope, without speculative extras.
+4. **VERIFY** — build, test, and inspect the result proportionate to risk.
+5. **REVIEW** — report what changed, what remains unverified, and any decision
+   needed before the next substantial step.
 
 Cite concrete file paths and line numbers when referring to existing code.
-When a GUIDE step tells Phil where to insert or move code, anchor it with
+When a manual-edit guide tells Phil where to insert or move code, anchor it with
 line numbers, not just surrounding text — text anchors like "between X and
 Y" can be ambiguous if that text appears more than once in the file (e.g.
 `ldh [$ff47], a` showed up in both `Start:` and `MainLoop:`, and code meant
@@ -104,8 +75,7 @@ drifts toward reproducing something that is effectively a direct copy.
 
 Brunch Bros is a solo project — no other collaborators or parallel agent
 sessions review this repo. When a background/agent session needs to write
-to `docs/`, `specs/`, or `notes/` (per the documentation exception above)
-and the session harness requires worktree isolation to do it, there is no
+to the repository and the session harness requires worktree isolation, there is no
 need for a sibling review branch: enter the worktree, make the change, exit
 with `keep`, then copy the changed files straight onto whatever branch is
 checked out in the main checkout (normally `main`) as **uncommitted**

@@ -104,11 +104,25 @@ Palette reference: [Pan Docs palettes](https://github.com/gbdev/pandocs/blob/mas
 
 ## Structural and gameplay contract
 
-The first vocabulary has two collision meanings: **empty** and **full solid
-8×8 cell**. Floors, ceilings, walls, isolated blocks, pillars, and narrow
-platforms are compositions of the same solid cells. A narrow platform is
-solid from below as well as above. One-way shelves, ladders, slopes,
-destructibility, ice friction, and hazards require later gameplay decisions.
+The structural vocabulary has two collision meanings: **empty** and **full
+solid 8×8 cell**. Floors, ceilings, walls, isolated blocks, pillars, and
+narrow structural platforms are compositions of the same solid cells. A
+structural platform is solid from below as well as above. The dining-room
+furniture pilot adds a third meaning, **one-way top**: the chef passes
+through it from below and from either side, but lands on its top while
+falling. Ladders, slopes, destructibility, ice friction, and hazards still
+require later gameplay decisions.
+
+The chef's world-space `PlayerY` is his feet coordinate. On a fall, test
+every tile-top boundary from the old feet position through the tentative
+position, including the starting boundary when already standing on it.
+At the first horizontally overlapping full-solid or one-way surface, snap
+`PlayerY` to that boundary and stop the fall. Rising and horizontal checks
+ignore one-way cells. Grounded/jump checks accept both surface types. The
+seat line of a booth or chair is the landing plane; backs and legs are
+passable art. Each landing plane aligns with the upper edge of an 8×8 tile;
+table and counter tops follow the same rule. No drop-through input is
+specified.
 
 For each solid cell, the four cardinal neighbors determine which edges are
 exposed. There are 16 possible combinations, enumerated in the manifest.
@@ -135,9 +149,9 @@ For each biome, a PNG atlas and external TSX tileset using relative paths:
 - TSX: tile width/height 8, tile count 128, columns 16, spacing/margin 0.
 - Local ID is `row * 16 + column`. Reserved slots are opaque white,
   explicitly marked reserved, and prohibited in authored maps.
-- Every assigned tile records `name` (string), `collision` (`empty` or
-  `solid` string), and `role` (string). Structural IDs 1–16 additionally
-  record `neighbor_mask` (integer 0–15). Reserved slots record
+- Every assigned tile records `name` (string), `collision` (`empty`,
+  `solid`, or `one_way` string), and `role` (string). Structural IDs 1–16
+  additionally record `neighbor_mask` (integer 0–15). Reserved slots record
   `role=reserved`; they are not alternate empty tiles.
 - First fixture map: finite orthogonal 32×32, one tile layer containing
   final rendered cells, one biome tileset. Decorative components replace
@@ -146,9 +160,9 @@ For each biome, a PNG atlas and external TSX tileset using relative paths:
 - No animation or tile transforms in the first TSX/map.
 
 The retained structural pilot assigns only IDs 0–16. The dining-room sheet
-adds shared IDs 17–24 and passable dining IDs 32–49, 64–75, and 80. Both
-TSX files mark all other slots reserved, even where the manifest budgets
-a later role.
+adds shared IDs 17–24, passable dining IDs 32–49, 64–75, and 80, plus the
+one-way test surface at ID 50. Both TSX files mark all other slots reserved,
+even where the manifest budgets a later role.
 
 Future map export resolves Tiled GIDs using `firstgid`, rather than copying
 GIDs as Game Boy indices. GID 0 (an empty Tiled cell) exports as BG tile 0;
@@ -157,11 +171,15 @@ transforms and reserved/foreign IDs. Tiled properties are editor data and
 must be exported/implemented explicitly before the ROM can use them.
 See [Tiled global IDs](https://doc.mapeditor.org/en/stable/reference/global-tile-ids/).
 
-Initial binary: exactly 2,048 bytes, tile order preserved, loaded at `$9000`.
+Initial tile binary: exactly 2,048 bytes, tile order preserved, loaded at `$9000`.
 Do not deduplicate, flip-deduplicate, or reorder tiles during conversion;
 fixed IDs are part of the contract. If the atlas later expands to 256 slots,
 IDs 128–255 load at `$8800`, not past `$97FF` into map memory. That extension
 needs its own export/load review.
+
+The dining generator also exports a 128-byte collision-type table in local
+tile-ID order (`0=empty`, `1=solid`, `2=one_way`). It is cartridge ROM data,
+not another VRAM tile block; its values match the TSX `collision` properties.
 
 ## Integration requirements
 
@@ -169,10 +187,10 @@ needs its own export/load review.
    together. Merely toggling the addressing bit breaks existing BG lookups.
 2. **Done for pilot:** Set `BGP=$E4`, preserving `OBP0=$E0`.
 3. **Done for pilot:** Replace wall index 45 and its loader with the manifest's structural IDs.
-4. **Done for pilot:** Replace the single-ID collision predicate. For this first vocabulary,
-   IDs 1–16 are solid and all assigned decorative IDs are empty; no general
-   material engine is needed yet. Later solid fixtures require an explicit
-   collision/export extension.
+4. **Done for one-way pilot:** Collision checks read a generated type table.
+   IDs 1–16 are full solid; ID 50 is one-way; decorative IDs are empty.
+   Side/head checks use full solid, while grounded and downward swept checks
+   accept both collidable types.
 5. **Done for pilot and passable dining-room groups:** Add atlas conversion and map export/build wiring.
    Load the current static fixture with LCD disabled using the established boot setup pattern.
 6. **Pending hands-on check:** Verify timing and collision during scrolling. A valid atlas does not
@@ -191,6 +209,9 @@ needs its own export/load review.
   boundaries; verify seams between adjoining modules when those exist.
 - Collision agrees with solid cells; decorations remain passable; chef
   stays legible over each rear-fill and structural family.
+- One-way cells allow ascent and side entry; feet land on their top even
+  across a 16-pixel fall, and jumping from the top works. Seat artwork
+  receives the one-way type only on its designated surface tiles.
 - SameBoy DMG rendering matches Tiled's intended four shades, preserves all
   chef poses, and shows no corrupted tiles while moving/scrolling.
 - No reads of uninitialized/reserved tiles and no writes into another

@@ -1,11 +1,11 @@
 SUMMARY:
-	ROM0: 4783 bytes used / 11601 free
+	ROM0: 4960 bytes used / 11424 free
 	WRAM0: 8 bytes used / 4088 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$13ae ($125f bytes) ["Main"]
+	SECTION: $0150-$145f ($1310 bytes) ["Main"]
 	         $0150 = Start
 	         $0153 = Start.waitVBlank
 	         $0166 = Start.copyTilesOuter
@@ -29,32 +29,39 @@ ROM0 bank #0:
 	         $02d2 = MainLoop.notRight
 	         $0304 = MainLoop.notLeft
 	         $0313 = MainLoop.velDone
-	         $0345 = MainLoop.checkRising
-	         $0363 = MainLoop.applyFall
-	         $0369 = MainLoop.headBump
-	         $0370 = MainLoop.worldBottom
-	         $0377 = MainLoop.landed
-	         $0383 = MainLoop.noLandFX
-	         $0388 = MainLoop.gravityDone
-	         $0394 = MainLoop.xNotTooLow
-	         $03a0 = MainLoop.xNotTooHigh
-	         $03b1 = MainLoop.yNotTooLow
-	         $03c2 = MainLoop.checkAirborne
-	         $03d7 = MainLoop.showAscent
-	         $03dc = MainLoop.poseOverrideDone
-	         $03ed = MainLoop.scxMin
-	         $03ef = MainLoop.scxDone
-	         $0402 = MainLoop.scyMin
-	         $0404 = MainLoop.scyDone
-	         $040c = UpdateSprites
-	         $046e = UpdateSprites.flipped
-	         $04c1 = IsWall
-	         $04eb = IsWall.clear
-	         $04ef = TileData
-	         $0cef = FixtureMap
-	         $10ef = ChefFrames
-	EMPTY: $13af-$3fff ($2c51 bytes)
-	TOTAL EMPTY: $2d51 bytes
+	         $0332 = MainLoop.scanFall
+	         $0339 = MainLoop.checkFallTop
+	         $035e = MainLoop.landedAtTop
+	         $0365 = MainLoop.checkRising
+	         $0383 = MainLoop.applyFall
+	         $0389 = MainLoop.headBump
+	         $0390 = MainLoop.worldBottom
+	         $0397 = MainLoop.landed
+	         $03a3 = MainLoop.noLandFX
+	         $03a8 = MainLoop.gravityDone
+	         $03b4 = MainLoop.xNotTooLow
+	         $03c0 = MainLoop.xNotTooHigh
+	         $03d1 = MainLoop.yNotTooLow
+	         $03e2 = MainLoop.checkAirborne
+	         $03f7 = MainLoop.showAscent
+	         $03fc = MainLoop.poseOverrideDone
+	         $040d = MainLoop.scxMin
+	         $040f = MainLoop.scxDone
+	         $0422 = MainLoop.scyMin
+	         $0424 = MainLoop.scyDone
+	         $042c = UpdateSprites
+	         $048e = UpdateSprites.flipped
+	         $04e1 = ReadBgTile
+	         $0502 = CollisionAt
+	         $050e = IsWall
+	         $0514 = IsSupport
+	         $051c = IsSupport.empty
+	         $0520 = TileData
+	         $0d20 = FixtureMap
+	         $1120 = CollisionTypes
+	         $11a0 = ChefFrames
+	EMPTY: $1460-$3fff ($2ba0 bytes)
+	TOTAL EMPTY: $2ca0 bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c007 ($0008 bytes) ["Player State"]

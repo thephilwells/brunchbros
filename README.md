@@ -5,10 +5,9 @@ run-based roguelike-platformer structure, themed around a chef navigating
 hazardous, procedurally assembled areas of a diner (kitchen, prep areas,
 pantry/storage, dining room, freezer, service areas).
 
-This is a long-term learning project. Phil is writing every line of game
-code himself; an AI assistant operates as a pair-programming **navigator**,
-not an implementer. See `AGENTS.md` for the full operating rules, and
-`docs/PROJECT.md` for the project vision in more detail.
+This is a long-term learning project. Phil reviews and approves changes in
+small steps while an AI assistant may implement them. See `AGENTS.md` for
+the full operating rules and `docs/PROJECT.md` for the project vision.
 
 ## Status
 
@@ -17,7 +16,8 @@ input, a 16×16 animated player sprite (idle/walk cycles, horizontal flip),
 tile-based wall collision, jumping/gravity with squash-stretch-settle
 animation, and scrolling camera follow (both axes) over a widened world.
 The tileset milestone now has a 17-tile structural pilot plus shared rear
-surfaces and passable dining-room wall art in a Tiled map. See
+surfaces, passable dining-room wall art, and a one-way platform test strip
+in a Tiled map. See
 `docs/ROADMAP.md` for the full milestone list and `docs/LEARNING.md` for
 concepts covered so far.
 
@@ -45,6 +45,7 @@ Aseprite are installed in `/Applications`. Verification history:
 node tools/generate-structural-pilot.mjs
 node tools/generate-dining-room.mjs
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
+node tools/verify-dining-room.mjs
 for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do
   rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
 done
@@ -61,7 +62,7 @@ Tiled to inspect the current dining-room sheet. Its external tileset is
 
 ## Documentation map
 
-- `AGENTS.md` — durable AI operating rules (Navigator Mode) and doc index
+- `AGENTS.md` — durable AI operating rules and doc index
 - `docs/PROJECT.md` — vision, scope, goals, target hardware
 - `docs/LEARNING.md` — living map of GB concepts encountered
 - `docs/ARCHITECTURE.md` — current architecture (starts empty)

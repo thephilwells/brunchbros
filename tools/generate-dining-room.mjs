@@ -106,6 +106,13 @@ for (let y = 2; y <= 5; y++) {
 paint(49, 3, 3, 3);
 paint(49, 4, 3, 3);
 
+fill(50, 1);
+for (let x = 0; x < 8; x++) {
+  paint(50, x, 0, 3);
+  paint(50, x, 1, 0);
+}
+for (let x = 1; x < 7; x++) paint(50, x, 2, 2);
+
 for (let id = 64; id <= 75; id++) fill(id, 1);
 for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) {
   let shade = 1;
@@ -156,6 +163,8 @@ writeFileSync('gfx/dining_room.png', Buffer.concat([
 
 const rearNames = ['rear_plain', 'rear_texture_a', 'rear_texture_b', 'rear_recess'];
 const trimNames = ['trim_h_left', 'trim_h_middle', 'trim_h_right', 'trim_h_single'];
+const collisionKinds = { empty: 0, solid: 1, one_way: 2 };
+const collisionTypes = Buffer.alloc(128);
 const tiles = Array.from({ length: 128 }, (_, id) => {
   let name = `reserved_${id}`;
   let role = 'reserved';
@@ -189,6 +198,10 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     properties.push('<property name="component" value="wall_sconce"/>');
     properties.push('<property name="part_x" type="int" value="0"/>');
     properties.push(`<property name="part_y" type="int" value="${id - 48}"/>`);
+  } else if (id === 50) {
+    name = 'one_way_test_top';
+    role = 'platform_test';
+    collision = 'one_way';
   } else if (id >= 64 && id <= 75) {
     name = `serving_hatch_${id - 64}`;
     role = 'landmark';
@@ -205,6 +218,7 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     `<property name="role" value="${role}"/>`,
   );
   if (id >= 1 && id <= 16) properties.push(`<property name="neighbor_mask" type="int" value="${id - 1}"/>`);
+  collisionTypes[id] = collisionKinds[collision];
   return ` <tile id="${id}"><properties>${properties.join('')}</properties></tile>`;
 });
 writeFileSync('gfx/dining_room.tsx', [
@@ -215,6 +229,7 @@ writeFileSync('gfx/dining_room.tsx', [
   '</tileset>',
   '',
 ].join('\n'));
+writeFileSync('build/dining_room_collision.bin', collisionTypes);
 
 const solid = Array.from({ length: 32 }, () => Array(32).fill(false));
 for (let y = 27; y < 32; y++) for (let x = 0; x < 32; x++) solid[y][x] = true;
@@ -262,6 +277,7 @@ placeComponent(6, 22, 44, 2, 2);
 placeComponent(9, 21, 64, 4, 3);
 placeComponent(14, 22, 48, 1, 2);
 placeComponent(16, 22, 40, 2, 2);
+for (let x = 9; x <= 12; x++) place(x, 24, 50);
 
 writeFileSync('gfx/dining_room_fixture.tmx', [
   '<?xml version="1.0" encoding="UTF-8"?>',

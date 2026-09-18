@@ -1,6 +1,6 @@
 # Background tile manifest
 
-Status: **IDs 0–24, 32–49, 64–75, and 80 implemented in the dining-room sheet**,
+Status: **IDs 0–24, 32–50, 64–75, and 80 implemented in the dining-room sheet**,
 2026-09-18. Remaining assignments and art are proposed. Contract and VRAM addresses:
 [background asset specification](background-assets.md).
 
@@ -14,18 +14,18 @@ One slot costs 16 bytes regardless of how often it appears in a room.
 | IDs | Count | Allocation | Art commitment now |
 |---|---:|---|---|
 | 0–31 | 32 | Shared structural vocabulary | 25 authored, 7 reserved |
-| 32–63 | 32 | Biome fixtures assembled from several tiles | 18 dining authored, 14 budgeted |
+| 32–63 | 32 | Biome fixtures assembled from several tiles | 19 dining authored, 13 budgeted |
 | 64–79 | 16 | Biome landmark/entrance artwork | 12 dining authored, 4 budgeted |
 | 80–95 | 16 | Biome rear surfaces | 1 dining authored, 15 budgeted |
 | 96–111 | 16 | Biome decorative details | Budget only |
 | 112–127 | 16 | Unassigned within the initial sheet | Reserved |
-| **0–127** | **128** | **2,048 bytes resident** | **56 authored, 49 budgeted, 23 reserved** |
+| **0–127** | **128** | **2,048 bytes resident** | **57 authored, 48 budgeted, 23 reserved** |
 
 These are caps, not a request to fill every slot. The common-material
 pilot authors 17 tiles (0–16) and marks all other slots reserved in its
-TSX. The dining sheet adds eight shared rear/trim tiles, 18 dining fixture
-tiles, a 12-tile landmark, and one wallpaper motif. Its unassigned slots
-remain reserved in the TSX.
+TSX. The dining sheet adds eight shared rear/trim tiles, 18 passable dining
+fixture tiles, one one-way test tile, a 12-tile landmark, and one wallpaper
+motif. Its unassigned slots remain reserved in the TSX.
 All four biomes use the same structural meanings; matching pixels are
 optional. Biome rows need an itemized footprint review before generation.
 
@@ -131,15 +131,28 @@ appears once as an isolated trim sample. This map is a visual and
 integration fixture, not a procedural room template.
 
 These groups exhaust the current *passable* dining-room vocabulary, not the
-tile budget. IDs 50–63, 76–79, 81–111 remain reserved in the current
-atlas. Collidable booths, tables, and counters require gameplay footprints
-and a collision/rendering decision before their art is assigned.
+tile budget. IDs 51–63, 76–79, 81–111 remain reserved in the current
+atlas. Furniture art still needs exact gameplay footprints and tile budgets.
+
+## One-way collision pilot: ID 50
+
+`one_way_test_top` is a repeatable horizontal test strip with
+`collision=one_way` and `role=platform_test`. Four copies sit at row 24,
+columns 9–12, directly below the lower serving hatch. The drawn top edge
+is the tile's upper boundary (world Y=192). The chef can jump through it
+from the floor at Y=216 and land at Y=192. This is a collision/contrast
+fixture, not final counter, booth, table, or chair art.
+
+For all four future furniture families, only the tile row containing the
+designated top surface receives `one_way`; the other visual parts remain
+`empty`. That surface must align with the tile row's upper edge. Chair and
+booth seats are the landing planes, with backs passable.
 
 ## Future biome vocabulary guide
 
 | Biome | Structural material candidate | Fixture candidates | Landmark candidates | Rear/details candidates |
 |---|---|---|---|---|
-| Dining room | Floor/wall cross-section with diner trim | Booth, service counter, table (collision undecided) | Entry/exit doorway (behavior undecided) | Further motifs only if room modules need them |
+| Dining room | Floor/wall cross-section with diner trim | Booth, service counter, table, chair (one-way tops) | Entry/exit doorway (behavior undecided) | Further motifs only if room modules need them |
 | Kitchen | Ceramic surface over solid masonry | Range, sink, cabinets | Vent hood or kitchen door | Tile wall, pipes, pans, utensils |
 | Patio | Paving/deck over solid earth | Planter, outdoor table | Awning or patio exit | Fence, foliage, distant outdoor scenery |
 | Deep freezer | Frosted insulated structure | Storage rack, frozen crates | Insulated doorway or cooling unit | Wall panels, pipes, frost |
