@@ -1,6 +1,6 @@
 # Background tile manifest
 
-Status: **IDs 0–24, 32–50, 64–75, and 80 implemented in the dining-room sheet**,
+Status: **IDs 0–24, 32–58, 64–75, and 80 implemented in the dining-room sheet**,
 2026-09-18. Remaining assignments and art are proposed. Contract and VRAM addresses:
 [background asset specification](background-assets.md).
 
@@ -14,18 +14,19 @@ One slot costs 16 bytes regardless of how often it appears in a room.
 | IDs | Count | Allocation | Art commitment now |
 |---|---:|---|---|
 | 0–31 | 32 | Shared structural vocabulary | 25 authored, 7 reserved |
-| 32–63 | 32 | Biome fixtures assembled from several tiles | 19 dining authored, 13 budgeted |
+| 32–63 | 32 | Biome fixtures assembled from several tiles | 27 dining authored, 5 budgeted |
 | 64–79 | 16 | Biome landmark/entrance artwork | 12 dining authored, 4 budgeted |
 | 80–95 | 16 | Biome rear surfaces | 1 dining authored, 15 budgeted |
 | 96–111 | 16 | Biome decorative details | Budget only |
 | 112–127 | 16 | Unassigned within the initial sheet | Reserved |
-| **0–127** | **128** | **2,048 bytes resident** | **57 authored, 48 budgeted, 23 reserved** |
+| **0–127** | **128** | **2,048 bytes resident** | **65 authored, 40 budgeted, 23 reserved** |
 
 These are caps, not a request to fill every slot. The common-material
 pilot authors 17 tiles (0–16) and marks all other slots reserved in its
 TSX. The dining sheet adds eight shared rear/trim tiles, 18 passable dining
-fixture tiles, one one-way test tile, a 12-tile landmark, and one wallpaper
-motif. Its unassigned slots remain reserved in the TSX.
+fixture tiles, one one-way test tile, five dining-table tiles, three
+dining-chair tiles, a 12-tile landmark, and one wallpaper motif. Its
+unassigned slots remain reserved in the TSX.
 All four biomes use the same structural meanings; matching pixels are
 optional. Biome rows need an itemized footprint review before generation.
 
@@ -130,9 +131,10 @@ remains visible after the chef lands on the bottom floor. ID 24 also
 appears once as an isolated trim sample. This map is a visual and
 integration fixture, not a procedural room template.
 
-These groups exhaust the current *passable* dining-room vocabulary, not the
-tile budget. IDs 51–63, 76–79, 81–111 remain reserved in the current
-atlas. Furniture art still needs exact gameplay footprints and tile budgets.
+These groups exhaust the current *passable wall-decoration* vocabulary,
+not the tile budget. IDs 59–63, 76–79, 81–111 remain reserved in the
+current atlas. Booth and counter art still need exact gameplay
+footprints and tile budgets.
 
 ## One-way collision pilot: ID 50
 
@@ -142,11 +144,37 @@ columns 9–12, directly below the lower serving hatch. The drawn top edge
 is the tile's upper boundary (world Y=192). The chef can jump through it
 from the floor at Y=216 and land at Y=192. This is a collision/contrast
 fixture, not final counter, booth, table, or chair art.
+The initial spawn at X=88, Y=88 has a clear fall lane through columns
+10–11, allowing a drop onto the strip from level-start height.
 
-For all four future furniture families, only the tile row containing the
+For all four furniture families, only the tile row containing the
 designated top surface receives `one_way`; the other visual parts remain
 `empty`. That surface must align with the tile row's upper edge. Chair and
 booth seats are the landing planes, with backs passable.
+
+## Dining table: IDs 51–55
+
+The 4×2-tile (32×16 px) table uses top row `51, 52, 52, 53` and leg row
+`54, 17, 17, 55`. ID 52 repeats to extend the tabletop; ID 17 is the
+shared plain rear fill between its legs. IDs 51–53 have
+`collision=one_way` at the tabletop's upper edge. IDs 54–55 and the rear
+fill are passable, so the chef can approach from either side or jump
+through the table. The fixture places it at columns 14–17, rows 25–26,
+with the legs touching the solid floor at row 27. Its top is world Y=200,
+16 px above floor height. Its one-way behavior was confirmed in SameBoy;
+booths and counters remain unassigned.
+
+## Dining chair: IDs 56–58
+
+The 2×2-tile (16×16 px) left-facing chair uses upper row `17, 56` and
+lower row `57, 58`. ID 56 is a passable chair back. IDs 57–58 form a
+one-way seat whose upper edge is the landing plane. The seat tiles also
+contain the chair's short legs; all non-seat pixels in those tiles share
+the seat's one-way collision type because collision is per 8×8 cell.
+The fixture places the chair at columns 19–20, rows 25–26, with its feet
+touching the solid floor at row 27. The seat is world Y=208, eight pixels
+below the table top and eight pixels above the floor. Its art and movement
+await hands-on SameBoy review.
 
 ## Future biome vocabulary guide
 

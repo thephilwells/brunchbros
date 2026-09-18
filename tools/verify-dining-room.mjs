@@ -26,4 +26,28 @@ for (let x = 9; x <= 12; x++) {
   assert.equal(collision[map[27 * 32 + x]], 1);
 }
 
-console.log('Dining-room collision table and one-way fixture verified.');
+for (let y = 11; y < 24; y++) {
+  for (const x of [10, 11]) assert.equal(collision[map[y * 32 + x]], 0);
+}
+
+for (const [x, id] of [[14, 51], [15, 52], [16, 52], [17, 53]]) {
+  assert.equal(map[25 * 32 + x], id);
+  assert.equal(collision[id], 2);
+  assert.equal(collision[map[24 * 32 + x]], 0);
+}
+for (const [x, id] of [[14, 54], [15, 17], [16, 17], [17, 55]]) {
+  assert.equal(map[26 * 32 + x], id);
+  assert.equal(collision[id], 0);
+  assert.equal(collision[map[27 * 32 + x]], 1);
+}
+
+assert.equal(map[25 * 32 + 19], 17);
+assert.equal(map[25 * 32 + 20], 56);
+assert.equal(collision[56], 0);
+for (const [x, id] of [[19, 57], [20, 58]]) {
+  assert.equal(map[26 * 32 + x], id);
+  assert.equal(collision[id], 2);
+  assert.equal(collision[map[27 * 32 + x]], 1);
+}
+
+console.log('Dining-room collision table and one-way furniture fixture verified.');

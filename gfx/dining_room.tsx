@@ -52,14 +52,14 @@
  <tile id="48"><properties><property name="name" value="wall_sconce_0"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="wall_sconce"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="0"/></properties></tile>
  <tile id="49"><properties><property name="name" value="wall_sconce_1"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="wall_sconce"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="1"/></properties></tile>
  <tile id="50"><properties><property name="name" value="one_way_test_top"/><property name="collision" value="one_way"/><property name="role" value="platform_test"/></properties></tile>
- <tile id="51"><properties><property name="name" value="reserved_51"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="52"><properties><property name="name" value="reserved_52"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="53"><properties><property name="name" value="reserved_53"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="54"><properties><property name="name" value="reserved_54"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="55"><properties><property name="name" value="reserved_55"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="56"><properties><property name="name" value="reserved_56"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="57"><properties><property name="name" value="reserved_57"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="58"><properties><property name="name" value="reserved_58"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="51"><properties><property name="name" value="table_top_left"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_table"/></properties></tile>
+ <tile id="52"><properties><property name="name" value="table_top_middle"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_table"/></properties></tile>
+ <tile id="53"><properties><property name="name" value="table_top_right"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_table"/></properties></tile>
+ <tile id="54"><properties><property name="name" value="table_leg_left"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="dining_table"/></properties></tile>
+ <tile id="55"><properties><property name="name" value="table_leg_right"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="dining_table"/></properties></tile>
+ <tile id="56"><properties><property name="name" value="chair_back_right"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="dining_chair"/></properties></tile>
+ <tile id="57"><properties><property name="name" value="chair_seat_left"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_chair"/></properties></tile>
+ <tile id="58"><properties><property name="name" value="chair_seat_right"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_chair"/></properties></tile>
  <tile id="59"><properties><property name="name" value="reserved_59"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
  <tile id="60"><properties><property name="name" value="reserved_60"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
  <tile id="61"><properties><property name="name" value="reserved_61"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>

@@ -89,9 +89,10 @@ history to remember them.
 the checkerboard placeholder. A 17-tile structural pilot established the
 tile budget and full-cell solid vocabulary; shared rear/trim tiles and the
 passable dining-room wall art are now in a Tiled map and ROM. A one-way
-platform test strip and collision-type table are integrated, pending a
-hands-on SameBoy check. Booth, table, counter, and chair art remains to be
-designed; the kitchen, patio, and deep freezer are unstarted.
+platform test strip and collision-type table are integrated and checked
+in SameBoy. The dining table passed visual and movement review; the chair
+is ready for review. Booth and counter art remain to be designed. The kitchen, patio,
+and deep freezer are unstarted.
 
 ## Completed
 

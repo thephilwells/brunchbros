@@ -11,16 +11,16 @@ below and from either side, but will catch a descending chef at their
 designated top surface. For booths and chairs, that surface is the seat;
 backs and legs remain passable. A generated per-tile collision table uses
 `0=empty`, `1=full solid`, and `2=one-way top`. ID 50 is a repeatable test
-surface in the current dining-room fixture; furniture art is not assigned
-yet. No drop-through input is specified.
+surface in the current dining-room fixture; IDs 51–55 form the dining
+table and IDs 56–58 form the chair. No drop-through input is specified.
 
 **Why:** The existing full-solid structural tiles block all directions.
 Distinct collision types keep visual furniture parts separate from the
 surface the chef can stand on. Checking every crossed tile top avoids
 skipping an 8-pixel surface during a 16-pixel fall.
 
-**Status:** Mechanic and test surface implemented; hands-on SameBoy review
-pending. See `specs/background-assets.md` and
+**Status:** Mechanic, test surface, and table confirmed in SameBoy; chair
+awaits hands-on review. See `specs/background-assets.md` and
 `specs/background-tile-manifest.md`.
 
 ---

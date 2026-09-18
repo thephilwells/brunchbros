@@ -113,6 +113,58 @@ for (let x = 0; x < 8; x++) {
 }
 for (let x = 1; x < 7; x++) paint(50, x, 2, 2);
 
+for (let id = 51; id <= 55; id++) fill(id, 1);
+for (let id = 51; id <= 53; id++) {
+  for (let x = 0; x < 8; x++) {
+    paint(id, x, 0, 3);
+    paint(id, x, 1, 0);
+    paint(id, x, 2, 2);
+    paint(id, x, 3, 2);
+    paint(id, x, 4, 3);
+  }
+}
+for (let y = 1; y <= 4; y++) {
+  paint(51, 0, y, 3);
+  paint(53, 7, y, 3);
+}
+for (const [top, leg, center] of [[51, 54, 4], [53, 55, 3]]) {
+  for (let y = 5; y < 8; y++) {
+    for (let x = center - 1; x <= center + 1; x++) paint(top, x, y, x === center ? 2 : 3);
+  }
+  for (let y = 0; y < 7; y++) {
+    for (let x = center - 1; x <= center + 1; x++) paint(leg, x, y, x === center ? 2 : 3);
+  }
+  for (let x = center - 2; x <= center + 2; x++) paint(leg, x, 7, 3);
+}
+
+for (let id = 56; id <= 58; id++) fill(id, 1);
+for (let x = 3; x < 8; x++) paint(56, x, 0, 3);
+for (let x = 4; x < 7; x++) paint(56, x, 1, 0);
+for (let y = 2; y < 8; y++) {
+  paint(56, 5, y, 3);
+  paint(56, 6, y, 2);
+  paint(56, 7, y, 3);
+}
+for (let id = 57; id <= 58; id++) {
+  for (let x = 0; x < 8; x++) {
+    paint(id, x, 0, 3);
+    paint(id, x, 1, 0);
+    paint(id, x, 2, 2);
+    paint(id, x, 3, 3);
+  }
+}
+for (let y = 1; y <= 3; y++) {
+  paint(57, 0, y, 3);
+  paint(58, 7, y, 3);
+}
+for (const [id, center] of [[57, 2], [58, 5]]) {
+  for (let y = 4; y < 7; y++) {
+    paint(id, center, y, 3);
+    paint(id, center + 1, y, 2);
+  }
+  for (let x = center - 1; x <= center + 2; x++) paint(id, x, 7, 3);
+}
+
 for (let id = 64; id <= 75; id++) fill(id, 1);
 for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) {
   let shade = 1;
@@ -202,6 +254,16 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     name = 'one_way_test_top';
     role = 'platform_test';
     collision = 'one_way';
+  } else if (id >= 51 && id <= 55) {
+    name = ['table_top_left', 'table_top_middle', 'table_top_right', 'table_leg_left', 'table_leg_right'][id - 51];
+    role = 'fixture';
+    collision = id <= 53 ? 'one_way' : 'empty';
+    properties.push('<property name="component" value="dining_table"/>');
+  } else if (id >= 56 && id <= 58) {
+    name = ['chair_back_right', 'chair_seat_left', 'chair_seat_right'][id - 56];
+    role = 'fixture';
+    collision = id === 56 ? 'empty' : 'one_way';
+    properties.push('<property name="component" value="dining_chair"/>');
   } else if (id >= 64 && id <= 75) {
     name = `serving_hatch_${id - 64}`;
     role = 'landmark';
@@ -233,7 +295,7 @@ writeFileSync('build/dining_room_collision.bin', collisionTypes);
 
 const solid = Array.from({ length: 32 }, () => Array(32).fill(false));
 for (let y = 27; y < 32; y++) for (let x = 0; x < 32; x++) solid[y][x] = true;
-for (let x = 8; x <= 14; x++) solid[18][x] = true;
+for (let x = 1; x <= 7; x++) solid[18][x] = true;
 for (let x = 20; x <= 25; x++) solid[21][x] = true;
 for (let y = 22; y <= 26; y++) solid[y][25] = true;
 
@@ -278,6 +340,15 @@ placeComponent(9, 21, 64, 4, 3);
 placeComponent(14, 22, 48, 1, 2);
 placeComponent(16, 22, 40, 2, 2);
 for (let x = 9; x <= 12; x++) place(x, 24, 50);
+for (const [x, id] of [[14, 51], [15, 52], [16, 52], [17, 53]]) place(x, 25, id);
+place(14, 26, 54);
+place(15, 26, 17);
+place(16, 26, 17);
+place(17, 26, 55);
+place(19, 25, 17);
+place(20, 25, 56);
+place(19, 26, 57);
+place(20, 26, 58);
 
 writeFileSync('gfx/dining_room_fixture.tmx', [
   '<?xml version="1.0" encoding="UTF-8"?>',
