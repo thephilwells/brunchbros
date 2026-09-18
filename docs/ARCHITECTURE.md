@@ -13,13 +13,11 @@ source files yet:
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
-  loads background/wall tiles and all 11 chef animation frames into VRAM,
-  clears and populates the 32×32 background tile map (checkerboard-free
-  now — just the wall tile, tile index 45, arranged into three test blocks:
-  two near the start for collision/head-bump testing, one far right as a
-  camera-scroll landmark), sets `BGP`/`OBP0`, zeroes `SCX`/`SCY`, clears
-  OAM, sets the player's starting WRAM state, and turns the LCD back on.
-  Falls through into `MainLoop`.
+  loads the 128-slot structural-pilot atlas at `$9000` and all 11 chef
+  animation frames at `$8010`, copies the 32×32 structural fixture into
+  the background tile map, sets `BGP=$E4`/`OBP0=$E0`, zeroes `SCX`/`SCY`,
+  clears OAM, sets the player's starting WRAM state, and turns the LCD
+  back on with signed background addressing. Falls through into `MainLoop`.
 - **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
   In order: reads the D-pad for animation state, drives idle/walk tile-swap
   animation, reads the A button (edge-detected) for jumping, applies
@@ -37,10 +35,12 @@ source files yet:
   block (horizontal-flip attribute bit set, left/right tile quadrants
   swapped) selected by `FacingFlip`.
 - **`IsWall`** — takes a pixel coordinate (`D`=Y, `E`=X), converts it to a
-  tile-map address, and returns whether that tile is the wall tile (index
-  45) in the zero flag.
-- **Tile data** (`TileData`, `ChefFrames`, `WallTile`) — `INCBIN`s of the
-  `.2bpp` files `rgbgfx` produces from `gfx/*.png`.
+  tile-map address, and returns whether the tile is structural (ID 1–16)
+  in the zero flag.
+- **Tile/map data** (`TileData`, `FixtureMap`, `ChefFrames`) — `INCBIN`s of
+  the atlas `.2bpp`, fixture `.tilemap`, and chef frame `.2bpp` files.
+  `tools/generate-structural-pilot.mjs` generates the atlas PNG, Tiled TSX,
+  fixture TMX, and raw tile map; `rgbgfx` converts the PNG to 2bpp.
 
 ## Memory map
 
@@ -60,7 +60,13 @@ power-on, set explicitly in `Start`:
 Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`SCY`/`SCX`), `$FF44` (`LY`), `$FF47`/`$FF48` (`BGP`/`OBP0`), `$FF00`
 (joypad), OAM (`$FE00`–`$FE9F`), background tile map (`$9800`–`$9BFF`),
-tile data (`$8000` up).
+sprite tile data (`$8000` up), and background tile data (`$9000` up).
+
+The chef uses sprite tile indices 1–44 in `$8010–$82CF`. Signed background
+addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the pilot loads all
+128 slots there, with only IDs 0–16 authored. Its static 32×32 map lives at
+`$9800–$9BFF`. See `specs/background-assets.md` for the remaining VRAM
+allocation and proposed future art groups.
 
 ## World vs. screen coordinates
 
@@ -78,6 +84,6 @@ built yet (see `docs/ROADMAP.md`'s Camera / room traversal entry and
 ## Not yet in place
 
 - No ROM banking (everything fits in `ROM0`/bank 0 so far).
-- No tileset/level-data structure — walls are still hand-placed test
-  blocks written directly into `Start`, not real level content.
+- No procedural generation or biome fixture art yet — the current map is a
+  static structural test fixture generated from the 16 neighbor masks.
 - No enemies, hazards, HUD, audio, or title/menu flow.

@@ -2,16 +2,17 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Convert Background Art",
+      "label": "Generate Structural Pilot",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-structural-pilot.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert Structural Pilot",
       "type": "shell",
       "command": "rgbgfx",
-      "args": [
-        "-c",
-        "dmg=E4",
-        "-o",
-        "build/background.2bpp",
-        "gfx/background.png"
-      ],
+      "args": ["-c", "dmg=E4", "-o", "build/structural_pilot.2bpp", "gfx/structural_pilot.png"],
       "problemMatcher": []
     },
     {
@@ -61,13 +62,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": [
-        "Convert Background Art",
-        "Convert Chef Frames",
-        "Assemble",
-        "Link",
-        "Fix"
-      ],
+      "dependsOn": ["Generate Structural Pilot", "Convert Structural Pilot", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true

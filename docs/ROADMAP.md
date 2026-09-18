@@ -86,8 +86,9 @@ history to remember them.
 ## Immediate next milestone
 
 **Tileset backgrounds** — real diner art assembled from tiles, replacing
-the checkerboard placeholder. Not yet explained in detail — covered when
-we start on it.
+the checkerboard placeholder. A 17-tile structural pilot and Tiled fixture
+map now establish the tile budget and full-cell solid vocabulary; rear
+surfaces and themed biome art remain to be designed and reviewed.
 
 ## Completed
 

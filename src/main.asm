@@ -30,88 +30,36 @@ Start:
 	ld hl, $ff40
 	res 7, [hl]
 
-; Copy the background tile into VRAM tile 0
+; BG indices 0-127 use $9000 with LCDC bit 4 clear; chef sprites stay at $8010.
 	ld de, TileData
-	ld hl, $8000
-	ld c, 16
-
-.copyTile
-	ld a, [de]
-	ld [hl+], a
-	inc de
-	dec c
-	jr nz, .copyTile
-
-; Copy the wall tile into VRAM tile 45 (moved from 33 — chef now has 11 frames using tiles 1-44)
-	ld de, WallTile
-	ld hl, $82d0
-	ld c, 16
-.copyWall
-	ld a, [de]
-	ld [hl+], a
-	inc de
-	dec c
-	jr nz, .copyWall
-
-; Clear the whole 32x32 background tile map to tile 0
-	ld hl, $9800
-	ld a, 0
-	ld b,4
-.clearMapOuter
+	ld hl, $9000
+	ld b, 8
+.copyTilesOuter
 	ld c, 0
-.clearMapInner
+.copyTilesInner
+	ld a, [de]
 	ld [hl+], a
+	inc de
 	dec c
-	jr nz, .clearMapInner
+	jr nz, .copyTilesInner
 	dec b
-	jr nz, .clearMapOuter
+	jr nz, .copyTilesOuter
 
-; Place a 4x2 wall block (test obstacle) at tile row 16, column 14 — 16px tall, flush with the ground
-	ld hl, $9a0e
-	ld a, 45
-	ld b, 2
-.wallRow
-	ld c, 4
-.wallCol
+	ld de, FixtureMap
+	ld hl, $9800
+	ld b, 4
+.copyMapOuter
+	ld c, 0
+.copyMapInner
+	ld a, [de]
 	ld [hl+], a
+	inc de
 	dec c
-	jr nz, .wallCol
-	ld de, 28
-	add hl, de
+	jr nz, .copyMapInner
 	dec b
-	jr nz, .wallRow
+	jr nz, .copyMapOuter
 
-; Place a second 4x1 wall block (head-bump test), 16px above the first block's top
-	ld hl, $99a8
-	ld a, 45
-	ld b, 1
-.wallRow2
-	ld c, 4
-.wallCol2
-	ld [hl+], a
-	dec c
-	jr nz, .wallCol2
-	ld de, 28
-	add hl, de
-	dec b
-	jr nz, .wallRow2
-; Place a third 2x2 wall block (camera landmark, far right) at tile row 16, column 26
-	ld hl, $9a1a
-	ld a, 45
-	ld b, 2
-.wallRow3
-	ld c, 2
-.wallCol3
-	ld [hl+], a
-	dec c
-	jr nz, .wallCol3
-	ld de, 30
-	add hl, de
-	dec b
-	jr nz, .wallRow3
-
-; BGP and OBP0 both identity — sprite has its own art now, no need to diverge
-	ld a, $e0
+	ld a, $e4
 	ldh [$ff47], a
 	ld a, $e0
 	ldh [$ff48], a
@@ -164,8 +112,8 @@ Start:
 	ld [LandTimer], a
 	call UpdateSprites
 
-; LCD on: BG + sprites enabled, tile data at $8000
-	ld a, %10010011
+; LCD on: BG + sprites enabled, BG tile data at $9000
+	ld a, %10000011
 	ldh [$ff40], a
 
 ; --- Main loop: runs once per frame, forever ---
@@ -662,7 +610,7 @@ UpdateSprites:
 
 	ret
 
-; Input: D=Y pixel, E=X pixel. Output: Z set if that tile is the wall (45).
+; Input: D=Y pixel, E=X pixel. Output: Z set for structural tile IDs 1-16.
 IsWall:
 	ld a, e
 	srl a
@@ -690,11 +638,22 @@ IsWall:
 	add hl, de
 
 	ld a, [hl]
-	cp a, 45
+	cp a, 1
+	jr c, .clear
+	cp a, 17
+	jr nc, .clear
+	xor a
+	ret
+.clear
+	ld a, 1
+	or a
 	ret
 
 TileData:
-	INCBIN "build/background.2bpp"
+	INCBIN "build/structural_pilot.2bpp"
+
+FixtureMap:
+	INCBIN "build/structural_fixture.tilemap"
 
 ChefFrames:
 	INCBIN "build/chef_idle0.2bpp"
@@ -708,6 +667,3 @@ ChefFrames:
 	INCBIN "build/chef_jump.2bpp"
 	INCBIN "build/chef_ascent.2bpp"
 	INCBIN "build/chef_crouch.2bpp"
-
-WallTile:
-		db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF

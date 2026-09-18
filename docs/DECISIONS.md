@@ -4,6 +4,28 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-18 — Structural pilot uses signed BG addressing and fixed tile IDs
+
+**Decision:** The first tileset pilot reserves BG IDs 0–127 at `$9000` with
+signed BG addressing and keeps chef sprite IDs 1–44 at `$8010`. BG IDs 1–16
+are full-solid 8×8 cells chosen from a four-neighbor mask; ID 0 is empty.
+The remaining pilot slots stay reserved. `BGP=$E4` gives backgrounds four
+distinct shades while `OBP0=$E0` preserves the chef's appearance. Tiled
+local IDs match BG map bytes through the generated fixture map, but its
+GIDs are converted rather than copied into the ROM.
+
+**Why:** The Game Boy offers a separate physical 128-tile block at `$9000`
+for signed BG IDs 0–127, so the pilot can grow without overwriting the
+existing chef tiles. Fixed IDs and explicit collision semantics let a later
+room generator select connecting shapes without inferring gameplay from
+pixels. The art is intentionally a geometry/contrast pilot; biome fixtures
+and their behavior still need individual review.
+
+**Status:** Implemented for the structural pilot. See
+`specs/background-assets.md` and `specs/background-tile-manifest.md`.
+
+---
+
 ## 2026-08-18 — Working agreement: line-number anchors must still be written unambiguously
 
 **Decision:** Citing line numbers (per the 2026-08-17 agreement below) isn't
