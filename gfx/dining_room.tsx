@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tileset version="1.10" tiledversion="1.12.2" name="dining_room" tilewidth="8" tileheight="8" tilecount="128" columns="16">
+ <image source="dining_room.png" width="128" height="64"/>
+ <tile id="0"><properties><property name="name" value="empty"/><property name="collision" value="empty"/><property name="role" value="empty"/></properties></tile>
+ <tile id="1"><properties><property name="name" value="solid_0"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="0"/></properties></tile>
+ <tile id="2"><properties><property name="name" value="solid_1"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="1"/></properties></tile>
+ <tile id="3"><properties><property name="name" value="solid_2"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="2"/></properties></tile>
+ <tile id="4"><properties><property name="name" value="solid_3"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="3"/></properties></tile>
+ <tile id="5"><properties><property name="name" value="solid_4"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="4"/></properties></tile>
+ <tile id="6"><properties><property name="name" value="solid_5"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="5"/></properties></tile>
+ <tile id="7"><properties><property name="name" value="solid_6"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="6"/></properties></tile>
+ <tile id="8"><properties><property name="name" value="solid_7"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="7"/></properties></tile>
+ <tile id="9"><properties><property name="name" value="solid_8"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="8"/></properties></tile>
+ <tile id="10"><properties><property name="name" value="solid_9"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="9"/></properties></tile>
+ <tile id="11"><properties><property name="name" value="solid_10"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="10"/></properties></tile>
+ <tile id="12"><properties><property name="name" value="solid_11"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="11"/></properties></tile>
+ <tile id="13"><properties><property name="name" value="solid_12"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="12"/></properties></tile>
+ <tile id="14"><properties><property name="name" value="solid_13"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="13"/></properties></tile>
+ <tile id="15"><properties><property name="name" value="solid_14"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="14"/></properties></tile>
+ <tile id="16"><properties><property name="name" value="solid_15"/><property name="collision" value="solid"/><property name="role" value="structure"/><property name="neighbor_mask" type="int" value="15"/></properties></tile>
+ <tile id="17"><properties><property name="name" value="rear_plain"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="18"><properties><property name="name" value="rear_texture_a"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="19"><properties><property name="name" value="rear_texture_b"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="20"><properties><property name="name" value="rear_recess"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="21"><properties><property name="name" value="trim_h_left"/><property name="collision" value="empty"/><property name="role" value="trim"/></properties></tile>
+ <tile id="22"><properties><property name="name" value="trim_h_middle"/><property name="collision" value="empty"/><property name="role" value="trim"/></properties></tile>
+ <tile id="23"><properties><property name="name" value="trim_h_right"/><property name="collision" value="empty"/><property name="role" value="trim"/></properties></tile>
+ <tile id="24"><properties><property name="name" value="trim_h_single"/><property name="collision" value="empty"/><property name="role" value="trim"/></properties></tile>
+ <tile id="25"><properties><property name="name" value="reserved_25"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="26"><properties><property name="name" value="reserved_26"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="27"><properties><property name="name" value="reserved_27"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="28"><properties><property name="name" value="reserved_28"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="29"><properties><property name="name" value="reserved_29"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="30"><properties><property name="name" value="reserved_30"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="31"><properties><property name="name" value="reserved_31"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="32"><properties><property name="name" value="menu_board_0"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="0"/></properties></tile>
+ <tile id="33"><properties><property name="name" value="menu_board_1"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="0"/></properties></tile>
+ <tile id="34"><properties><property name="name" value="menu_board_2"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="2"/><property name="part_y" type="int" value="0"/></properties></tile>
+ <tile id="35"><properties><property name="name" value="menu_board_3"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="3"/><property name="part_y" type="int" value="0"/></properties></tile>
+ <tile id="36"><properties><property name="name" value="menu_board_4"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="1"/></properties></tile>
+ <tile id="37"><properties><property name="name" value="menu_board_5"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="1"/></properties></tile>
+ <tile id="38"><properties><property name="name" value="menu_board_6"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="2"/><property name="part_y" type="int" value="1"/></properties></tile>
+ <tile id="39"><properties><property name="name" value="menu_board_7"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="menu_board"/><property name="part_x" type="int" value="3"/><property name="part_y" type="int" value="1"/></properties></tile>
+ <tile id="40"><properties><property name="name" value="wall_mirror_0"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="wall_mirror"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="0"/></properties></tile>
+ <tile id="41"><properties><property name="name" value="wall_mirror_1"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="wall_mirror"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="0"/></properties></tile>
+ <tile id="42"><properties><property name="name" value="wall_mirror_2"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="wall_mirror"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="1"/></properties></tile>
+ <tile id="43"><properties><property name="name" value="wall_mirror_3"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="wall_mirror"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="1"/></properties></tile>
+ <tile id="44"><properties><property name="name" value="reserved_44"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="45"><properties><property name="name" value="reserved_45"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="46"><properties><property name="name" value="reserved_46"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="47"><properties><property name="name" value="reserved_47"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="48"><properties><property name="name" value="reserved_48"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="49"><properties><property name="name" value="reserved_49"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="50"><properties><property name="name" value="reserved_50"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="51"><properties><property name="name" value="reserved_51"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="52"><properties><property name="name" value="reserved_52"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="53"><properties><property name="name" value="reserved_53"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="54"><properties><property name="name" value="reserved_54"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="55"><properties><property name="name" value="reserved_55"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="56"><properties><property name="name" value="reserved_56"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="57"><properties><property name="name" value="reserved_57"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="58"><properties><property name="name" value="reserved_58"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="59"><properties><property name="name" value="reserved_59"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="60"><properties><property name="name" value="reserved_60"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="61"><properties><property name="name" value="reserved_61"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="62"><properties><property name="name" value="reserved_62"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="63"><properties><property name="name" value="reserved_63"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="64"><properties><property name="name" value="reserved_64"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="65"><properties><property name="name" value="reserved_65"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="66"><properties><property name="name" value="reserved_66"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="67"><properties><property name="name" value="reserved_67"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="68"><properties><property name="name" value="reserved_68"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="69"><properties><property name="name" value="reserved_69"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="70"><properties><property name="name" value="reserved_70"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="71"><properties><property name="name" value="reserved_71"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="72"><properties><property name="name" value="reserved_72"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="73"><properties><property name="name" value="reserved_73"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="74"><properties><property name="name" value="reserved_74"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="75"><properties><property name="name" value="reserved_75"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="76"><properties><property name="name" value="reserved_76"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="77"><properties><property name="name" value="reserved_77"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="78"><properties><property name="name" value="reserved_78"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="79"><properties><property name="name" value="reserved_79"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="80"><properties><property name="name" value="reserved_80"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="81"><properties><property name="name" value="reserved_81"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="82"><properties><property name="name" value="reserved_82"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="83"><properties><property name="name" value="reserved_83"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="84"><properties><property name="name" value="reserved_84"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="85"><properties><property name="name" value="reserved_85"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="86"><properties><property name="name" value="reserved_86"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="87"><properties><property name="name" value="reserved_87"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="88"><properties><property name="name" value="reserved_88"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="89"><properties><property name="name" value="reserved_89"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="90"><properties><property name="name" value="reserved_90"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="91"><properties><property name="name" value="reserved_91"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="92"><properties><property name="name" value="reserved_92"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="93"><properties><property name="name" value="reserved_93"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="94"><properties><property name="name" value="reserved_94"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="95"><properties><property name="name" value="reserved_95"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="96"><properties><property name="name" value="reserved_96"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="97"><properties><property name="name" value="reserved_97"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="98"><properties><property name="name" value="reserved_98"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="99"><properties><property name="name" value="reserved_99"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="100"><properties><property name="name" value="reserved_100"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="101"><properties><property name="name" value="reserved_101"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="102"><properties><property name="name" value="reserved_102"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="103"><properties><property name="name" value="reserved_103"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="104"><properties><property name="name" value="reserved_104"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="105"><properties><property name="name" value="reserved_105"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="106"><properties><property name="name" value="reserved_106"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="107"><properties><property name="name" value="reserved_107"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="108"><properties><property name="name" value="reserved_108"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="109"><properties><property name="name" value="reserved_109"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="110"><properties><property name="name" value="reserved_110"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="111"><properties><property name="name" value="reserved_111"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="112"><properties><property name="name" value="reserved_112"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="113"><properties><property name="name" value="reserved_113"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="114"><properties><property name="name" value="reserved_114"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="115"><properties><property name="name" value="reserved_115"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="116"><properties><property name="name" value="reserved_116"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="117"><properties><property name="name" value="reserved_117"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="118"><properties><property name="name" value="reserved_118"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="119"><properties><property name="name" value="reserved_119"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="120"><properties><property name="name" value="reserved_120"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="121"><properties><property name="name" value="reserved_121"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="122"><properties><property name="name" value="reserved_122"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="123"><properties><property name="name" value="reserved_123"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="124"><properties><property name="name" value="reserved_124"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="125"><properties><property name="name" value="reserved_125"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="126"><properties><property name="name" value="reserved_126"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="127"><properties><property name="name" value="reserved_127"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+</tileset>

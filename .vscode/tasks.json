@@ -9,10 +9,17 @@
       "problemMatcher": []
     },
     {
-      "label": "Convert Structural Pilot",
+      "label": "Generate Dining Room",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-dining-room.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert Dining Room",
       "type": "shell",
       "command": "rgbgfx",
-      "args": ["-c", "dmg=E4", "-o", "build/structural_pilot.2bpp", "gfx/structural_pilot.png"],
+      "args": ["-c", "dmg=E4", "-o", "build/dining_room.2bpp", "gfx/dining_room.png"],
       "problemMatcher": []
     },
     {
@@ -62,7 +69,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Convert Structural Pilot", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Convert Dining Room", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true

@@ -650,10 +650,10 @@ IsWall:
 	ret
 
 TileData:
-	INCBIN "build/structural_pilot.2bpp"
+	INCBIN "build/dining_room.2bpp"
 
 FixtureMap:
-	INCBIN "build/structural_fixture.tilemap"
+	INCBIN "build/dining_room_fixture.tilemap"
 
 ChefFrames:
 	INCBIN "build/chef_idle0.2bpp"

@@ -1,7 +1,8 @@
 # Background assets — constrained specification
 
-Status: **Accepted for the structural pilot** on 2026-09-18. Later biome
-art and upper-pool allocation remain proposals. Companion:
+Status: **Structural pilot and first dining-room group implemented** on
+2026-09-18. SameBoy visual review, later biome art, and upper-pool
+allocation remain open. Companion:
 [tile manifest](background-tile-manifest.md).
 
 ## Purpose and scope
@@ -11,7 +12,7 @@ to Game Boy tile data without manual pixel repair, and integrated through
 a documented loader/map conversion contract. Cover dining room, kitchen,
 patio, and deep freezer with a shared structural vocabulary.
 
-The first art group has a PNG, Tiled tileset and fixture map, exact
+The implemented art groups have PNGs, Tiled tilesets and fixture maps, exact
 conversion, and a matching ROM loader/collision check. Remaining groups
 follow their own reviews. A PNG alone does not describe game behavior.
 
@@ -144,9 +145,9 @@ For each biome, a PNG atlas and external TSX tileset using relative paths:
   hardware scrolling layers or unbudgeted composites.
 - No animation or tile transforms in the first TSX/map.
 
-The current pilot assigns only IDs 0–16. Its TSX marks IDs 17–127 reserved
-until their groups have actual art, even where the manifest names their
-intended future roles.
+The retained structural pilot assigns only IDs 0–16. The dining-room sheet
+adds shared IDs 17–24 and dining fixture IDs 32–43. Both TSX files mark
+all other slots reserved, even where the manifest budgets a later role.
 
 Future map export resolves Tiled GIDs using `firstgid`, rather than copying
 GIDs as Game Boy indices. GID 0 (an empty Tiled cell) exports as BG tile 0;
@@ -171,8 +172,8 @@ needs its own export/load review.
    IDs 1–16 are solid and all assigned decorative IDs are empty; no general
    material engine is needed yet. Later solid fixtures require an explicit
    collision/export extension.
-5. **Done for pilot:** Add atlas conversion and map export/build wiring. Load the first static
-   fixture with LCD disabled using the established boot setup pattern.
+5. **Done for pilot and dining-room group:** Add atlas conversion and map export/build wiring.
+   Load the current static fixture with LCD disabled using the established boot setup pattern.
 6. **Pending hands-on check:** Verify timing and collision during scrolling. A valid atlas does not
    prove frame timing or platform physics correct.
 
@@ -194,13 +195,14 @@ needs its own export/load review.
 - No reads of uninitialized/reserved tiles and no writes into another
   owner's VRAM range. Expansion/HUD allocation remains unconsumed.
 
-## Review decisions before visual generation
+## Adopted baseline and next review
 
 The pilot uses signed BG addressing, 128 initial environment slots, 8×8
 full-cell solids, 16 cardinal-neighbor variants, and four distinct BG
-shades. One biome resident at a time, rear surfaces, exact biome fixtures,
-and prop footprints remain for individual group reviews.
+shades. One biome is resident at a time; each additional fixture group and
+biome still needs its own footprint and visual review.
 
-The first art checkpoint is tile 0 plus the 16 solid variants in a neutral
-material. Review seams, concave corners, narrow platforms, and chef contrast
-in SameBoy before adding rear surfaces or biome decorations.
+The first art checkpoint was tile 0 plus the 16 solid variants in a neutral
+material. Shared rear/trim tiles and the first dining-room group now use
+that same structure. Review rear-surface and chef contrast in SameBoy before
+expanding into additional dining fixtures or other biomes.

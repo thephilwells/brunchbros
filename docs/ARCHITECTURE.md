@@ -13,8 +13,8 @@ source files yet:
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
-  loads the 128-slot structural-pilot atlas at `$9000` and all 11 chef
-  animation frames at `$8010`, copies the 32×32 structural fixture into
+  loads the 128-slot dining-room atlas at `$9000` and all 11 chef
+  animation frames at `$8010`, copies the 32×32 dining-room fixture into
   the background tile map, sets `BGP=$E4`/`OBP0=$E0`, zeroes `SCX`/`SCY`,
   clears OAM, sets the player's starting WRAM state, and turns the LCD
   back on with signed background addressing. Falls through into `MainLoop`.
@@ -39,8 +39,10 @@ source files yet:
   in the zero flag.
 - **Tile/map data** (`TileData`, `FixtureMap`, `ChefFrames`) — `INCBIN`s of
   the atlas `.2bpp`, fixture `.tilemap`, and chef frame `.2bpp` files.
-  `tools/generate-structural-pilot.mjs` generates the atlas PNG, Tiled TSX,
-  fixture TMX, and raw tile map; `rgbgfx` converts the PNG to 2bpp.
+  `tools/generate-structural-pilot.mjs` generates the base atlas and test
+  map. `tools/generate-dining-room.mjs` extends that atlas with rear and
+  dining tiles, then generates its TSX, fixture TMX, and raw tile map;
+  `rgbgfx` converts the dining PNG to 2bpp.
 
 ## Memory map
 
@@ -63,8 +65,8 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–44 in `$8010–$82CF`. Signed background
-addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the pilot loads all
-128 slots there, with only IDs 0–16 authored. Its static 32×32 map lives at
+addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads all
+128 slots there, with IDs 0–24 and 32–43 authored. Its static 32×32 map lives at
 `$9800–$9BFF`. See `specs/background-assets.md` for the remaining VRAM
 allocation and proposed future art groups.
 
@@ -84,6 +86,6 @@ built yet (see `docs/ROADMAP.md`'s Camera / room traversal entry and
 ## Not yet in place
 
 - No ROM banking (everything fits in `ROM0`/bank 0 so far).
-- No procedural generation or biome fixture art yet — the current map is a
-  static structural test fixture generated from the 16 neighbor masks.
+- No procedural generation yet — the current map is a static dining-room
+  fixture. Kitchen, patio, and deep-freezer art remain unstarted.
 - No enemies, hazards, HUD, audio, or title/menu flow.
