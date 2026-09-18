@@ -17,7 +17,7 @@ input, a 16×16 animated player sprite (idle/walk cycles, horizontal flip),
 tile-based wall collision, jumping/gravity with squash-stretch-settle
 animation, and scrolling camera follow (both axes) over a widened world.
 The tileset milestone now has a 17-tile structural pilot plus shared rear
-surfaces and the first dining-room fixtures in a Tiled map. See
+surfaces and passable dining-room wall art in a Tiled map. See
 `docs/ROADMAP.md` for the full milestone list and `docs/LEARNING.md` for
 concepts covered so far.
 

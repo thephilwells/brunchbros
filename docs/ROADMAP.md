@@ -88,9 +88,9 @@ history to remember them.
 **Tileset backgrounds** — real diner art assembled from tiles, replacing
 the checkerboard placeholder. A 17-tile structural pilot established the
 tile budget and full-cell solid vocabulary; shared rear/trim tiles and the
-first 12 dining-room fixture tiles are now in a Tiled map and ROM. Their
-readability still needs a hands-on SameBoy review. Other dining-room groups
-and the kitchen, patio, and deep freezer remain to be designed.
+passable dining-room wall art are now in a Tiled map and ROM. Their
+readability still needs a hands-on SameBoy review. Collidable dining-room
+furniture and the kitchen, patio, and deep freezer remain to be designed.
 
 ## Completed
 

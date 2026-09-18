@@ -81,6 +81,48 @@ for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
   composite(40, 2, x, y, shade);
 }
 
+for (let id = 44; id <= 49; id++) fill(id, 1);
+for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+  const distance = (2 * x - 15) ** 2 + (2 * y - 15) ** 2;
+  const shade = distance > 196 ? 1 : distance > 120 ? 2 : 0;
+  composite(44, 2, x, y, shade);
+}
+for (const [x, y] of [[7, 3], [7, 4], [7, 7], [8, 8], [9, 8], [10, 8]]) composite(44, 2, x, y, 3);
+for (const [x, y] of [[7, 2], [13, 7], [7, 13], [2, 7]]) composite(44, 2, x, y, 2);
+
+for (let y = 2; y <= 7; y++) for (let x = 2; x <= 5; x++) paint(48, x, y, 0);
+for (let y = 3; y <= 6; y++) {
+  paint(48, 1, y, 2);
+  paint(48, 6, y, 2);
+}
+for (let x = 2; x <= 5; x++) {
+  paint(49, x, 1, 2);
+  paint(49, x, 6, 2);
+}
+for (let y = 2; y <= 5; y++) {
+  paint(49, 2, y, 2);
+  paint(49, 5, y, 2);
+}
+paint(49, 3, 3, 3);
+paint(49, 4, 3, 3);
+
+for (let id = 64; id <= 75; id++) fill(id, 1);
+for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) {
+  let shade = 1;
+  if (x === 0 || x === 31 || y === 0 || y === 23) shade = 2;
+  else if (x === 1 || x === 30 || y === 1 || y === 22) shade = 0;
+  else if (x >= 3 && x <= 28 && y >= 4 && y <= 18) shade = 2;
+  if (x >= 4 && x <= 27 && y === 5) shade = 1;
+  if (x >= 13 && x <= 19 && y === 16) shade = 0;
+  if (x >= 14 && x <= 18 && y === 17) shade = 0;
+  if (x >= 15 && x <= 17 && y === 18) shade = 0;
+  composite(64, 4, x, y, shade);
+}
+
+fill(80, 1);
+for (const [x, y] of [[3, 2], [2, 3], [4, 3], [3, 4]]) paint(80, x, y, 0);
+paint(80, 3, 3, 2);
+
 const crcTable = Array.from({ length: 256 }, (_, index) => {
   let value = index;
   for (let bit = 0; bit < 8; bit++) value = value & 1 ? (value >>> 1) ^ 0xedb88320 : value >>> 1;
@@ -135,6 +177,27 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     properties.push('<property name="component" value="wall_mirror"/>');
     properties.push(`<property name="part_x" type="int" value="${(id - 40) % 2}"/>`);
     properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 40) / 2)}"/>`);
+  } else if (id >= 44 && id <= 47) {
+    name = `wall_clock_${id - 44}`;
+    role = 'fixture';
+    properties.push('<property name="component" value="wall_clock"/>');
+    properties.push(`<property name="part_x" type="int" value="${(id - 44) % 2}"/>`);
+    properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 44) / 2)}"/>`);
+  } else if (id >= 48 && id <= 49) {
+    name = `wall_sconce_${id - 48}`;
+    role = 'fixture';
+    properties.push('<property name="component" value="wall_sconce"/>');
+    properties.push('<property name="part_x" type="int" value="0"/>');
+    properties.push(`<property name="part_y" type="int" value="${id - 48}"/>`);
+  } else if (id >= 64 && id <= 75) {
+    name = `serving_hatch_${id - 64}`;
+    role = 'landmark';
+    properties.push('<property name="component" value="serving_hatch"/>');
+    properties.push(`<property name="part_x" type="int" value="${(id - 64) % 4}"/>`);
+    properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 64) / 4)}"/>`);
+  } else if (id === 80) {
+    name = 'dining_wallpaper_motif';
+    role = 'rear';
   }
   properties.unshift(
     `<property name="name" value="${name}"/>`,
@@ -165,7 +228,10 @@ const ids = solid.map((row, y) => row.map((occupied, x) => {
     (x < 31 && solid[y][x + 1] ? 2 : 0) +
     (y < 31 && solid[y + 1][x] ? 4 : 0) +
     (x > 0 && solid[y][x - 1] ? 8 : 0);
-  if (x >= 12 && x <= 15 && y >= 5 && y <= 7) return 20;
+  if (x >= 27 && x <= 30 && y >= 7 && y <= 9) return 20;
+  if ((y <= 10 && (x <= 9 || x >= 22)) || (y >= 20 && y <= 26 && x <= 19)) {
+    return x % 4 === 1 && y % 3 === 1 ? 80 : 17;
+  }
   if ((x + y * 3) % 17 === 0) return 18;
   if ((x * 3 + y) % 23 === 0) return 19;
   return 17;
@@ -176,10 +242,26 @@ function place(x, y, id) {
   ids[y][x] = id;
 }
 
+function placeComponent(x, y, id, tileWidth, tileHeight) {
+  for (let row = 0; row < tileHeight; row++) {
+    for (let column = 0; column < tileWidth; column++) {
+      place(x + column, y + row, id + row * tileWidth + column);
+    }
+  }
+}
+
 for (let x = 0; x < 32; x++) place(x, 11, x === 0 ? 21 : x === 31 ? 23 : 22);
 place(18, 4, 24);
-for (let y = 0; y < 2; y++) for (let x = 0; x < 4; x++) place(3 + x, 4 + y, 32 + y * 4 + x);
-for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) place(24 + x, 4 + y, 40 + y * 2 + x);
+placeComponent(3, 4, 32, 4, 2);
+placeComponent(24, 4, 40, 2, 2);
+placeComponent(8, 4, 44, 2, 2);
+placeComponent(19, 4, 48, 1, 2);
+placeComponent(13, 3, 64, 4, 3);
+placeComponent(1, 22, 32, 4, 2);
+placeComponent(6, 22, 44, 2, 2);
+placeComponent(9, 21, 64, 4, 3);
+placeComponent(14, 22, 48, 1, 2);
+placeComponent(16, 22, 40, 2, 2);
 
 writeFileSync('gfx/dining_room_fixture.tmx', [
   '<?xml version="1.0" encoding="UTF-8"?>',

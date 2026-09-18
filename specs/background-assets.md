@@ -1,8 +1,8 @@
 # Background assets — constrained specification
 
-Status: **Structural pilot and first dining-room group implemented** on
-2026-09-18. SameBoy visual review, later biome art, and upper-pool
-allocation remain open. Companion:
+Status: **Structural pilot and passable dining-room vocabulary implemented**
+on 2026-09-18. SameBoy visual review, collidable fixtures, other biome art,
+and upper-pool allocation remain open. Companion:
 [tile manifest](background-tile-manifest.md).
 
 ## Purpose and scope
@@ -146,8 +146,9 @@ For each biome, a PNG atlas and external TSX tileset using relative paths:
 - No animation or tile transforms in the first TSX/map.
 
 The retained structural pilot assigns only IDs 0–16. The dining-room sheet
-adds shared IDs 17–24 and dining fixture IDs 32–43. Both TSX files mark
-all other slots reserved, even where the manifest budgets a later role.
+adds shared IDs 17–24 and passable dining IDs 32–49, 64–75, and 80. Both
+TSX files mark all other slots reserved, even where the manifest budgets
+a later role.
 
 Future map export resolves Tiled GIDs using `firstgid`, rather than copying
 GIDs as Game Boy indices. GID 0 (an empty Tiled cell) exports as BG tile 0;
@@ -172,7 +173,7 @@ needs its own export/load review.
    IDs 1–16 are solid and all assigned decorative IDs are empty; no general
    material engine is needed yet. Later solid fixtures require an explicit
    collision/export extension.
-5. **Done for pilot and dining-room group:** Add atlas conversion and map export/build wiring.
+5. **Done for pilot and passable dining-room groups:** Add atlas conversion and map export/build wiring.
    Load the current static fixture with LCD disabled using the established boot setup pattern.
 6. **Pending hands-on check:** Verify timing and collision during scrolling. A valid atlas does not
    prove frame timing or platform physics correct.
@@ -203,6 +204,6 @@ shades. One biome is resident at a time; each additional fixture group and
 biome still needs its own footprint and visual review.
 
 The first art checkpoint was tile 0 plus the 16 solid variants in a neutral
-material. Shared rear/trim tiles and the first dining-room group now use
+material. Shared rear/trim tiles and passable dining-room groups now use
 that same structure. Review rear-surface and chef contrast in SameBoy before
-expanding into additional dining fixtures or other biomes.
+adding collidable dining fixtures or other biomes.

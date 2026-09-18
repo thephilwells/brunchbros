@@ -1,6 +1,6 @@
 # Background tile manifest
 
-Status: **IDs 0–24 and 32–43 implemented in the dining-room sheet**,
+Status: **IDs 0–24, 32–49, 64–75, and 80 implemented in the dining-room sheet**,
 2026-09-18. Remaining assignments and art are proposed. Contract and VRAM addresses:
 [background asset specification](background-assets.md).
 
@@ -14,17 +14,18 @@ One slot costs 16 bytes regardless of how often it appears in a room.
 | IDs | Count | Allocation | Art commitment now |
 |---|---:|---|---|
 | 0–31 | 32 | Shared structural vocabulary | 25 authored, 7 reserved |
-| 32–63 | 32 | Biome fixtures assembled from several tiles | 12 dining authored, 20 budgeted |
-| 64–79 | 16 | Biome landmark/entrance artwork | Budget only |
-| 80–95 | 16 | Biome rear surfaces | Budget only |
+| 32–63 | 32 | Biome fixtures assembled from several tiles | 18 dining authored, 14 budgeted |
+| 64–79 | 16 | Biome landmark/entrance artwork | 12 dining authored, 4 budgeted |
+| 80–95 | 16 | Biome rear surfaces | 1 dining authored, 15 budgeted |
 | 96–111 | 16 | Biome decorative details | Budget only |
 | 112–127 | 16 | Unassigned within the initial sheet | Reserved |
-| **0–127** | **128** | **2,048 bytes resident** | **37 authored, 68 budgeted, 23 reserved** |
+| **0–127** | **128** | **2,048 bytes resident** | **56 authored, 49 budgeted, 23 reserved** |
 
 These are caps, not a request to fill every slot. The common-material
 pilot authors 17 tiles (0–16) and marks all other slots reserved in its
-TSX. The dining sheet adds eight shared rear/trim tiles and 12 dining
-fixture tiles; its unassigned slots remain reserved in the TSX.
+TSX. The dining sheet adds eight shared rear/trim tiles, 18 dining fixture
+tiles, a 12-tile landmark, and one wallpaper motif. Its unassigned slots
+remain reserved in the TSX.
 All four biomes use the same structural meanings; matching pixels are
 optional. Biome rows need an itemized footprint review before generation.
 
@@ -102,33 +103,48 @@ map, so placing the same trim over a different rear texture requires a
 separate composite tile and budget review. Bands must read as wall trim,
 not supporting platforms. Apply the same principle to future props.
 
-## First dining-room fixture group: IDs 32–43
+## Passable dining-room groups: IDs 32–49, 64–75, 80
 
 These are passable wall decorations on the single background layer. They
-replace rear-fill cells rather than overlay them. Component parts are in
-row-major order; Tiled metadata records `component`, `part_x`, and `part_y`.
+replace rear-fill cells rather than overlay them. Multi-tile component
+parts are in row-major order; Tiled metadata records `component`, `part_x`,
+and `part_y` for those parts.
 
 | IDs | Component | Footprint | Placement and reuse |
 |---|---|---:|---|
 | 32–39 | `menu_board` | 4×2 tiles (32×16 px) | One framed board; place all eight parts together |
 | 40–43 | `wall_mirror` | 2×2 tiles (16×16 px) | One framed mirror; place all four parts together |
+| 44–47 | `wall_clock` | 2×2 tiles (16×16 px) | One round clock; place all four parts together |
+| 48–49 | `wall_sconce` | 1×2 tiles (8×16 px) | One light fixture; place both parts together |
+| 64–75 | `serving_hatch` | 4×3 tiles (32×24 px) | Decorative back-wall pass-through; no transition or collision |
+| 80 | `dining_wallpaper_motif` | 1 tile (8×8 px) | Sparse accent in a field of `rear_plain` |
 
-The dining-room fixture places a menu board at tile (3,4), a mirror at
-(24,4), a four-tile-wide recess patch at rows 5–7, and shared trim across
-row 11. The solid platform/wall cells use IDs 1–16 from the pilot without
-reskinning. ID 24 also appears once as an isolated trim sample. This map
-is a visual and integration fixture, not a procedural room template.
+The dining-room fixture places a menu board at tile (3,4), mirror at
+(24,4), clock at (8,4), sconce at (19,4), and serving hatch at (13,3).
+Sparse wallpaper motifs appear on the left and right wall fields. A
+four-tile-wide recess patch occupies rows 7–9 near the right edge, and
+shared trim spans row 11. The solid platform/wall cells use IDs 1–16 from
+the pilot without reskinning. A second gallery of the same five components
+spans columns 1–17 and rows 21–23, with sparse wallpaper below, so the art
+remains visible after the chef lands on the bottom floor. ID 24 also
+appears once as an isolated trim sample. This map is a visual and
+integration fixture, not a procedural room template.
 
-## Biome vocabulary guide (remaining IDs 32–111)
+These groups exhaust the current *passable* dining-room vocabulary, not the
+tile budget. IDs 50–63, 76–79, 81–111 remain reserved in the current
+atlas. Collidable booths, tables, and counters require gameplay footprints
+and a collision/rendering decision before their art is assigned.
+
+## Future biome vocabulary guide
 
 | Biome | Structural material candidate | Fixture candidates | Landmark candidates | Rear/details candidates |
 |---|---|---|---|---|
-| Dining room | Floor/wall cross-section with diner trim | Booth, service counter, table | Service opening or doorway | Wallpaper, framed menu, cups/condiments |
+| Dining room | Floor/wall cross-section with diner trim | Booth, service counter, table (collision undecided) | Entry/exit doorway (behavior undecided) | Further motifs only if room modules need them |
 | Kitchen | Ceramic surface over solid masonry | Range, sink, cabinets | Vent hood or kitchen door | Tile wall, pipes, pans, utensils |
 | Patio | Paving/deck over solid earth | Planter, outdoor table | Awning or patio exit | Fence, foliage, distant outdoor scenery |
 | Deep freezer | Frosted insulated structure | Storage rack, frozen crates | Insulated doorway or cooling unit | Wall panels, pipes, frost |
 
-Except for the first dining-room group above, candidates are a menu for
+Except for the passable dining-room groups above, candidates are a menu for
 later reviews, not a commitment that all fit.
 Count unique 8×8 component tiles, not named objects: a 32×32 fixture can
 cost 16 slots before reuse. Repeated shelf middles may cost only one slot.

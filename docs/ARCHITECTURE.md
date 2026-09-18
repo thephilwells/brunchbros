@@ -65,8 +65,9 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–44 in `$8010–$82CF`. Signed background
-addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads all
-128 slots there, with IDs 0–24 and 32–43 authored. Its static 32×32 map lives at
+addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
+all 128 slots there, with IDs 0–24, 32–49, 64–75, and 80 authored. Its
+static 32×32 map lives at
 `$9800–$9BFF`. See `specs/background-assets.md` for the remaining VRAM
 allocation and proposed future art groups.
 
