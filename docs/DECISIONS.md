@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Crouching preserves the standing terrain hitbox
+
+**Decision:** Holding Down while grounded gives the Chef the existing crouch
+pose and suppresses horizontal movement. His terrain collision remains 12×16;
+crouching does not permit shorter passages or change structural reachability.
+Landing squash reuses the same pose. Exit descent and future Down+A one-way
+drop-through take priority over ordinary crouching when implemented.
+
+**Why:** A pose-only terrain rule prevents generated rooms from depending on
+crouch tunnels while leaving room for a shorter combat or hazard hurtbox once
+those systems exist.
+
+**Status:** Implemented; SameBoy input and pose review pending.
+
+---
+
 ## 2026-09-21 — Ledge catch uses held direction and exposed solid corners
 
 **Decision:** While descending, the Chef catches an exposed upper corner of a
@@ -19,8 +35,8 @@ avoids demanding continuous input after a successful catch. Requiring empty
 space above and beside the solid tile limits the mechanic to true exposed
 upper corners rather than arbitrary wall faces or interior seams.
 
-**Status:** Implemented; the first right-wall catch is confirmed in SameBoy.
-Mirrored catch, jump/drop controls, snap position, and sprite review remain.
+**Status:** Implemented and accepted in SameBoy, including the mirrored catch
+and revised hanging sprite.
 
 ---
 

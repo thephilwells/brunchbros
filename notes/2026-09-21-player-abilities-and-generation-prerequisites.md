@@ -30,13 +30,11 @@ their focused specifications and playtests.
    review. The 16×16 visual sprite extends two pixels beyond it on each side,
    while full standing height is preserved. Passage widths, edge support, and
    wall-contact coordinates can use it.
-2. Verify the implemented upper-corner ledge catch/jump/drop behavior and
-   hanging pose in SameBoy. It materially changes the reachable ledge height
-   and horizontal gap envelope.
-3. Decide crouch collision semantics. Recommended initial rule: crouching
-   lowers the future combat/hazard hurtbox but does not create a shorter
-   terrain collision box or crouch-only tunnels. That preserves a two-tile
-   minimum passage height and keeps crouch out of structural reachability.
+2. Upper-corner ledge catch/jump/drop behavior and the revised hanging pose
+   have passed SameBoy review.
+3. Verify grounded crouching in SameBoy. Its implemented 12×16 terrain box
+   does not create crouch-only tunnels or change structural reachability. A
+   shorter future combat/hazard hurtbox remains an option for those systems.
 4. Measure traversal from the implemented code rather than relying only on
    equations: maximum standing jump height, running jump span, one-way
    platform behavior, ledge-catch recovery distance, and safe landing widths.
@@ -97,9 +95,8 @@ their focused specifications and playtests.
 
 ## Focused decisions for the next step
 
-- SameBoy acceptance of the ledge catch window, snap position, hang pose, and
-  jump/drop controls.
-- Whether crouch affects only animation now or also the later hazard hurtbox.
+- SameBoy acceptance of grounded crouch input, pose, and movement suppression.
+- Whether crouch later shortens the combat/hazard hurtbox.
 - The minimum safe platform width and clearance around spawn and exit.
 - Initial world dimensions and whether tile-map streaming belongs in the
   first generation implementation or a following expansion.

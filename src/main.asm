@@ -18,6 +18,7 @@ LandTimer: db
 CurrentDpad: db
 LedgeSide: db
 LedgeTop: db
+PlayerGrounded: db
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
 SECTION "Entry Point", ROM0[$100]
@@ -121,6 +122,7 @@ Start:
 	ld a, 0
 	ld [LandTimer], a
 	ld [LedgeSide], a
+	ld [PlayerGrounded], a
 	call UpdateSprites
 
 ; LCD on: BG + sprites enabled, BG tile data at $9000
@@ -344,10 +346,18 @@ MainLoop:
 .grounded
 	ld a, -8
 	ld [PlayerVelY], a
+	ld a, 0
+	ld [PlayerGrounded], a
 
 .noJump
+	ld a, [PlayerGrounded]
+	and a, a
+	jr z, .checkRight
+	bit 3, b
+	jp z, .applyGravity
 
 ; movement (uses the D-pad reading from the top of the loop)
+.checkRight
 	bit 0, b
 	jr nz, .notRight
 	ld a, [PlayerX]
@@ -422,6 +432,8 @@ MainLoop:
 
 ; Gravity: accelerate downward velocity, capped while falling
 .applyGravity
+	ld a, 0
+	ld [PlayerGrounded], a
 	ld a, [PlayerVelY]
 	add a, 1
 	bit 7, a
@@ -570,6 +582,8 @@ MainLoop:
 .noLandFX
 	ld a, 0
 	ld [PlayerVelY], a
+	ld a, 1
+	ld [PlayerGrounded], a
 
 .gravityDone
 
@@ -608,6 +622,19 @@ MainLoop:
 	jr .poseOverrideDone
 
 .checkAirborne
+	ld a, [PlayerGrounded]
+	and a, a
+	jr z, .checkVelocity
+	ld a, [CurrentDpad]
+	bit 3, a
+	jr nz, .poseOverrideDone
+	ld a, 0
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	jr .poseOverrideDone
+
+.checkVelocity
 	ld a, [PlayerVelY]
 	and a, a
 	jr z, .poseOverrideDone
@@ -893,6 +920,7 @@ TryLedgeCatch:
 	ld [PlayerY], a
 	ld a, 0
 	ld [PlayerVelY], a
+	ld [PlayerGrounded], a
 	ld [LandTimer], a
 	ld a, PLAYER_LEDGE_TILE
 	ld [PlayerTileBase], a

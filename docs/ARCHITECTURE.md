@@ -30,6 +30,8 @@ source files yet:
 - **Ledge catch** — while descending and holding toward a full-solid exposed
   upper corner, swept detection snaps the Chef into a hanging state. A jumps
   upward and away, while Down drops. One-way cells are never catchable.
+- **Crouch** — holding Down while grounded selects the existing crouch frame
+  and suppresses horizontal movement. The terrain hitbox stays 12×16.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
   into the 4 OAM entries that make up the 16×16 player, converting to
   screen coordinates by subtracting the current `SCX`/`SCY` (sprites don't
@@ -73,6 +75,7 @@ power-on, set explicitly in `Start`:
 | `CurrentDpad` | Active-low directional input retained for ledge detection after physics reuses registers |
 | `LedgeSide` | `0` when free, `1` while hanging from a wall on the right, `2` for a wall on the left |
 | `LedgeTop` | Scratch world Y coordinate for the tile top currently considered by swept ledge detection |
+| `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
 
 Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`SCY`/`SCX`), `$FF44` (`LY`), `$FF47`/`$FF48` (`BGP`/`OBP0`), `$FF00`

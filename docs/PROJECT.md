@@ -47,7 +47,8 @@ another ordinary biome exit.
 
 ## Desired Chef abilities and interactions
 
-- Holding Down crouches using the existing squat pose. At a descent exit,
+- Holding Down while grounded crouches in place using the existing squat pose
+  without changing the terrain hitbox. At a descent exit,
   the exit interaction takes priority and the Chef walks diagonally down
   into the doorway instead. Holding Down away from an exit eventually pans
   the camera downward; releasing it restores the normal follow position.
