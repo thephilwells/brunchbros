@@ -45,8 +45,8 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | VRAM range | Owner | Slots | Bytes |
 |---|---|---:|---:|
 | `$8000–$800F` | Sprite index 0, reserved | 1 | 16 |
-| `$8010–$82CF` | Existing chef, sprite indices 1–44 | 44 | 704 |
-| `$82D0–$87FF` | Remaining sprite capacity, indices 45–127 | 83 | 1,328 |
+| `$8010–$830F` | Existing chef, sprite indices 1–48 | 48 | 768 |
+| `$8310–$87FF` | Remaining sprite capacity, indices 49–127 | 79 | 1,264 |
 | `$8800–$8BFF` | Environment expansion, BG IDs 128–191 | 64 | 1,024 |
 | `$8C00–$8DFF` | Future HUD, BG/Window IDs 192–223 | 32 | 512 |
 | `$8E00–$8FFF` | Unassigned BG/Window capacity, IDs 224–255 | 32 | 512 |
@@ -123,7 +123,9 @@ ignore one-way cells. Grounded/jump checks accept both surface types. The
 seat line of a booth or chair is the landing plane; backs and legs are
 passable art. Each landing plane aligns with the upper edge of an 8×8 tile;
 table and counter tops follow the same rule. No drop-through input is
-specified.
+currently implemented. The accepted future rule is that Down+A suppresses
+one-way support long enough for the chef to pass below the landing plane;
+full-solid cells remain impassable.
 
 For each solid cell, the four cardinal neighbors determine which edges are
 exposed. There are 16 possible combinations, enumerated in the manifest.
@@ -140,7 +142,8 @@ platform silhouettes. Generate/select collision layout before choosing art.
 Room connectivity, jump reachability, and enemy/hazard placement are not
 encoded by this tile vocabulary. They belong to the future room/generation
 specification. Every tested traversable passage must accommodate the current
-16×16 collision box (at least two tiles in both relevant dimensions).
+12×16 terrain hitbox (at least two tiles in both relevant dimensions on the
+8×8 structural grid).
 
 ## Tiled and binary deliverables
 

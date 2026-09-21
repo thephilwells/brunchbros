@@ -47,7 +47,7 @@ node tools/generate-structural-pilot.mjs
 node tools/generate-dining-room.mjs
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 node tools/verify-dining-room.mjs
-for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do
+for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge; do
   rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
 done
 rgbasm -o build/main.o src/main.asm

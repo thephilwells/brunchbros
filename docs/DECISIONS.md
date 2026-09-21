@@ -4,6 +4,57 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Ledge catch uses held direction and exposed solid corners
+
+**Decision:** While descending, the Chef catches an exposed upper corner of a
+full-solid tile only while the player holds toward it. Catch detection sweeps
+every crossed 8-pixel boundary so terminal fall speed cannot skip a ledge.
+One-way surfaces cannot be caught. While hanging, A jumps upward and one pixel
+away from the wall, Down drops, and releasing the held direction does not
+release the catch. One right-facing 16×16 pose at sprite indices 45–48 is
+mirrored in OAM for left-facing hangs.
+
+**Why:** Held direction makes catches intentional, while persistent hanging
+avoids demanding continuous input after a successful catch. Requiring empty
+space above and beside the solid tile limits the mechanic to true exposed
+upper corners rather than arbitrary wall faces or interior seams.
+
+**Status:** Implemented; the first right-wall catch is confirmed in SameBoy.
+Mirrored catch, jump/drop controls, snap position, and sprite review remain.
+
+---
+
+## 2026-09-21 — Down+A drops through one-way surfaces
+
+**Decision:** While standing on a one-way tabletop, seat, counter, or other
+one-way surface, pressing Down+A will make the Chef pass downward through it.
+The input never permits passage through full-solid structural tiles.
+
+**Why:** One-way furniture should support intentional downward traversal
+without weakening the collision contract of opaque walls and floors.
+
+**Status:** Accepted for later implementation; current runtime still treats
+one-way surfaces as support whenever the Chef is grounded or falling.
+
+---
+
+## 2026-09-21 — Standing terrain hitbox is 12×16 pixels
+
+**Decision:** Keep the Chef's visible sprite at 16×16 pixels but use a
+12×16 terrain hitbox centered on `PlayerX` and ending at the `PlayerY` feet
+line. Collision probes are two pixels inset from each visual side. Each
+collision edge samples its two ends and center; world-edge clamps continue
+to keep the full visible sprite inside the map.
+
+**Why:** The original full-sprite box made the Chef visibly hang too far over
+platform edges. A horizontal inset better matches the drawn silhouette and
+gives ledge-catching a stable body width. Center probes prevent isolated
+8×8 blocks from slipping between the hitbox's corner samples.
+
+**Status:** Implemented and accepted after SameBoy edge-overhang review.
+
+---
+
 ## 2026-09-21 — Traversal baseline precedes procedural reachability
 
 **Decision:** Finalize the Chef's terrain hitbox and upper-corner ledge
@@ -21,7 +72,8 @@ ledges, passages, and landing areas are valid. Building a reachability
 validator against temporary movement rules would encode incorrect level
 constraints and force avoidable rework.
 
-**Status:** Adopted as the next milestone. Detailed mechanics remain open in
+**Status:** Hitbox and ledge mechanics are implemented pending final SameBoy
+review. Crouch semantics and traversal measurements remain open in
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ---
@@ -71,7 +123,8 @@ backs and legs remain passable. A generated per-tile collision table uses
 `0=empty`, `1=full solid`, and `2=one-way top`. ID 50 is a repeatable test
 surface in the current dining-room fixture; IDs 51–55 form the dining
 table, IDs 56–58 form the chair, IDs 59–63 form the booth, and IDs
-112–115 form the counter. No drop-through input is specified.
+112–115 form the counter. Down+A drop-through is planned but not yet
+implemented.
 
 **Why:** The existing full-solid structural tiles block all directions.
 Distinct collision types keep visual furniture parts separate from the

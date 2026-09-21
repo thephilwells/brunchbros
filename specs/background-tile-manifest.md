@@ -149,7 +149,10 @@ The dining-room fixture places a menu board at tile (3,4), mirror at
 Sparse wallpaper motifs appear on the left and right wall fields. A
 four-tile-wide recess patch occupies rows 7–9 near the right edge, and
 shared trim spans row 11. The solid platform/wall cells use IDs 1–16 from
-the pilot without reskinning. A second gallery of the same five components
+the pilot without reskinning. The seven-tile solid platform at columns 1–7,
+row 20 has a world-Y top of 160. Its exposed right corner is the fixture's
+left-facing ledge-catch test, reachable from the one-way serving-window strip
+at world Y=192. A second gallery of the same five components
 spans columns 1–17 and rows 21–23, with sparse wallpaper below, so the art
 remains visible after the chef lands on the bottom floor. ID 24 also
 appears once as an isolated trim sample. This map is a visual and

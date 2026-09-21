@@ -9,12 +9,15 @@ their focused specifications and playtests.
 - Down normally crouches with the existing landing/squat pose.
 - Down at an exit takes priority over crouching and begins a diagonal
   stair-descent presentation.
+- Down+A while supported by a one-way surface drops the Chef through it. It
+  has no effect on full-solid structural tiles. This is not yet implemented.
 - Holding Down or Up long enough shifts the camera in that direction;
   releasing returns it to the ordinary follow offset.
 - Up needs a new upward-looking Chef pose.
 - The Chef can catch an exposed upper corner of a full-solid structural cell
-  while airborne, jump from the hanging position, or drop. He cannot cling
-  along arbitrary wall faces or climb vertically.
+  while descending and holding toward it. The catch persists after direction
+  is released; A jumps upward and away, and Down drops. He cannot catch
+  one-way surfaces, cling along arbitrary wall faces, or climb vertically.
 - Deep Freezer floors have reduced horizontal stopping after landing and
   after Left/Right is released.
 - Loot comes from large breakable eggs that can be lifted and thrown. Carry,
@@ -23,12 +26,13 @@ their focused specifications and playtests.
 
 ## What must precede generated-room reachability
 
-1. Fix the Chef's terrain collision box. The current 16×16 visual bounds are
-   also the collision bounds, while the roadmap already calls for a narrower
-   box. Passage widths, edge support, and wall-contact coordinates must not
-   be validated against a temporary hitbox.
-2. Specify and implement upper-corner ledge catch/jump/drop. It materially
-   changes the reachable ledge height and horizontal gap envelope.
+1. The implemented 12×16 terrain hitbox has passed SameBoy edge-overhang
+   review. The 16×16 visual sprite extends two pixels beyond it on each side,
+   while full standing height is preserved. Passage widths, edge support, and
+   wall-contact coordinates can use it.
+2. Verify the implemented upper-corner ledge catch/jump/drop behavior and
+   hanging pose in SameBoy. It materially changes the reachable ledge height
+   and horizontal gap envelope.
 3. Decide crouch collision semantics. Recommended initial rule: crouching
    lowers the future combat/hazard hurtbox but does not create a shorter
    terrain collision box or crouch-only tunnels. That preserves a two-tile
@@ -37,10 +41,29 @@ their focused specifications and playtests.
    equations: maximum standing jump height, running jump span, one-way
    platform behavior, ledge-catch recovery distance, and safe landing widths.
 
+## Measured traversal baseline
+
+- With the current `-8` jump impulse and gravity applied before vertical
+  movement, the rising displacement sequence is 7, 6, 5, 4, 3, 2, and 1
+  pixels: a 28-pixel feet rise.
+- From the serving-window strip at world Y=192, the Chef's feet reach Y=164
+  and the top of the 16-pixel sprite reaches Y=148. SameBoy visual review
+  agrees with this apex.
+- The ledge grab line is eight pixels above the feet, reaching Y=156 at the
+  apex. Because catches occur while descending at tile-aligned boundaries,
+  world Y=160 is the highest 8-pixel-grid ledge top reachable from that strip.
+- The dining fixture's upper-left platform now uses that exact Y=160 limit as
+  an opposite-side “just made it” catch test. Treat it as a boundary case,
+  not the default procedural-generation clearance, until playtesting supplies
+  a forgiving margin.
+
 ## What can follow the first generator
 
 - Directional camera look changes visibility, not reachability. It is useful
   for reviewing vertical rooms but does not block structural generation.
+- Down+A drop-through changes navigation through one-way furniture but does
+  not change the guaranteed structural route; it may follow the first
+  generator.
 - The exit descent animation and biome-state transition can follow once two
   biome maps exist. Generated rooms only need to reserve a reachable 2×3
   doorway footprint and safe interaction space.
@@ -74,9 +97,8 @@ their focused specifications and playtests.
 
 ## Focused decisions for the next step
 
-- Exact standing terrain hitbox dimensions and probe offsets.
-- Whether ledge catch is automatic in its catch window or requires holding
-  toward the ledge; how Down/release drops; and the ledge-jump launch vector.
+- SameBoy acceptance of the ledge catch window, snap position, hang pose, and
+  jump/drop controls.
 - Whether crouch affects only animation now or also the later hazard hurtbox.
 - The minimum safe platform width and clearance around spawn and exit.
 - Initial world dimensions and whether tile-map streaming belongs in the

@@ -365,7 +365,7 @@ writeFileSync('build/dining_room_collision.bin', collisionTypes);
 
 const solid = Array.from({ length: 32 }, () => Array(32).fill(false));
 for (let y = 27; y < 32; y++) for (let x = 0; x < 32; x++) solid[y][x] = true;
-for (let x = 1; x <= 7; x++) solid[18][x] = true;
+for (let x = 1; x <= 7; x++) solid[20][x] = true;
 for (let x = 20; x <= 25; x++) solid[21][x] = true;
 for (let y = 22; y <= 26; y++) solid[y][25] = true;
 

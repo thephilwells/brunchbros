@@ -309,6 +309,13 @@ milestone) if useful.
   belongs paired with the future Level generation milestone, not built
   against placeholder test blocks now.
 
+- **Direct OAM writes must happen during a known writable display period.**
+  The CPU cannot access OAM during LCD modes 2 and 3. Writing four sprite
+  entries at the end of an increasingly long frame eventually produced a
+  split update: some coordinates changed while the lower half retained an
+  old Y position. The main loop now commits the camera and all four Chef OAM
+  entries immediately after entering VBlank, then calculates the next state.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

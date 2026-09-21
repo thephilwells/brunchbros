@@ -1,3 +1,10 @@
+DEF PLAYER_HITBOX_LEFT EQU 6
+DEF PLAYER_HITBOX_RIGHT EQU 5
+DEF PLAYER_HITBOX_TOP EQU 16
+DEF PLAYER_LEDGE_TILE EQU 45
+DEF LEDGE_RIGHT EQU 1
+DEF LEDGE_LEFT EQU 2
+
 ; Persistent game state — uninitialized at power-on, set explicitly in Start
 SECTION "Player State", WRAM0
 PlayerY: db
@@ -8,6 +15,9 @@ FacingFlip: db
 PlayerVelY: db
 PrevButtons: db
 LandTimer: db
+CurrentDpad: db
+LedgeSide: db
+LedgeTop: db
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
 SECTION "Entry Point", ROM0[$100]
@@ -78,10 +88,10 @@ Start:
 	dec c
 	jr nz, .clearOAM
 
-; Copy all 11 chef animation frames (4 tiles each = 704 bytes) into VRAM, starting at tile index 1
+; Copy all 12 chef animation frames into VRAM, starting at tile index 1.
 	ld de, ChefFrames
 	ld hl, $8010
-	ld b, 11
+	ld b, 12
 .copyChefOuter
 	ld c, 64
 .copyChefInner
@@ -110,6 +120,7 @@ Start:
 	ld [PrevButtons], a
 	ld a, 0
 	ld [LandTimer], a
+	ld [LedgeSide], a
 	call UpdateSprites
 
 ; LCD on: BG + sprites enabled, BG tile data at $9000
@@ -129,12 +140,108 @@ MainLoop:
 	cp a, 144
 	jr c, .waitVBlank
 
+; Commit camera and sprite state while OAM is accessible.
+	ld a, [PlayerX]
+	cp a, 80
+	jr c, .scxMin
+
+	sub a, 80
+	cp a, 97
+	jr c, .scxDone
+	ld a, 96
+	jr .scxDone
+
+.scxMin
+	ld a, 0
+
+.scxDone
+	ldh [$ff43], a
+
+	ld a, [PlayerY]
+	cp a, 72
+	jr c, .scyMin
+
+	sub a, 72
+	cp a, 113
+	jr c, .scyDone
+	ld a, 112
+	jr .scyDone
+
+.scyMin
+	ld a, 0
+
+.scyDone
+	ldh [$ff42], a
+	call UpdateSprites
+
 ; Read the D-pad (needed both for animation mode below and movement further down)
 	ld a, %00100000
 	ldh [$ff00], a
 	ldh a, [$ff00]
 	ldh a, [$ff00]
 	ld b, a
+	ld [CurrentDpad], a
+
+	ld a, %00010000
+	ldh [$ff00], a
+	ldh a, [$ff00]
+	ldh a, [$ff00]
+	ld d, a
+
+	cpl
+	ld e, a
+	ld a, [PrevButtons]
+	and e
+	ld e, a
+
+	ld a, d
+	ld [PrevButtons], a
+
+	ld a, [LedgeSide]
+	and a, a
+	jr z, .notHanging
+
+	ld a, PLAYER_LEDGE_TILE
+	ld [PlayerTileBase], a
+	bit 3, b
+	jr z, .dropFromLedge
+	ld a, e
+	bit 0, a
+	jr nz, .jumpFromLedge
+	jp MainLoop
+
+.dropFromLedge
+	ld a, 0
+	ld [LedgeSide], a
+	ld [PlayerVelY], a
+	jp .applyGravity
+
+.jumpFromLedge
+	ld a, [LedgeSide]
+	ld c, a
+	ld a, 0
+	ld [LedgeSide], a
+	ld a, -8
+	ld [PlayerVelY], a
+	ld a, c
+	cp a, LEDGE_RIGHT
+	jr nz, .jumpFromLeftLedge
+	ld a, [PlayerX]
+	dec a
+	ld [PlayerX], a
+	ld a, $20
+	ld [FacingFlip], a
+	jp .applyGravity
+
+.jumpFromLeftLedge
+	ld a, [PlayerX]
+	inc a
+	ld [PlayerX], a
+	ld a, 0
+	ld [FacingFlip], a
+	jp .applyGravity
+
+.notHanging
 
 ; Determine walking vs idle from the D-pad reading, advance animation accordingly
 	ld a, b
@@ -203,22 +310,6 @@ MainLoop:
 	ld [PlayerTileBase], a
 
 .animDone
-
-	ld a, %00010000
-	ldh [$ff00], a
-	ldh a, [$ff00]
-	ldh a, [$ff00]
-	ld d, a
-
-	cpl
-	ld e, a
-	ld a, [PrevButtons]
-	and e
-	ld e, a
-
-	ld a, d
-	ld [PrevButtons], a
-
 	ld a, e
 	bit 0, a
 	jr z, .noJump
@@ -228,7 +319,7 @@ MainLoop:
 	jr z, .grounded
 
 	ld a, [PlayerX]
-	sub a, 8
+	sub a, PLAYER_HITBOX_LEFT
 	ld e, a
 	ld a, [PlayerY]
 	ld d, a
@@ -236,7 +327,14 @@ MainLoop:
 	jr z, .grounded
 
 	ld a, [PlayerX]
-	add a, 7
+	ld e, a
+	ld a, [PlayerY]
+	ld d, a
+	call IsSupport
+	jr z, .grounded
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
 	ld e, a
 	ld a, [PlayerY]
 	ld d, a
@@ -253,16 +351,25 @@ MainLoop:
 	bit 0, b
 	jr nz, .notRight
 	ld a, [PlayerX]
-	add a, 8
+	add a, PLAYER_HITBOX_RIGHT + 1
 	ld e, a
 	ld a, [PlayerY]
-	sub a, 16
+	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .notRight
 
 	ld a, [PlayerX]
-	add a, 8
+	add a, PLAYER_HITBOX_RIGHT + 1
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	jr z, .notRight
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT + 1
 	ld e, a
 	ld a, [PlayerY]
 	sub a, 1
@@ -280,16 +387,25 @@ MainLoop:
 	bit 1, b
 	jr nz, .notLeft
 	ld a, [PlayerX]
-	sub a, 9
+	sub a, PLAYER_HITBOX_LEFT + 1
 	ld e, a
 	ld a, [PlayerY]
-	sub a, 16
+	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .notLeft
 
 	ld a, [PlayerX]
-	sub a, 9
+	sub a, PLAYER_HITBOX_LEFT + 1
+	ld e, a
+	ld a, [PlayerY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	jr z, .notLeft
+
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT + 1
 	ld e, a
 	ld a, [PlayerY]
 	sub a, 1
@@ -305,6 +421,7 @@ MainLoop:
 .notLeft
 
 ; Gravity: accelerate downward velocity, capped while falling
+.applyGravity
 	ld a, [PlayerVelY]
 	add a, 1
 	bit 7, a
@@ -339,10 +456,10 @@ MainLoop:
 	ld a, c
 	cp b
 	jr z, .checkFallTop
-	jp nc, .applyFall
+	jp nc, .checkLedges
 .checkFallTop
 	ld a, [PlayerX]
-	sub a, 8
+	sub a, PLAYER_HITBOX_LEFT
 	ld e, a
 	ld d, c
 	push bc
@@ -351,7 +468,15 @@ MainLoop:
 	jr z, .landedAtTop
 
 	ld a, [PlayerX]
-	add a, 7
+	ld e, a
+	ld d, c
+	push bc
+	call IsSupport
+	pop bc
+	jr z, .landedAtTop
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
 	ld e, a
 	ld d, c
 	push bc
@@ -361,9 +486,32 @@ MainLoop:
 
 	ld a, c
 	add a, 8
-	jp c, .applyFall
+	jp c, .checkLedges
 	ld c, a
 	jr .scanFall
+
+.checkLedges
+	ld a, [PlayerY]
+	sub a, 8
+	add a, 7
+	and a, $f8
+	ld c, a
+
+.scanLedges
+	ld a, b
+	sub a, 8
+	cp c
+	jr c, .applyFall
+	ld a, c
+	push bc
+	call TryLedgeCatch
+	pop bc
+	jr c, .gravityDone
+	ld a, c
+	add a, 8
+	jr c, .applyFall
+	ld c, a
+	jr .scanLedges
 
 .landedAtTop
 	ld a, c
@@ -371,21 +519,29 @@ MainLoop:
 	jp .landed
 
 .checkRising
-; Rising: check both top-edge points at the tentative Y
+; Rising: check the top edge at the tentative Y
 	ld a, [PlayerX]
-	sub a, 8
+	sub a, PLAYER_HITBOX_LEFT
 	ld e, a
 	ld a, b
-	sub a, 16
+	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .headBump
 
 	ld a, [PlayerX]
-	add a, 7
 	ld e, a
 	ld a, b
-	sub a, 16
+	sub a, PLAYER_HITBOX_TOP
+	ld d, a
+	call IsWall
+	jr z, .headBump
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
+	ld e, a
+	ld a, b
+	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .headBump
@@ -471,42 +627,6 @@ MainLoop:
 	ld [PlayerTileBase], a
 
 .poseOverrideDone
-
-; Camera: SCX follows PlayerX, centered, clamped to the world's scrollable range [0,96]
-	ld a, [PlayerX]
-	cp a, 80
-	jr c, .scxMin
-
-	sub a, 80
-	cp a, 97
-	jr c, .scxDone
-	ld a, 96
-	jr .scxDone
-
-.scxMin
-	ld a, 0
-
-.scxDone
-	ldh [$ff43], a
-
-; Camera: SCY follows PlayerY, centered, clamped to the world's scrollable range [0,112]
-	ld a, [PlayerY]
-	cp a, 72
-	jr c, .scyMin
-
-	sub a, 72
-	cp a, 113
-	jr c, .scyDone
-	ld a, 112
-	jr .scyDone
-
-.scyMin
-	ld a, 0
-
-.scyDone
-	ldh [$ff42], a
-
-	call UpdateSprites
 
 	jp MainLoop
 
@@ -684,6 +804,105 @@ IsSupport:
 	or a
 	ret
 
+TryLedgeCatch:
+	ld [LedgeTop], a
+	ld a, [CurrentDpad]
+	bit 3, a
+	jp z, .notCaught
+	bit 0, a
+	jr nz, .tryLeft
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT + 1
+	ld e, a
+	ld a, [LedgeTop]
+	ld d, a
+	call IsWall
+	jr nz, .tryLeft
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT + 1
+	ld e, a
+	ld a, [LedgeTop]
+	dec a
+	ld d, a
+	call IsWall
+	jr z, .tryLeft
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
+	ld e, a
+	ld a, [LedgeTop]
+	ld d, a
+	call IsWall
+	jr z, .tryLeft
+
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT + 1
+	and a, $f8
+	sub a, PLAYER_HITBOX_RIGHT + 1
+	ld [PlayerX], a
+	ld a, 0
+	ld [FacingFlip], a
+	ld a, LEDGE_RIGHT
+	jr .caught
+
+.tryLeft
+	ld a, [CurrentDpad]
+	bit 1, a
+	jr nz, .notCaught
+
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT + 1
+	ld e, a
+	ld a, [LedgeTop]
+	ld d, a
+	call IsWall
+	jr nz, .notCaught
+
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT + 1
+	ld e, a
+	ld a, [LedgeTop]
+	dec a
+	ld d, a
+	call IsWall
+	jr z, .notCaught
+
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT
+	ld e, a
+	ld a, [LedgeTop]
+	ld d, a
+	call IsWall
+	jr z, .notCaught
+
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT + 1
+	and a, $f8
+	add a, 8 + PLAYER_HITBOX_LEFT
+	ld [PlayerX], a
+	ld a, $20
+	ld [FacingFlip], a
+	ld a, LEDGE_LEFT
+
+.caught
+	ld [LedgeSide], a
+	ld a, [LedgeTop]
+	add a, 8
+	ld [PlayerY], a
+	ld a, 0
+	ld [PlayerVelY], a
+	ld [LandTimer], a
+	ld a, PLAYER_LEDGE_TILE
+	ld [PlayerTileBase], a
+	scf
+	ret
+
+.notCaught
+	and a
+	ret
+
 TileData:
 	INCBIN "build/dining_room.2bpp"
 
@@ -705,3 +924,4 @@ ChefFrames:
 	INCBIN "build/chef_jump.2bpp"
 	INCBIN "build/chef_ascent.2bpp"
 	INCBIN "build/chef_crouch.2bpp"
+	INCBIN "build/chef_ledge.2bpp"

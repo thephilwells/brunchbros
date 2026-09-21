@@ -32,7 +32,7 @@
     {
       "label": "Convert Chef Frames",
       "type": "shell",
-      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
+      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
       "problemMatcher": []
     },
     {

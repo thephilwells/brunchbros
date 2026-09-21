@@ -53,10 +53,11 @@ another ordinary biome exit.
   the camera downward; releasing it restores the normal follow position.
 - Holding Up uses a new upward-looking pose and eventually pans the camera
   upward; releasing it restores the normal follow position.
-- The Chef can catch an exposed upper corner of a full-solid structural tile
-  while airborne, hanging from the ledge after an otherwise-short jump. He
-  can jump from that position or drop, but cannot cling to arbitrary wall
-  faces or climb vertically.
+- While descending and holding toward an exposed upper corner of a full-solid
+  structural tile, the Chef catches and hangs from it after an otherwise-short
+  jump. Releasing the direction does not release the catch; A jumps upward
+  and away, while Down drops. He cannot catch one-way surfaces, cling to
+  arbitrary wall faces, or climb vertically.
 - Deep Freezer floors preserve some horizontal momentum after landing and
   after directional input is released, creating a slippery-floor behavior.
 - Loot can appear inside large breakable eggs. Eggs can be lifted and thrown,

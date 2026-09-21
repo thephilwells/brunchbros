@@ -87,30 +87,18 @@ around Hazards/Enemies/Additional areas content design later.
 
 ## Polish backlog
 
-Running list of feel/tuning items noticed along the way but deliberately
-deferred to the Polish milestone rather than fixed in the moment. Append to
-this whenever one comes up — the goal is to stop relying on conversation
-history to remember them.
-
-- **Narrow the player's collision hitbox relative to the visual sprite.**
-  Currently the collision box is the full 16×16 bounding box, same as the
-  rendered sprite — but the chef's drawn silhouette doesn't fill that box
-  edge-to-edge, so he can visibly hang a few pixels off a platform edge
-  before falling. Standard platformer practice is a hitbox noticeably
-  smaller than the sprite. Touches four places consistently, once
-  addressed: the Right/Left movement checks, the falling-collision check,
-  and the grounded check (all in `src/main.asm`'s `MainLoop`). This is now a
-  prerequisite of the Player traversal baseline rather than late polish,
-  because generated passage widths and reachability depend on it.
+No current items. Add feel/tuning observations here rather than relying on
+conversation history.
 
 ## Immediate next milestone
 
-**Player traversal baseline** — settle the Chef's terrain hitbox, ledge
-catch/jump/drop behavior, and crouch collision semantics, then measure the
-resulting jump and ledge-catch envelope. Those measurements become inputs to
-the level-design rules and reachability validator. Directional look poses
-and camera look-ahead can ship in the same milestone but are not blockers
-for procedural generation. See
+**Player traversal baseline** — the 12×16 terrain hitbox is implemented and
+accepted after SameBoy edge-overhang review. Ledge catch/jump/drop and its
+new hanging pose are implemented pending SameBoy review. Next, settle crouch
+collision semantics, then measure the resulting jump and ledge-catch envelope.
+Those measurements become inputs to the level-design rules and reachability
+validator. Directional look poses and camera look-ahead can ship in the same
+milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed

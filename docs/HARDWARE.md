@@ -33,12 +33,13 @@ than front-loading a full hardware manual before it's relevant.
   tiles always use unsigned `$8000` addressing**, regardless of that bit.
 - **OAM (`$FE00`–`$FE9F`): 40 sprite slots, 4 bytes each** (`Y`, `X`, tile
   index, attributes). Not guaranteed zero at power-on — needs explicit
-  clearing. Stored `Y`/`X` are offset (`Y = screen row + 16`, `X = screen
-  column + 8`) so any position, including partially off-screen, is
-  representable without negative numbers. **Sprite coordinates are always
-  screen-space — sprites do not scroll with the background.** No native
-  16-pixel-wide sprite mode; a 16×16 character is 4 coordinated 8×8 OAM
-  entries. For sprites, color index 0 is unconditionally transparent
+  clearing. CPU access is blocked during LCD modes 2 and 3, so direct OAM
+  updates must complete during VBlank. Stored `Y`/`X` are offset (`Y = screen
+  row + 16`, `X = screen column + 8`) so any position, including partially
+  off-screen, is representable without negative numbers. **Sprite coordinates
+  are always screen-space — sprites do not scroll with the background.** No
+  native 16-pixel-wide sprite mode; a 16×16 character is 4 coordinated 8×8
+  OAM entries. For sprites, color index 0 is unconditionally transparent
   regardless of palette, leaving exactly 3 opaque indices per tile.
 - **Palettes: `BGP`/`OBP0`/`OBP1` (`$FF47`/`$FF48`/`$FF49`), 2 bits × 4
   entries each.** Sprites never read `BGP`. Only 4 physical gray shades
