@@ -69,7 +69,14 @@ their focused specifications and playtests.
   terrain hitbox, so it is not a safe required-route landing candidate. Two
   tiles provide 16 pixels of support and four pixels of total fit tolerance.
   The fixture now includes a two-tile one-way target at world Y=136, 24 pixels
-  above the wide row-20 platform, for isolated SameBoy width review.
+  above the wide row-20 platform. SameBoy review accepted two tiles as the
+  required-route minimum and confirmed that three tiles is the ordinary upward
+  transition limit.
+- Required upward transitions now cap at three tiles for an ordinary landing
+  and four tiles for an exposed full-solid ledge catch. Required downward
+  transitions cap at eight tiles so the full first tile row of the landing
+  remains visible at the normal camera offset. These authoritative limits live
+  in `specs/level-design-rules.md`.
 
 ## What can follow the first generator
 

@@ -96,11 +96,11 @@ conversation history.
 accepted after SameBoy edge-overhang review. Ledge catch/jump/drop and its
 new hanging pose are accepted after SameBoy review. Grounded crouching is also
 accepted with the 12×16 terrain hitbox unchanged. The tested three-tile
-same-height gap is now the authoritative hard maximum. Next, complete the
-remaining level-design rules and reachability inputs, including safe platform
-widths, vertical transitions, spawn/exit clearance, and ordinary versus
-boundary-case tolerances. Directional look poses and camera look-ahead can ship
-in the same milestone but are not blockers for procedural generation. See
+same-height gap is now the authoritative hard maximum. Two-tile minimum
+platforms and the 24/32/64-pixel vertical transition limits are also accepted.
+Next, complete spawn/exit clearance and ordinary versus boundary-case
+tolerances. Directional look poses and camera look-ahead can ship in the same
+milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed

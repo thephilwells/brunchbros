@@ -179,7 +179,8 @@ The initial spawn at X=88, Y=88 has a clear fall lane through columns
 Two additional copies at row 17, columns 15–16 form a 16-pixel minimum-safe-
 width candidate at world Y=136. It sits 24 pixels above the row-20 platform,
 within the ordinary 28-pixel jump rise, and isolates landing width from ledge
-catch and maximum-gap recovery.
+catch and maximum-gap recovery. SameBoy review accepted it as the minimum
+required-route width and confirmed the three-tile upward landing limit.
 
 For all four furniture families, only the tile row containing the
 designated top surface receives `one_way`; the other visual parts remain

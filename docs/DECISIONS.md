@@ -4,6 +4,38 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Required vertical transitions use 24/32/64-pixel limits
+
+**Decision:** Required routes may rise at most three tiles (24 pixels) to an
+ordinary landing or four tiles (32 pixels) to an exposed, full-solid ledge
+catch. Required drops may descend at most eight tiles (64 pixels), keeping the
+landing's first tile row visible at the normal camera offset. Downward landings
+remain at least two tiles wide.
+
+**Why:** SameBoy testing confirms both upward limits with the fixture's
+two-tile landing and opposite-side ledge catch. The downward limit follows the
+current 72-pixel player screen position: a surface 64 pixels lower begins at
+screen Y=136, leaving its full eight-pixel tile row visible in the 144-pixel
+viewport. Deeper mandatory drops should wait for look-down camera review.
+
+**Status:** Accepted. See `specs/level-design-rules.md`.
+
+---
+
+## 2026-09-21 — Required-route platforms are at least two tiles wide
+
+**Decision:** Mandatory landing surfaces are at least two tiles, or 16 pixels,
+wide. One-tile platforms may be optional precision footholds but cannot be
+required landings or spawn surfaces.
+
+**Why:** The 12-pixel terrain hitbox cannot fit completely on an eight-pixel
+tile. A two-tile surface leaves four pixels of total fit tolerance and was easy
+to land on from either direction in SameBoy.
+
+**Status:** Accepted. See `specs/level-design-rules.md`.
+
+---
+
 ## 2026-09-21 — Three tiles is the maximum same-height required-route gap
 
 **Decision:** A same-height required-route gap may span at most three empty
