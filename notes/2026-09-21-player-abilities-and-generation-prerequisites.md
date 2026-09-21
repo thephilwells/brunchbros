@@ -54,6 +54,17 @@ their focused specifications and playtests.
   an opposite-side “just made it” catch test. Treat it as a boundary case,
   not the default procedural-generation clearance, until playtesting supplies
   a forgiving margin.
+- Holding a horizontal direction moves the Chef one pixel on each of the 15
+  frames through a same-height jump, for 15 pixels of center travel. A launch
+  may begin with the center five pixels beyond the departure edge, and landing
+  may use the hitbox's five-pixel leading probe, making 25 pixels the
+  theoretical gap limit. The largest tile-aligned candidate is therefore a
+  three-tile (24-pixel) gap, with only two pixels of overlap on landing.
+- The dining fixture places two row-20 platforms around a three-tile gap for
+  SameBoy validation. Review confirmed that the Chef just clears it and that
+  ledge catch provides useful recovery. Three tiles is now the hard
+  same-height required-route maximum in `specs/level-design-rules.md`, not the
+  default gap width.
 
 ## What can follow the first generator
 

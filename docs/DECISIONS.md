@@ -4,6 +4,23 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Three tiles is the maximum same-height required-route gap
+
+**Decision:** A same-height required-route gap may span at most three empty
+8-pixel columns, or 24 pixels. Three-tile gaps must end at an exposed
+full-solid upper corner so ledge catch can recover a short landing. A one-way
+surface cannot provide that recovery edge. Wider gaps require a later ability
+and an explicitly capability-gated route.
+
+**Why:** SameBoy testing confirmed that the Chef just clears the three-tile
+fixture gap and that ledge catch provides meaningful recovery. This matches the
+calculated 25-pixel absolute limit and leaves only two pixels of landing
+overlap, so three tiles is suitable as a hard limit rather than a routine gap.
+
+**Status:** Accepted. See `specs/level-design-rules.md`.
+
+---
+
 ## 2026-09-21 — Crouching preserves the standing terrain hitbox
 
 **Decision:** Holding Down while grounded gives the Chef the existing crouch
@@ -16,7 +33,8 @@ drop-through take priority over ordinary crouching when implemented.
 crouch tunnels while leaving room for a shorter combat or hazard hurtbox once
 those systems exist.
 
-**Status:** Implemented; SameBoy input and pose review pending.
+**Status:** Implemented and accepted in SameBoy on full-solid and one-way
+support.
 
 ---
 

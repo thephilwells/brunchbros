@@ -94,12 +94,13 @@ conversation history.
 
 **Player traversal baseline** — the 12×16 terrain hitbox is implemented and
 accepted after SameBoy edge-overhang review. Ledge catch/jump/drop and its
-new hanging pose are accepted after SameBoy review. Grounded crouching now
-preserves the 12×16 terrain hitbox and awaits review. Next, measure the running
-jump and ledge-catch envelope. Those measurements become inputs to the
-level-design rules and reachability validator. Directional look poses and
-camera look-ahead can ship in the same milestone but are not blockers for
-procedural generation. See
+new hanging pose are accepted after SameBoy review. Grounded crouching is also
+accepted with the 12×16 terrain hitbox unchanged. The tested three-tile
+same-height gap is now the authoritative hard maximum. Next, complete the
+remaining level-design rules and reachability inputs, including safe platform
+widths, vertical transitions, spawn/exit clearance, and ordinary versus
+boundary-case tolerances. Directional look poses and camera look-ahead can ship
+in the same milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed
