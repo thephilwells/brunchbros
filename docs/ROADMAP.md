@@ -98,10 +98,11 @@ new hanging pose are accepted after SameBoy review. Grounded crouching is also
 accepted with the 12×16 terrain hitbox unchanged. The tested three-tile
 same-height gap is now the authoritative hard maximum. Two-tile minimum
 platforms and the 24/32/64-pixel vertical transition limits are also accepted.
-Next, complete spawn/exit clearance and ordinary versus boundary-case
-tolerances. Directional look poses and camera look-ahead can ship in the same
-milestone but are not blockers for procedural generation. See
-`notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
+Spawn/exit safety envelopes and ordinary versus isolated boundary-case
+tolerances are now defined. Next, choose the initial world dimensions and
+critical-route representation. Directional look poses and camera look-ahead
+can ship in the same milestone but are not blockers for procedural generation.
+See `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed
 

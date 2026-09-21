@@ -116,10 +116,16 @@ their focused specifications and playtests.
   current camera cannot address a larger world without streaming map data as
   the view moves.
 
+The authoritative generation envelope is now recorded in
+`specs/level-design-rules.md`. Ordinary route edges stay comfortably inside
+the measured traversal limits; isolated boundary cases may use one hard limit
+when surrounded by ordinary rest geometry. Spawn and exit have protected
+structural and encounter-free envelopes that later placement passes cannot
+occupy.
+
 ## Focused decisions for the next step
 
-- SameBoy acceptance of grounded crouch input, pose, and movement suppression.
 - Whether crouch later shortens the combat/hazard hurtbox.
-- The minimum safe platform width and clearance around spawn and exit.
 - Initial world dimensions and whether tile-map streaming belongs in the
   first generation implementation or a following expansion.
+- The first generator's macro topology and critical-route representation.

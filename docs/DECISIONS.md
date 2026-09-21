@@ -4,6 +4,41 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Generation separates ordinary transitions from boundary cases
+
+**Decision:** The critical route defaults to three-tile-or-wider destinations,
+gaps and rises of at most two tiles, and drops of at most four tiles. The
+accepted hard limits remain available as isolated boundary cases: two-tile
+landings, three-tile gaps or rises, four-tile ledge catches, and five-to-eight-
+tile drops. Boundary transitions cannot be consecutive and cannot combine a
+narrow destination with a maximum gap, catch, or long drop.
+
+**Why:** Physical reachability alone is too weak a generation rule. Keeping
+ordinary geometry comfortably inside the measured envelope creates variation
+without making every route a traversal test, while explicit boundary cases
+preserve occasional “just made it” moments under validator control.
+
+**Status:** Accepted baseline. See `specs/level-design-rules.md`.
+
+---
+
+## 2026-09-21 — Spawn and exit use protected safety envelopes
+
+**Decision:** Spawn uses a full-solid platform at least three tiles wide with a
+three-by-six-tile clear volume and an ordinary first transition. The 2×3 exit
+uses a full-solid threshold, a two-tile approach apron on at least one side,
+three clear rows across the combined four-tile span, and an ordinary final
+transition. Both envelopes exclude hazards, enemies, furniture, and objects.
+
+**Why:** The run must begin with room to understand and control the Chef, and
+must end without random geometry or encounter placement obstructing the
+deliberate Down interaction. Reserving these cells before dressing makes the
+guarantee independently verifiable.
+
+**Status:** Accepted baseline. See `specs/level-design-rules.md`.
+
+---
+
 ## 2026-09-21 — Required vertical transitions use 24/32/64-pixel limits
 
 **Decision:** Required routes may rise at most three tiles (24 pixels) to an
