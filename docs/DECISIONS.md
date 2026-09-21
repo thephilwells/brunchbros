@@ -4,6 +4,26 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Biome levels use a pre-generated 40×32 logical map
+
+**Decision:** Every biome uses a 4×4 grid of 10×8-tile subrooms, producing a
+40×32-tile (320×256-pixel) level. The complete current biome is generated up
+front into a 1,280-byte WRAM tile buffer. Collision and generation use that
+logical map, while the 32×32 VRAM background map acts as a horizontal ring
+buffer. Only logical columns 32–39 require streaming into wrapped physical
+columns 0–7. Logical X coordinates become 16-bit; Y remains eight-bit.
+
+**Why:** The full generated map fits comfortably in WRAM0, so there is no need
+to generate rooms during play or discard off-screen structure. It cannot be
+displayed as one static hardware map because the Game Boy background is fixed
+at 32×32 tiles. Separating the authoritative logical map from its streamed VRAM
+view preserves deterministic collision and backtracking.
+
+**Status:** Accepted architecture; implementation pending. See
+`specs/level-design-rules.md`.
+
+---
+
 ## 2026-09-21 — Generation separates ordinary transitions from boundary cases
 
 **Decision:** The critical route defaults to three-tile-or-wider destinations,

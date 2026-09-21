@@ -10,6 +10,33 @@ accepted in SameBoy.
 - Passages used by the required route are at least two tiles wide and two
   tiles high.
 
+## Level dimensions and map storage
+
+- Every ordinary biome level is a 4×4 grid of subrooms.
+- Each subroom is 10 tiles wide by 8 tiles high, or 80×64 pixels.
+- The complete level is 40 tiles wide by 32 tiles high, or 320×256 pixels and
+  1,280 tile cells.
+- Generate the complete current-biome level before play into a 1,280-byte
+  row-major WRAM tile buffer. Room templates and generation tables remain in
+  ROM; only one biome's generated tile map occupies the buffer at a time.
+- Collision and reachability read the logical WRAM map, not the currently
+  displayed VRAM background map. Each tile ID continues to resolve through the
+  biome's collision-type table.
+- Logical world X coordinates require at least nine bits because the level is
+  320 pixels wide. Player and camera world X state therefore use 16-bit values;
+  Y remains eight-bit for the 256-pixel level height.
+
+The Game Boy background map remains 32×32 tiles. Level height fits it exactly,
+but level width exceeds it by eight columns. Rendering uses the 32×32 map as a
+horizontal ring buffer: initially load logical columns 0–31, then copy logical
+columns 32–39 into physical columns 0–7 after their old contents leave the
+viewport. Backtracking restores the displaced columns before they become
+visible again. The physical VRAM column is `logical_column & 31`.
+
+Streaming is a rendering concern only. Generation, collision, route
+validation, and object placement always operate on the complete 40×32 logical
+map. No vertical streaming is required for this level size.
+
 ## Horizontal gaps
 
 - A same-height gap on the required route may contain at most three empty tile

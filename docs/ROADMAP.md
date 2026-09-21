@@ -99,7 +99,9 @@ accepted with the 12×16 terrain hitbox unchanged. The tested three-tile
 same-height gap is now the authoritative hard maximum. Two-tile minimum
 platforms and the 24/32/64-pixel vertical transition limits are also accepted.
 Spawn/exit safety envelopes and ordinary versus isolated boundary-case
-tolerances are now defined. Next, choose the initial world dimensions and
+tolerances are now defined. The common 40×32-tile level size and pre-generated
+WRAM map with horizontal VRAM streaming are also settled. Next, prove 16-bit
+horizontal coordinates and bidirectional column streaming, then define the
 critical-route representation. Directional look poses and camera look-ahead
 can ship in the same milestone but are not blockers for procedural generation.
 See `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.

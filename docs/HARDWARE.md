@@ -54,6 +54,13 @@ than front-loading a full hardware manual before it's relevant.
   by code after boot. Currently just single-byte player state (see
   `docs/ARCHITECTURE.md`'s Memory map) — no bank switching or larger
   structures needed yet.
+- **A generated 40×32-tile level fits in WRAM but not in one VRAM background
+  map.** Its 1,280 one-byte tile IDs fit in the 4 KiB WRAM0 region alongside
+  current state, leaving 2,804 bytes at the present 12-byte baseline. The
+  32×32 VRAM map can hold the full height but only 32 of the 40 columns, so the
+  renderer must replace eight wrapped columns as the camera moves. A second
+  VRAM background map cannot extend the first one horizontally; `LCDC` selects
+  one whole map at a time.
 - **ROM banking, precise CPU/VBlank cycle timing, and audio channels: not
   yet touched.** Everything so far fits in `ROM0`; no cycle-critical code
   or sound has been written.

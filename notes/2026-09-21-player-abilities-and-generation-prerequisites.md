@@ -126,6 +126,7 @@ occupy.
 ## Focused decisions for the next step
 
 - Whether crouch later shortens the combat/hazard hurtbox.
-- Initial world dimensions and whether tile-map streaming belongs in the
-  first generation implementation or a following expansion.
 - The first generator's macro topology and critical-route representation.
+- Conversion from eight-bit to 16-bit horizontal world coordinates.
+- A bidirectional horizontal VRAM column-streaming test before procedural room
+  assembly depends on it.
