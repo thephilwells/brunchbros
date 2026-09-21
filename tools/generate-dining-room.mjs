@@ -410,6 +410,7 @@ placeComponent(6, 22, 44, 2, 2);
 placeComponent(9, 21, 64, 4, 3);
 placeComponent(14, 22, 48, 1, 2);
 placeComponent(16, 22, 40, 2, 2);
+for (let x = 15; x <= 16; x++) place(x, 17, 50);
 for (let x = 9; x <= 12; x++) place(x, 24, 50);
 for (const [x, id] of [[14, 51], [15, 52], [16, 52], [17, 53]]) place(x, 25, id);
 place(14, 26, 54);

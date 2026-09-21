@@ -176,6 +176,11 @@ fixture, not final counter, booth, table, or chair art.
 The initial spawn at X=88, Y=88 has a clear fall lane through columns
 10–11, allowing a drop onto the strip from level-start height.
 
+Two additional copies at row 17, columns 15–16 form a 16-pixel minimum-safe-
+width candidate at world Y=136. It sits 24 pixels above the row-20 platform,
+within the ordinary 28-pixel jump rise, and isolates landing width from ledge
+catch and maximum-gap recovery.
+
 For all four furniture families, only the tile row containing the
 designated top surface receives `one_way`; the other visual parts remain
 `empty`. That surface must align with the tile row's upper edge. Chair and

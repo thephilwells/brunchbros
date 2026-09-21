@@ -26,6 +26,12 @@ for (let x = 9; x <= 12; x++) {
   assert.equal(collision[map[27 * 32 + x]], 1);
 }
 
+for (let x = 15; x <= 16; x++) {
+  assert.equal(map[17 * 32 + x], 50);
+  assert.equal(collision[map[16 * 32 + x]], 0);
+  assert.equal(collision[map[18 * 32 + x]], 0);
+}
+
 for (let y = 11; y < 24; y++) {
   for (const x of [10, 11]) assert.equal(collision[map[y * 32 + x]], 0);
 }

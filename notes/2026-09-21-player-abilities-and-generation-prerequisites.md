@@ -65,6 +65,11 @@ their focused specifications and playtests.
   ledge catch provides useful recovery. Three tiles is now the hard
   same-height required-route maximum in `specs/level-design-rules.md`, not the
   default gap width.
+- A one-tile platform is 8 pixels wide and cannot fully contain the 12-pixel
+  terrain hitbox, so it is not a safe required-route landing candidate. Two
+  tiles provide 16 pixels of support and four pixels of total fit tolerance.
+  The fixture now includes a two-tile one-way target at world Y=136, 24 pixels
+  above the wide row-20 platform, for isolated SameBoy width review.
 
 ## What can follow the first generator
 
