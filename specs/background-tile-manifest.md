@@ -1,6 +1,6 @@
 # Background tile manifest
 
-Status: **IDs 0–24, 32–63, 64–75, 80, and 112–115 implemented in the dining-room sheet**,
+Status: **IDs 0–30, 32–63, 64–75, 80, and 112–115 implemented in the dining-room sheet**,
 2026-09-18. Remaining assignments and art are proposed. Contract and VRAM addresses:
 [background asset specification](background-assets.md).
 
@@ -13,19 +13,19 @@ One slot costs 16 bytes regardless of how often it appears in a room.
 
 | IDs | Count | Allocation | Art commitment now |
 |---|---:|---|---|
-| 0–31 | 32 | Shared structural vocabulary | 25 authored, 7 reserved |
+| 0–31 | 32 | Shared structural vocabulary | 31 authored, 1 reserved |
 | 32–63 | 32 | Biome fixtures assembled from several tiles | 32 dining authored |
 | 64–79 | 16 | Biome landmark/entrance artwork | 12 dining authored, 4 budgeted |
 | 80–95 | 16 | Biome rear surfaces | 1 dining authored, 15 budgeted |
 | 96–111 | 16 | Biome decorative details | Budget only |
 | 112–115 | 4 | Dining-room fixture extension | 4 counter tiles authored |
 | 116–127 | 12 | Unassigned within the initial sheet | Reserved |
-| **0–127** | **128** | **2,048 bytes resident** | **74 authored, 35 budgeted, 19 reserved** |
+| **0–127** | **128** | **2,048 bytes resident** | **80 authored, 35 budgeted, 13 reserved** |
 
 These are caps, not a request to fill every slot. The common-material
 pilot authors 17 tiles (0–16) and marks all other slots reserved in its
-TSX. The dining sheet adds eight shared rear/trim tiles, 18 passable dining
-fixture tiles, one one-way test tile, five dining-table tiles, three
+TSX. The dining sheet adds eight shared rear/trim tiles, a six-tile shared
+descent exit, 18 passable dining fixture tiles, one one-way test tile, five dining-table tiles, three
 dining-chair tiles, five booth tiles, four counter tiles, a 12-tile
 landmark, and one wallpaper motif. Its
 unassigned slots remain reserved in the TSX.
@@ -99,12 +99,34 @@ scenery behind the chef, whereas solid walls block movement.
 | 22 | trim_h_middle | trim | Horizontal band, repeats left/right |
 | 23 | trim_h_right | trim | Right cap matching the middle |
 | 24 | trim_h_single | trim | One-cell band with both ends finished |
-| 25–31 | reserved_shared | reserved | Opaque white; not placeable |
+| 25–30 | `descent_exit` | exit | Shared 2×3 visual portal; passable, with future Down-button interaction |
+| 31 | reserved_shared | reserved | Opaque white; not placeable |
 
 Trim backgrounds must match rear_plain. They replace cells in the rendered
 map, so placing the same trim over a different rear texture requires a
 separate composite tile and budget review. Bands must read as wall trim,
 not supporting platforms. Apply the same principle to future props.
+
+## Shared descent exit: IDs 25–30
+
+The 2×3-tile (16×24 px) doorway uses IDs 25–30 in row-major order and is
+identical in every biome. Its dark opening, frame, threshold, and downward
+arrow identify it as the run's exit rather than an ordinary background
+door. All six tiles have `collision=empty`, `role=exit`, and
+`interaction=press_down`. The future room runtime will descend when the
+chef overlaps the doorway and presses Down; tile metadata alone does not
+perform the transition. Entrance art is unnecessary—the chef appears at
+the biome's spawn point.
+
+Normal progression is Patio → Dining Room → Kitchen → Deep Freezer. The
+first three biomes use this doorway to reach the next one. The Deep Freezer
+contains the final boss, so its completion behavior is deferred to the boss
+and game-completion design rather than implied by this ordinary exit.
+
+The dining fixture places the doorway at columns 28–29, rows 24–26, beyond
+the right-hand structural wall. Its threshold meets the solid floor at row
+27. This placement tests reaching an exit that is separated from the spawn
+area by traversal geometry.
 
 ## Passable dining-room groups: IDs 32–49, 64–75, 80
 
@@ -185,8 +207,8 @@ passable; only ID 63 has `collision=one_way` at the seat's upper edge.
 Repeated middle and seat tiles extend the upholstered bench without
 additional atlas slots. The fixture places it at columns 2–5, rows 24–26,
 with its base touching the floor at row 27. The seat is world Y=208,
-eight pixels above floor height. Its art was reviewed in SameBoy; a
-specific pass-through and landing check remains open.
+eight pixels above floor height. Its art and one-way behavior were
+confirmed in SameBoy.
 
 ## Dining counter: IDs 112–115
 
@@ -196,23 +218,24 @@ keep the counter to four unique slots. IDs 112–114 have
 `collision=one_way` at the countertop's upper edge; the front is
 passable. The fixture places it at columns 21–24, rows 25–26, left of
 the structural wall, with its base touching the floor at row 27. The
-top is world Y=200, 16 px above floor height. Its art and movement await
-hands-on SameBoy review.
+top is world Y=200, 16 px above floor height. Its art and one-way behavior
+were confirmed in SameBoy.
 
 ## Future biome vocabulary guide
 
 | Biome | Structural material candidate | Fixture candidates | Landmark candidates | Rear/details candidates |
 |---|---|---|---|---|
-| Dining room | Floor/wall cross-section with diner trim | Booth, service counter, table, chair (one-way tops) | Entry/exit doorway (behavior undecided) | Further motifs only if room modules need them |
-| Kitchen | Ceramic surface over solid masonry | Range, sink, cabinets | Vent hood or kitchen door | Tile wall, pipes, pans, utensils |
-| Patio | Paving/deck over solid earth | Planter, outdoor table | Awning or patio exit | Fence, foliage, distant outdoor scenery |
-| Deep freezer | Frosted insulated structure | Storage rack, frozen crates | Insulated doorway or cooling unit | Wall panels, pipes, frost |
+| Dining room | Floor/wall cross-section with diner trim | Booth, service counter, table, chair (one-way tops) | Shared descent exit | Further motifs only if room modules need them |
+| Kitchen | Ceramic surface over solid masonry | Range, sink, cabinets | Shared descent exit plus optional vent hood | Tile wall, pipes, pans, utensils |
+| Patio | Paving/deck over solid earth | Planter, outdoor table | Shared descent exit plus optional awning | Fence, foliage, distant outdoor scenery |
+| Deep freezer | Frosted insulated structure | Storage rack, frozen crates | Final-boss arena/ending behavior undecided | Wall panels, pipes, frost |
 
 Except for the passable dining-room groups above, candidates are a menu for
 later reviews, not a commitment that all fit.
 Count unique 8×8 component tiles, not named objects: a 32×32 fixture can
 cost 16 slots before reuse. Repeated shelf middles may cost only one slot.
-Allocate doors by actual opening dimensions before art production.
+The shared descent doorway has a fixed 2×3-tile footprint. Other doors are
+decorative unless separately specified.
 
 Biome fixtures in this first contract are passable scenery. Anything the
 chef should stand on must use the solid vocabulary or receive an explicit

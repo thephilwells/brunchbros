@@ -55,6 +55,22 @@ function composite(base, tileWidth, x, y, shade) {
   paint(base + Math.floor(y / 8) * tileWidth + Math.floor(x / 8), x % 8, y % 8, shade);
 }
 
+for (let id = 25; id <= 30; id++) fill(id, 1);
+for (let y = 0; y < 24; y++) for (let x = 0; x < 16; x++) {
+  const frame = (y === 0 && x >= 4 && x <= 11) ||
+    (y === 1 && (x === 2 || x === 3 || x === 12 || x === 13)) ||
+    (y >= 2 && (x === 1 || x === 14)) ||
+    (y === 22 && x >= 1 && x <= 14) ||
+    (y === 23 && x >= 0 && x <= 15);
+  const interior = y >= 2 && y < 22 && x >= 2 && x <= 13;
+  composite(25, 2, x, y, frame ? 3 : interior ? 2 : 1);
+}
+for (let y = 10; y <= 13; y++) for (let x = 6; x <= 9; x++) composite(25, 2, x, y, 0);
+for (let y = 14; y <= 17; y++) {
+  const inset = y - 14;
+  for (let x = 4 + inset; x <= 11 - inset; x++) composite(25, 2, x, y, 0);
+}
+
 for (let id = 32; id <= 43; id++) fill(id, 1);
 for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
   if (x === 0 || x === 31 || y === 0 || y === 15) composite(32, 4, x, y, 2);
@@ -263,7 +279,14 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
   else if (id <= 16) { name = `solid_${id - 1}`; role = 'structure'; collision = 'solid'; }
   else if (id <= 20) { name = rearNames[id - 17]; role = 'rear'; }
   else if (id <= 24) { name = trimNames[id - 21]; role = 'trim'; }
-  else if (id >= 32 && id <= 39) {
+  else if (id <= 30) {
+    name = `descent_exit_${id - 25}`;
+    role = 'exit';
+    properties.push('<property name="component" value="descent_exit"/>');
+    properties.push(`<property name="part_x" type="int" value="${(id - 25) % 2}"/>`);
+    properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 25) / 2)}"/>`);
+    properties.push('<property name="interaction" value="press_down"/>');
+  } else if (id >= 32 && id <= 39) {
     name = `menu_board_${id - 32}`;
     role = 'fixture';
     properties.push('<property name="component" value="menu_board"/>');
@@ -403,6 +426,7 @@ for (let x = 2; x <= 5; x++) {
 }
 for (const [x, id] of [[21, 112], [22, 113], [23, 113], [24, 114]]) place(x, 25, id);
 for (let x = 21; x <= 24; x++) place(x, 26, 115);
+placeComponent(28, 24, 25, 2, 3);
 
 writeFileSync('gfx/dining_room_fixture.tmx', [
   '<?xml version="1.0" encoding="UTF-8"?>',

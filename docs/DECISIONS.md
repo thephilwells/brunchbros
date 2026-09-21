@@ -4,6 +4,48 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-21 — Traversal baseline precedes procedural reachability
+
+**Decision:** Finalize the Chef's terrain hitbox and upper-corner ledge
+catch/jump/drop mechanic before defining generated-room reachability. The
+first generator uses a shared seeded architecture with biome parameters;
+normal critical paths require only baseline abilities, while boss arenas
+are curated modules. Crouch/look camera behavior may ship with the traversal
+work but does not block generation if it leaves terrain reach unchanged.
+Ledge catch is a baseline ability, so a critical route may include measured,
+forgiving gaps whose successful traversal ends in a ledge catch rather than
+a standing landing.
+
+**Why:** Ledge catching and collision-box dimensions change which gaps,
+ledges, passages, and landing areas are valid. Building a reachability
+validator against temporary movement rules would encode incorrect level
+constraints and force avoidable rework.
+
+**Status:** Adopted as the next milestone. Detailed mechanics remain open in
+`notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
+
+---
+
+## 2026-09-21 — Runs descend through four ordered biomes
+
+**Decision:** Normal progression is Patio → Dining Room → Kitchen → Deep
+Freezer. Patio, Dining Room, and Kitchen end at the same recognizable 2×3
+descent doorway using shared IDs 25–30. The chef enters each biome at its
+configured spawn point, so no entrance asset is required. The doorway is
+passable and will activate when the overlapping player presses Down. The
+Deep Freezer contains the final boss; its completion flow is a later boss
+design decision.
+
+**Why:** A repeated portal gives procedural rooms a clear, consistent goal
+without spending biome-specific tile budgets or requiring matching entrance
+art. Explicit input prevents accidental transitions while passing the door.
+
+**Status:** Doorway art and Tiled metadata implemented in the dining-room
+fixture. Runtime biome transitions await additional biome maps and level
+generation.
+
+---
+
 ## 2026-09-18 — Counter extends the initial dining-room fixture allocation
 
 **Decision:** Assign dining-counter tiles to IDs 112–115 in the existing
@@ -15,7 +57,7 @@ unassigned slots. Using four of them keeps the landmark, rear, and detail
 budgets intact without changing the ROM's tile loader or collision-table
 size.
 
-**Status:** Implemented; hands-on SameBoy review pending. See
+**Status:** Implemented and reviewed in SameBoy. See
 `specs/background-tile-manifest.md`.
 
 ---
@@ -36,9 +78,8 @@ Distinct collision types keep visual furniture parts separate from the
 surface the chef can stand on. Checking every crossed tile top avoids
 skipping an 8-pixel surface during a 16-pixel fall.
 
-**Status:** Mechanic, test surface, table, and chair confirmed in SameBoy;
-booth appearance reviewed, booth collision and counter await hands-on
-checks. See `specs/background-assets.md` and
+**Status:** Mechanic, test surface, table, chair, booth, and counter
+confirmed in SameBoy. See `specs/background-assets.md` and
 `specs/background-tile-manifest.md`.
 
 ---

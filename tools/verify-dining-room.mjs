@@ -70,4 +70,16 @@ for (const [x, id] of [[21, 112], [22, 113], [23, 113], [24, 114]]) {
   assert.equal(collision[map[27 * 32 + x]], 1);
 }
 
-console.log('Dining-room collision table and one-way furniture fixture verified.');
+for (let row = 0; row < 3; row++) {
+  for (let column = 0; column < 2; column++) {
+    const id = 25 + row * 2 + column;
+    assert.equal(map[(24 + row) * 32 + 28 + column], id);
+    assert.equal(collision[id], 0);
+    const properties = tiles[id][2];
+    assert.match(properties, /name="role" value="exit"/);
+    assert.match(properties, /name="interaction" value="press_down"/);
+  }
+}
+for (let x = 28; x <= 29; x++) assert.equal(collision[map[27 * 32 + x]], 1);
+
+console.log('Dining-room tileset, exit, and one-way furniture fixture verified.');

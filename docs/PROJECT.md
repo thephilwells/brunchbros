@@ -19,6 +19,15 @@ kitchen, prep areas, pantry/storage, dining room, freezer/refrigeration
 areas, service areas. These are thematic constraints only — not a request to
 lock in detailed content yet.
 
+## Run progression
+
+The normal biome chain is **Patio → Dining Room → Kitchen → Deep Freezer**.
+The first three biomes end at the same recognizable descent doorway; each
+subsequent biome begins at its configured spawn point without requiring
+entrance artwork. The Deep Freezer contains the final boss. Its victory and
+run-completion flow will be specified with the boss rather than treated as
+another ordinary biome exit.
+
 ## What the finished project should demonstrate
 
 - Responsive platform movement
@@ -35,6 +44,27 @@ lock in detailed content yet.
 - A complete playable progression
 - Compatibility with real Game Boy hardware or a highly accurate emulator
 - Reasonable adherence to Game Boy CPU, memory, sprite, tile, and timing limits
+
+## Desired Chef abilities and interactions
+
+- Holding Down crouches using the existing squat pose. At a descent exit,
+  the exit interaction takes priority and the Chef walks diagonally down
+  into the doorway instead. Holding Down away from an exit eventually pans
+  the camera downward; releasing it restores the normal follow position.
+- Holding Up uses a new upward-looking pose and eventually pans the camera
+  upward; releasing it restores the normal follow position.
+- The Chef can catch an exposed upper corner of a full-solid structural tile
+  while airborne, hanging from the ledge after an otherwise-short jump. He
+  can jump from that position or drop, but cannot cling to arbitrary wall
+  faces or climb vertically.
+- Deep Freezer floors preserve some horizontal momentum after landing and
+  after directional input is released, creating a slippery-floor behavior.
+- Loot can appear inside large breakable eggs. Eggs can be lifted and thrown,
+  requiring carry and throw poses for the Chef.
+- The Chef attacks with an oversized frying pan, with dedicated attack art.
+
+Exact timings, velocities, hitboxes, controls, damage, inventory effects,
+and sprite budgets are specified when each system reaches implementation.
 
 ## Guiding stance
 

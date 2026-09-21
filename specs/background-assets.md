@@ -1,8 +1,9 @@
 # Background assets — constrained specification
 
-Status: **Structural pilot, passable dining-room vocabulary, dining table,
-chair, booth, and counter implemented** on 2026-09-18. Counter visual
-review, other biome art, and upper-pool allocation remain open. Companion:
+Status: **Structural pilot, shared descent exit, passable dining-room
+vocabulary, dining table, chair, booth, and counter implemented** as of
+2026-09-21. Exit visual review, other biome art, and upper-pool allocation
+remain open. Companion:
 [tile manifest](background-tile-manifest.md).
 
 ## Purpose and scope
@@ -160,7 +161,7 @@ For each biome, a PNG atlas and external TSX tileset using relative paths:
 - No animation or tile transforms in the first TSX/map.
 
 The retained structural pilot assigns only IDs 0–16. The dining-room sheet
-adds shared IDs 17–24, passable dining IDs 32–49, 64–75, and 80, the
+adds shared IDs 17–30, passable dining IDs 32–49, 64–75, and 80, the
 one-way test surface at ID 50, dining-table IDs 51–55, dining-chair
 IDs 56–58, dining-booth IDs 59–63, and dining-counter IDs 112–115.
 Both TSX files mark all other slots reserved,
@@ -182,6 +183,9 @@ needs its own export/load review.
 The dining generator also exports a 128-byte collision-type table in local
 tile-ID order (`0=empty`, `1=solid`, `2=one_way`). It is cartridge ROM data,
 not another VRAM tile block; its values match the TSX `collision` properties.
+Exit IDs 25–30 remain empty in this table. Their `role=exit` and
+`interaction=press_down` metadata define a future interaction trigger, not
+physical collision or a transition in the current ROM.
 
 ## Integration requirements
 

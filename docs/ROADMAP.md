@@ -17,11 +17,15 @@ everything else is upcoming.
 - [x] Collision
 - [x] Jumping
 - [x] Camera / room traversal
-- [ ] Tileset backgrounds
+- [x] Tileset backgrounds
+- [ ] Player traversal baseline
+- [ ] Level design rules
+- [ ] Level generation
 - [ ] Hazards
 - [ ] Enemies
+- [ ] Combat
+- [ ] Loot and carried objects
 - [ ] HUD
-- [ ] Level generation
 - [ ] Gameplay systems
 - [ ] Inventory
 - [ ] Additional areas
@@ -47,6 +51,20 @@ we actually start on it.
   proven with the checkerboard; real diner art (via Tiled) is separate,
   substantial work, and its payoff is much bigger once Level generation
   actually needs tile variety to assemble rooms from.
+- **Player traversal baseline** — fixes the Chef's terrain hitbox and adds
+  ledge catch/jump/drop before generated-room reachability is defined. It also
+  covers crouch/look poses and camera look-ahead because those are best
+  evaluated against authored vertical geometry, though they do not increase
+  jump reach.
+- **Level design rules** — records the legal geometry, spawn/exit clearance,
+  baseline traversal envelope, optional skill-gated paths, and biome
+  parameters before code assembles rooms from them. Boss arenas remain
+  curated exceptions rather than ordinary generated rooms.
+- **Combat** — introduces the frying-pan attack, hit detection, and required
+  attack poses before enemies depend on it.
+- **Loot and carried objects** — introduces breakable loot eggs plus lifting,
+  carrying, throwing, and their Chef poses. Inventory consequences remain a
+  separate decision.
 - **HUD** — after Hazards/Enemies, once there's an actual value (health)
   worth displaying. Needs the **Window layer** (`LCDC` bit 5, `WY`/`WX`) —
   hardware we haven't touched at all yet.
@@ -81,21 +99,29 @@ history to remember them.
   before falling. Standard platformer practice is a hitbox noticeably
   smaller than the sprite. Touches four places consistently, once
   addressed: the Right/Left movement checks, the falling-collision check,
-  and the grounded check (all in `src/main.asm`'s `MainLoop`).
+  and the grounded check (all in `src/main.asm`'s `MainLoop`). This is now a
+  prerequisite of the Player traversal baseline rather than late polish,
+  because generated passage widths and reachability depend on it.
 
 ## Immediate next milestone
 
-**Tileset backgrounds** — real diner art assembled from tiles, replacing
-the checkerboard placeholder. A 17-tile structural pilot established the
-tile budget and full-cell solid vocabulary; shared rear/trim tiles and the
-passable dining-room wall art are now in a Tiled map and ROM. A one-way
-platform test strip and collision-type table are integrated and checked
-in SameBoy. The dining table and chair passed visual and movement review;
-the booth's appearance passed review. A counter using extension IDs
-112–115 is ready for visual and movement review. The kitchen, patio,
-and deep freezer are unstarted.
+**Player traversal baseline** — settle the Chef's terrain hitbox, ledge
+catch/jump/drop behavior, and crouch collision semantics, then measure the
+resulting jump and ledge-catch envelope. Those measurements become inputs to
+the level-design rules and reachability validator. Directional look poses
+and camera look-ahead can ship in the same milestone but are not blockers
+for procedural generation. See
+`notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed
+
+- **2026-09-21 — Tileset backgrounds (first-biome baseline).** Completed a
+  128-tile dining-room atlas with structural connectivity variants, rear
+  surfaces and trim, passable wall details, one-way table/chair/booth/counter
+  furniture, and the shared descent doorway. PNG, TSX, TMX, raw tilemap,
+  collision table, build wiring, and SameBoy review are all in place. The
+  other biome tilesets remain under Additional areas; level generation can
+  now use Dining Room as its first complete visual test vocabulary.
 
 - **2026-08-27 — Camera / room traversal.** Explicit `SCX`/`SCY` init at
   boot (closing a long-standing "never set, happens to read 0" gap), then

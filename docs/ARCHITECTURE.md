@@ -70,10 +70,11 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–44 in `$8010–$82CF`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
-all 128 slots there, with IDs 0–24, 32–50, 64–75, and 80 authored. Its
-static 32×32 map lives at `$9800–$9BFF`. ID 50 is a one-way test surface
-under the lower serving hatch. See `specs/background-assets.md` for the
-remaining VRAM allocation and proposed future art groups.
+all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. Its
+static 32×32 map lives at `$9800–$9BFF`. IDs 25–30 draw the shared descent
+exit, while IDs 50–63 and 112–115 provide one-way test/furniture surfaces.
+The exit is metadata and art only; biome-transition runtime code does not
+exist yet. See `specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates
 
