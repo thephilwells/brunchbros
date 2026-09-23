@@ -114,11 +114,13 @@ SameBoy. A focused fixture proves that a six-row seam makes paired cells read as
 one large room and that a one-way-free 32-pixel rise makes ledge catch useful.
 Seeded selection now assigns one reciprocal wide seam and, when eligible, one
 ledge-catch boundary room; validation rejects seam mismatches and consecutive
-critical-route boundary rooms. Next, accept the revised seed 0 in SameBoy, then
-add protected-clearance and remaining route-transition validation before the
-assembly port. Directional look poses and camera
-look-ahead can ship in the same milestone but are not blockers for procedural
-generation. See
+critical-route boundary rooms. Revised seed 0 is accepted in SameBoy. Assembly
+now enforces the protected spawn and exit geometry across every topology, and
+validation keeps boundary traversal out of the ordinary first and final route
+transitions. Every critical-route room now also proves a directed path matching
+its declared ordinary or ledge-catch class. The assembly generator port is
+next. Directional look poses and camera look-ahead can ship in the same
+milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed

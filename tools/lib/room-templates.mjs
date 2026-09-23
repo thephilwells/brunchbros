@@ -4,6 +4,8 @@ export const PORT_WEST = 0x01;
 export const PORT_EAST = 0x02;
 export const PORT_NORTH = 0x04;
 export const PORT_SOUTH = 0x08;
+export const ROOM_ANCHOR_SPAWN = 'spawn';
+export const ROOM_ANCHOR_EXIT = 'exit';
 
 const PORT_CELLS = new Map([
   [PORT_WEST, [[0, 5], [0, 6]]],
@@ -82,6 +84,56 @@ export function validateRoomTemplateSet(set) {
 }
 
 export function validateRoomTemplateReachability(template) {
+  const { supports, graph } = analyzeTemplate(template);
+
+  const errors = [];
+  const anchors = [...PORT_NAMES].filter(([port]) => template.portMask & port).map(([port, name]) => ({ name, index: findAnchor(supports, port) }));
+  for (const anchor of anchors) if (anchor.index < 0) errors.push(`${anchor.name} port has no reachable support surface`);
+  if (errors.length || anchors.length < 2) return errors;
+
+  for (const origin of anchors) {
+    const reached = reachableSupports(graph, origin.index, () => true);
+    for (const target of anchors) {
+      if (!reached.has(target.index)) errors.push(`${origin.name} port cannot reach ${target.name} port`);
+    }
+  }
+  return errors;
+}
+
+export function validateRoomTemplatePassage(template, origin, target, traversalClass) {
+  const { supports, graph } = analyzeTemplate(template);
+  const originIndex = findAnchor(supports, origin);
+  const targetIndex = findAnchor(supports, target);
+  const errors = [];
+  if (originIndex < 0) errors.push(`${anchorName(origin)} has no support surface`);
+  if (targetIndex < 0) errors.push(`${anchorName(target)} has no support surface`);
+  if (errors.length) return errors;
+
+  if (traversalClass === 'ordinary') {
+    if (!reachableSupports(graph, originIndex, edge => edge.types.length === 0).has(targetIndex)) {
+      errors.push(`${anchorName(origin)} to ${anchorName(target)} lacks ordinary traversal`);
+    }
+    return errors;
+  }
+
+  if (traversalClass === 'ledge_catch') {
+    const directions = [[originIndex, targetIndex], [targetIndex, originIndex]];
+    let requiresCatch = false;
+    for (const [from, to] of directions) {
+      if (!reachableSupports(graph, from, edge => edge.types.length === 0 || edge.types.length === 1 && edge.types[0] === 'ledge_catch').has(to)) {
+        errors.push(`${anchorName(origin)} and ${anchorName(target)} lack mutual ledge-catch traversal`);
+        return errors;
+      }
+      if (!reachableSupports(graph, from, edge => edge.types.length === 0).has(to)) requiresCatch = true;
+    }
+    if (!requiresCatch) errors.push(`${anchorName(origin)} and ${anchorName(target)} do not require ledge catch`);
+    return errors;
+  }
+
+  return [`unknown traversal class ${traversalClass}`];
+}
+
+function analyzeTemplate(template) {
   const supports = [];
   for (let y = 0; y < template.rows.length; y++) {
     let start = null;
@@ -109,38 +161,52 @@ export function validateRoomTemplateReachability(template) {
       const rise = supports[from].y - supports[to].y;
       const drop = -rise;
       const gap = Math.max(0, supports[from].start - supports[to].end - 1, supports[to].start - supports[from].end - 1);
-      const upward = rise >= 0 && (rise <= 3 || (rise === 4 && template.traversalClass === 'ledge_catch' && supports[to].catchable));
-      if (gap <= 3 && (upward || (drop > 0 && drop <= 8))) graph[from].push(to);
+      const destinationWidth = supports[to].end - supports[to].start + 1;
+      const departureWidth = supports[from].end - supports[from].start + 1;
+      const reasons = [];
+      if (destinationWidth < 3) reasons.push('narrow_landing');
+      if (gap === 3) reasons.push('long_gap');
+      if (rise === 3) reasons.push('high_jump');
+      if (rise === 4) reasons.push('ledge_catch');
+      if (drop > 4) reasons.push('long_drop');
+      const upward = rise >= 0 && (rise <= 3 || rise === 4 && supports[to].catchable);
+      const narrowHighJump = reasons.length === 2 && reasons.includes('narrow_landing') && reasons.includes('high_jump');
+      const legal = destinationWidth >= 2 && gap <= 3 && (upward || drop > 0 && drop <= 8) &&
+        (!reasons.length || departureWidth >= 3) &&
+        !(destinationWidth === 2 && (gap === 3 || rise === 4 || drop > 4)) &&
+        (gap !== 3 || supports[to].catchable) && (reasons.length <= 1 || narrowHighJump);
+      if (legal) graph[from].push({ to, types: reasons });
     }
   }
 
-  function findAnchor(port) {
-    if (port === PORT_WEST) return supports.findIndex(support => support.y === 7 && support.start === 0);
-    if (port === PORT_EAST) return supports.findIndex(support => support.y === 7 && support.end === 9);
-    if (port === PORT_NORTH) return supports.findIndex(support => support.y === 1 && support.start <= 6 && support.end >= 4);
-    return supports.findIndex(support => support.y === 6 && support.start <= 6 && support.end >= 4);
-  }
+  return { supports, graph };
+}
 
-  const errors = [];
-  const anchors = [...PORT_NAMES].filter(([port]) => template.portMask & port).map(([port, name]) => ({ name, index: findAnchor(port) }));
-  for (const anchor of anchors) if (anchor.index < 0) errors.push(`${anchor.name} port has no reachable support surface`);
-  if (errors.length || anchors.length < 2) return errors;
+function findAnchor(supports, anchor) {
+  if (anchor === PORT_WEST) return supports.findIndex(support => support.y === 7 && support.start === 0);
+  if (anchor === PORT_EAST) return supports.findIndex(support => support.y === 7 && support.end === 9);
+  if (anchor === PORT_NORTH) return supports.findIndex(support => support.y === 1 && support.start <= 6 && support.end >= 4);
+  if (anchor === PORT_SOUTH) return supports.findIndex(support => support.y === 6 && support.start <= 6 && support.end >= 4);
+  if (anchor === ROOM_ANCHOR_SPAWN) return supports.findIndex(support => support.y === 7 && support.start <= 1 && support.end >= 3);
+  if (anchor === ROOM_ANCHOR_EXIT) return supports.findIndex(support => support.y === 7 && support.start <= 1 && support.end >= 4);
+  return -1;
+}
 
-  for (const origin of anchors) {
-    const reached = new Set([origin.index]);
-    const pending = [origin.index];
-    while (pending.length) {
-      for (const next of graph[pending.pop()]) {
-        if (reached.has(next)) continue;
-        reached.add(next);
-        pending.push(next);
-      }
-    }
-    for (const target of anchors) {
-      if (!reached.has(target.index)) errors.push(`${origin.name} port cannot reach ${target.name} port`);
+function anchorName(anchor) {
+  return PORT_NAMES.get(anchor) ?? anchor;
+}
+
+function reachableSupports(graph, origin, accepts) {
+  const reached = new Set([origin]);
+  const pending = [origin];
+  while (pending.length) {
+    for (const edge of graph[pending.pop()]) {
+      if (!accepts(edge) || reached.has(edge.to)) continue;
+      reached.add(edge.to);
+      pending.push(edge.to);
     }
   }
-  return errors;
+  return reached;
 }
 
 export function templateSetToFixture(set) {

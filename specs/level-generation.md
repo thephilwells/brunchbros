@@ -1,8 +1,9 @@
 # Level generation
 
 Status: **macro-route generator, seeded gallery, all 15 room port masks,
-tile-level mutual-port validation, and build-time ROM map implemented;
-protected-clearance validation and runtime parity pending**.
+tile-level mutual-port and critical-route transition validation, protected
+endpoint clearances, and build-time ROM map implemented; runtime parity
+pending**.
 
 ## Purpose
 
@@ -102,13 +103,15 @@ large-room effect and required catch.
 
 Seeded selection assigns exactly one horizontal wide seam per level. Both rooms
 store reciprocal wide-port bits, and assembly clears boundary rows 1–6 on both
-sides. When an eligible non-spawn/non-exit room has a north port, no south port,
-and a horizontal approach, it may receive the `ledge_catch` class. That class
-replaces its ordinary internal staircase with the accepted four-tile solid
-ledge plus one high interface platform. At most one such boundary room is
-selected initially. Validation rejects mismatched wide seams, unsupported
-vertical wide seams, ineligible traversal classes, and consecutive boundary
-rooms on the critical route.
+sides. When an eligible critical-route room outside the first and final two
+route positions is entered from the north, leaves horizontally, and has no
+south port, it may receive the `ledge_catch` class. That class replaces its
+ordinary internal staircase with the accepted four-tile solid ledge plus one
+high interface platform. At most one such boundary room is selected initially.
+Validation rejects mismatched wide seams, unsupported vertical wide seams,
+ineligible or multiple boundary classes, boundary traversal inside the
+protected endpoint transitions, and consecutive boundary rooms on the critical
+route.
 
 ## Critical room templates
 
@@ -118,10 +121,12 @@ rooms on the critical route.
   directed entry/exit variants.
 - Template selection matches the exact required port mask. It cannot introduce
   an undeclared opening at a room seam.
-- The spawn template contains the protected spawn envelope and an ordinary
-  route to its outgoing port.
-- The exit template connects its incoming port to the protected approach apron
-  and doorway using ordinary tolerances.
+- Assembly reserves and clears the protected spawn envelope, then supplies its
+  three-tile full-solid floor independently of the selected port mask.
+- Assembly reserves the exit doorway, right-side approach apron, upper
+  clearance, and four-tile full-solid floor independently of the selected port
+  mask. Exit rooms with a north port receive an ordinary downward platform
+  outside the protected span so their critical approach remains ordinary.
 - Structural templates store semantic cells such as empty, full-solid, and
   one-way. The assembled 40×32 map derives final connectivity tile IDs after
   all neighboring room cells are known.
@@ -151,6 +156,16 @@ tile conversion, transition limits, and directed reachability between every
 declared port. It also rejects required one-way landings with fewer than three
 empty rows beneath a full-solid ceiling. The accepted W|E, N|S, and N|E map
 remains as a regression fixture while the ROM loads an assembled seed.
+
+The transition analyzer represents every standing surface at least two tiles
+wide and classifies directed moves by destination width, horizontal gap, rise,
+drop, and catchable edge. Baseline room validation retains mutual reachability
+within the accepted hard limits. Critical-route validation separately checks
+the ordered spawn-to-exit passage through every selected room: `ordinary`
+passages must use only three-tile-or-wider destinations, gaps and rises of at
+most two tiles, and drops of at most four tiles. A `ledge_catch` passage must be
+mutually traversable using ordinary moves plus the four-tile catch and must
+genuinely require that catch in at least one direction.
 
 ## Non-critical rooms and optional branches
 
@@ -214,16 +229,18 @@ The implemented host phase checks every generated level for:
 4. Exactly three downward route edges and no upward route edge.
 5. Reciprocal ports, sealed outer boundaries, all 16 rooms connected to spawn,
    and exactly 15 room-to-room connections in the initial branch tree.
-6. Exact template-to-port-mask matches and mutual tile-level traversal between
+6. Exact template-to-port-mask matches and mutual hard-limit traversal between
    every port declared by each selected template.
 7. Reciprocal wide-seam profiles, eligible traversal classes, catchable
-   four-tile ledges, and no consecutive boundary rooms on the critical route.
+   four-tile ledges, declared-class passage through every ordered critical-route
+   room, and no consecutive boundary rooms.
+8. Exact spawn support and 3×6 clearance, exact exit footprint, four-tile
+   approach support and clearance, and ordinary endpoint transitions.
 
 `RoomTemplates` stores stable one-based authored template IDs for all 16 rooms.
 `RoomWidePorts` and `RoomTraversalClasses` describe the transformations applied
-before connectivity tile IDs are derived. Protected spawn/exit clearances,
-full transition sequencing beyond the initial boundary rule, and reserved cells
-after dressing and object placement remain to be validated.
+before connectivity tile IDs are derived. Dressing and object placement do not
+exist yet; when added, they must retain these already-protected endpoint cells.
 
 The batch command exits nonzero if any seed fails, while retaining its report
 and inspectable map. Exhaust all 1,024 macro topologies in the topology test;

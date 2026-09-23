@@ -73,9 +73,12 @@ source files yet:
   128-byte collision-type table. `tools/generate-room-template-playtest.mjs`
   retains the accepted three-room regression map.
   `tools/generate-seeded-level.mjs` emits the active seed 0 map, including its
-  reciprocal wide seam, ledge-catch traversal room, and player-start constants.
+  reciprocal wide seam, ledge-catch traversal room, protected spawn/exit
+  envelopes, and player-start constants.
   `tools/generate-room-variant-playtest.mjs` retains the focused regression
-  fixture. `rgbgfx` converts the dining PNG to 2bpp.
+  fixture. Host validation classifies support-to-support moves and checks the
+  ordered passage through every critical-route room against its ordinary or
+  ledge-catch class. `rgbgfx` converts the dining PNG to 2bpp.
 
 ## Memory map
 

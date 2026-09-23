@@ -16,8 +16,9 @@ port masks adds meaningful spatial variation without multiplying every topology
 template. Reciprocal and sequencing validation prevents incompatible room edges
 and clusters of maximum-tolerance traversal.
 
-**Status:** Implemented in host generation and loaded as revised seed 0;
-awaiting SameBoy acceptance.
+**Status:** Implemented and accepted in SameBoy as revised seed 0. The matched
+wide seam and generated ledge-catch room both remained playable after full
+level composition.
 
 ---
 
@@ -159,7 +160,11 @@ ordinary geometry comfortably inside the measured envelope creates variation
 without making every route a traversal test, while explicit boundary cases
 preserve occasional “just made it” moments under validator control.
 
-**Status:** Accepted baseline. See `specs/level-design-rules.md`.
+**Status:** Implemented in host validation. Every ordered critical-route room
+must provide a directed passage matching its declared class. The initial
+generated ledge-catch class is limited to one isolated interior route room,
+must genuinely require a catch in at least one direction, and leaves ordinary
+endpoint transitions. See `specs/level-design-rules.md`.
 
 ---
 
@@ -176,7 +181,9 @@ must end without random geometry or encounter placement obstructing the
 deliberate Down interaction. Reserving these cells before dressing makes the
 guarantee independently verifiable.
 
-**Status:** Accepted baseline. See `specs/level-design-rules.md`.
+**Status:** Implemented in host assembly and exhaustive validation. Future
+dressing and object passes must preserve the protected cells. See
+`specs/level-design-rules.md`.
 
 ---
 

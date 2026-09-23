@@ -1,7 +1,10 @@
 import {
   loadRoomTemplateSet,
+  ROOM_ANCHOR_EXIT,
+  ROOM_ANCHOR_SPAWN,
   semanticCellsToTileIds,
   validateRoomTemplateSet,
+  validateRoomTemplatePassage,
   validateRoomTemplateReachability,
 } from './room-templates.mjs';
 
@@ -155,8 +158,9 @@ function portFromRoomToRoom(from, to) {
 function selectRoomVariants(roomPorts, criticalRoute, randomState) {
   const roomWidePorts = Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
   const roomTraversalClasses = Array(GRID_WIDTH * GRID_HEIGHT).fill(TRAVERSAL_ORDINARY);
-  const candidates = criticalRoute.slice(1, -1).filter(room =>
-    roomPorts[room] & PORT_NORTH && !(roomPorts[room] & PORT_SOUTH) && roomPorts[room] & (PORT_WEST | PORT_EAST));
+  const candidates = criticalRoute.flatMap((room, index) =>
+    index >= 2 && index <= criticalRoute.length - 3 && criticalRoute[index - 1] === room - GRID_WIDTH &&
+      Math.abs(criticalRoute[index + 1] - room) === 1 && !(roomPorts[room] & PORT_SOUTH) ? [room] : []);
 
   let wideEdge;
   if (candidates.length) {
@@ -185,7 +189,7 @@ function describeSeams(ports, widePorts) {
   };
 }
 
-function materializeTemplate(template, traversalClass, widePorts) {
+function materializeTemplate(template, traversalClass, widePorts, protectedRole = null) {
   const rows = template.rows.map(row => [...row]);
   if (traversalClass === TRAVERSAL_LEDGE_CATCH) {
     for (let y = 1; y <= 6; y++) {
@@ -200,13 +204,29 @@ function materializeTemplate(template, traversalClass, widePorts) {
   }
   if (widePorts & PORT_WEST) for (let y = 1; y <= 6; y++) rows[y][0] = '.';
   if (widePorts & PORT_EAST) for (let y = 1; y <= 6; y++) rows[y][9] = '.';
+  if (protectedRole === ROOM_ANCHOR_SPAWN) {
+    for (let x = 1; x <= 3; x++) {
+      for (let y = 1; y <= 6; y++) rows[y][x] = '.';
+      rows[7][x] = '#';
+    }
+  }
+  if (protectedRole === ROOM_ANCHOR_EXIT) {
+    for (let x = 1; x <= 4; x++) {
+      for (let y = 1; y <= 6; y++) rows[y][x] = '.';
+      rows[7][x] = '#';
+    }
+    if (template.portMask & PORT_NORTH) {
+      for (let x = 5; x <= 7; x++) rows[4][x] = '=';
+    }
+  }
   return { ...template, traversalClass, rows: rows.map(row => row.join('')) };
 }
 
 function assembleTemplateLevel(level, selectedTemplates) {
   const cells = Array.from({ length: LEVEL_HEIGHT }, () => Array(LEVEL_WIDTH).fill('.'));
   for (let room = 0; room < selectedTemplates.length; room++) {
-    const template = materializeTemplate(selectedTemplates[room], level.roomTraversalClasses[room], level.roomWidePorts[room]);
+    const protectedRole = room === level.spawnRoom ? ROOM_ANCHOR_SPAWN : room === level.exitRoom ? ROOM_ANCHOR_EXIT : null;
+    const template = materializeTemplate(selectedTemplates[room], level.roomTraversalClasses[room], level.roomWidePorts[room], protectedRole);
     const roomX = (room % GRID_WIDTH) * ROOM_WIDTH;
     const roomY = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT;
     for (let y = 0; y < ROOM_HEIGHT; y++) {
@@ -214,10 +234,11 @@ function assembleTemplateLevel(level, selectedTemplates) {
     }
   }
 
-  const tiles = semanticCellsToTileIds(cells);
-
   const exitX = (level.exitRoom % GRID_WIDTH) * ROOM_WIDTH + 1;
   const exitY = Math.floor(level.exitRoom / GRID_WIDTH) * ROOM_HEIGHT + 4;
+
+  const tiles = semanticCellsToTileIds(cells);
+
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 2; column++) tiles[exitY + row][exitX + column] = 25 + row * 2 + column;
   }
@@ -320,17 +341,39 @@ export function validateLevel(level) {
     const traversalClass = level.roomTraversalClasses[room];
     if (![TRAVERSAL_ORDINARY, TRAVERSAL_LEDGE_CATCH].includes(traversalClass)) errors.push(`room ${room} has unknown traversal class ${traversalClass}`);
     if (traversalClass === TRAVERSAL_LEDGE_CATCH) {
-      const eligible = level.roomPorts[room] & PORT_NORTH && !(level.roomPorts[room] & PORT_SOUTH) && level.roomWidePorts[room] & (PORT_WEST | PORT_EAST);
+      const routeIndex = route.indexOf(room);
+      const eligible = routeIndex >= 2 && routeIndex <= route.length - 3 && route[routeIndex - 1] === room - GRID_WIDTH &&
+        Math.abs(route[routeIndex + 1] - room) === 1 && !(level.roomPorts[room] & PORT_SOUTH) &&
+        level.roomWidePorts[room] & (PORT_WEST | PORT_EAST);
       if (!eligible) errors.push(`room ${room} cannot host a ledge-catch boundary`);
     }
     if (template) {
-      const materialized = materializeTemplate(template, traversalClass, level.roomWidePorts[room]);
+      const protectedRole = room === level.spawnRoom ? ROOM_ANCHOR_SPAWN : room === level.exitRoom ? ROOM_ANCHOR_EXIT : null;
+      const materialized = materializeTemplate(template, traversalClass, level.roomWidePorts[room], protectedRole);
       for (const error of validateRoomTemplateReachability(materialized)) errors.push(`room ${room}: ${error}`);
+    }
+  }
+
+  for (let index = 0; index < route.length; index++) {
+    const room = route[index];
+    const template = ROOM_TEMPLATE_SET.templates[level.roomTemplates[room] - 1];
+    if (!template) continue;
+    const protectedRole = index === 0 ? ROOM_ANCHOR_SPAWN : index === route.length - 1 ? ROOM_ANCHOR_EXIT : null;
+    const materialized = materializeTemplate(template, level.roomTraversalClasses[room], level.roomWidePorts[room], protectedRole);
+    const origin = index === 0 ? ROOM_ANCHOR_SPAWN : portFromRoomToRoom(room, route[index - 1]);
+    const target = index === route.length - 1 ? ROOM_ANCHOR_EXIT : portFromRoomToRoom(room, route[index + 1]);
+    for (const error of validateRoomTemplatePassage(materialized, origin, target, level.roomTraversalClasses[room])) {
+      errors.push(`critical-route room ${room}: ${error}`);
     }
   }
 
   const wideConnectionCount = level.roomWidePorts.reduce((total, ports) => total + Boolean(ports & PORT_EAST), 0);
   if (wideConnectionCount !== 1) errors.push(`level has ${wideConnectionCount} wide seams instead of 1`);
+  const boundaryRouteIndices = route.flatMap((room, index) => level.roomTraversalClasses[room] === TRAVERSAL_ORDINARY ? [] : [index]);
+  if (boundaryRouteIndices.length > 1) errors.push(`critical route has ${boundaryRouteIndices.length} boundary traversals instead of at most 1`);
+  for (const index of boundaryRouteIndices) {
+    if (index < 2 || index > route.length - 3) errors.push(`critical-route room ${route[index]} places a boundary traversal inside protected endpoint transitions`);
+  }
   for (let index = 1; index < route.length; index++) {
     if (level.roomTraversalClasses[route[index - 1]] !== TRAVERSAL_ORDINARY && level.roomTraversalClasses[route[index]] !== TRAVERSAL_ORDINARY) {
       errors.push(`critical-route rooms ${route[index - 1]} and ${route[index]} contain consecutive boundary traversals`);
@@ -339,6 +382,38 @@ export function validateLevel(level) {
 
   if (level.tiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push(`tile map has ${level.tiles.length} cells instead of 1280`);
   if (level.tiles.some(tile => tile < 0 || tile > 127)) errors.push('tile map contains an invalid tile ID');
+
+  const tileAt = (x, y) => level.tiles[y * LEVEL_WIDTH + x];
+  const solidAt = (x, y) => tileAt(x, y) >= 1 && tileAt(x, y) <= 16;
+  const expectedSpawnX = (level.spawnRoom % GRID_WIDTH) * ROOM_WIDTH * 8 + 20;
+  const expectedSpawnY = Math.floor(level.spawnRoom / GRID_WIDTH) * ROOM_HEIGHT * 8 + 56;
+  if (level.spawnPosition.x !== expectedSpawnX || level.spawnPosition.y !== expectedSpawnY) errors.push('spawn position does not match its protected envelope');
+  const spawnFloorY = expectedSpawnY / 8;
+  const spawnCenterX = Math.floor(expectedSpawnX / 8);
+  for (let x = spawnCenterX - 1; x <= spawnCenterX + 1; x++) {
+    if (!solidAt(x, spawnFloorY)) errors.push(`spawn support cell ${x},${spawnFloorY} is not full-solid`);
+    for (let y = spawnFloorY - 6; y < spawnFloorY; y++) {
+      if (tileAt(x, y) !== 17) errors.push(`spawn clearance cell ${x},${y} is obstructed`);
+    }
+  }
+
+  const expectedExitX = (level.exitRoom % GRID_WIDTH) * ROOM_WIDTH + 1;
+  const expectedExitY = Math.floor(level.exitRoom / GRID_WIDTH) * ROOM_HEIGHT + 4;
+  if (level.exitDoor.x !== expectedExitX || level.exitDoor.y !== expectedExitY) errors.push('exit position does not match its protected envelope');
+  for (let row = 0; row < 3; row++) {
+    for (let column = 0; column < 2; column++) {
+      if (tileAt(expectedExitX + column, expectedExitY + row) !== 25 + row * 2 + column) errors.push(`exit footprint cell ${column},${row} is invalid`);
+    }
+    for (let column = 2; column < 4; column++) {
+      if (tileAt(expectedExitX + column, expectedExitY + row) !== 17) errors.push(`exit approach cell ${column},${row} is obstructed`);
+    }
+  }
+  for (let x = expectedExitX; x < expectedExitX + 4; x++) {
+    if (!solidAt(x, expectedExitY + 3)) errors.push(`exit support cell ${x},${expectedExitY + 3} is not full-solid`);
+    for (let y = expectedExitY - 3; y < expectedExitY; y++) {
+      if (tileAt(x, y) !== 17) errors.push(`exit upper-clearance cell ${x},${y} is obstructed`);
+    }
+  }
 
   return { valid: errors.length === 0, errors };
 }

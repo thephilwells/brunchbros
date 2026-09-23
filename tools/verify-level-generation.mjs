@@ -56,4 +56,22 @@ consecutiveBoundaries.roomTraversalClasses[consecutiveBoundaries.criticalRoute[0
 consecutiveBoundaries.roomTraversalClasses[consecutiveBoundaries.criticalRoute[1]] = 'ledge_catch';
 assert(validateLevel(consecutiveBoundaries).errors.some(error => error.includes('consecutive boundary traversals')));
 
+const endpointBoundary = structuredClone(generateLevel(0));
+for (const room of endpointBoundary.criticalRoute) endpointBoundary.roomTraversalClasses[room] = 'ordinary';
+endpointBoundary.roomTraversalClasses[endpointBoundary.criticalRoute[1]] = 'ledge_catch';
+assert(validateLevel(endpointBoundary).errors.some(error => error.includes('protected endpoint transitions')));
+endpointBoundary.roomTraversalClasses[endpointBoundary.criticalRoute[1]] = 'ordinary';
+endpointBoundary.roomTraversalClasses[endpointBoundary.criticalRoute.at(-2)] = 'ledge_catch';
+assert(validateLevel(endpointBoundary).errors.some(error => error.includes('protected endpoint transitions')));
+
+const obstructedSpawn = structuredClone(generateLevel(0));
+const spawnX = Math.floor(obstructedSpawn.spawnPosition.x / 8);
+const spawnY = obstructedSpawn.spawnPosition.y / 8;
+obstructedSpawn.tiles[(spawnY - 1) * 40 + spawnX] = 1;
+assert(validateLevel(obstructedSpawn).errors.some(error => error.includes('spawn clearance')));
+
+const obstructedExit = structuredClone(generateLevel(0));
+obstructedExit.tiles[obstructedExit.exitDoor.y * 40 + obstructedExit.exitDoor.x + 2] = 1;
+assert(validateLevel(obstructedExit).errors.some(error => error.includes('exit approach')));
+
 console.log('All 1,024 route topologies and 4,096 deterministic seeds verified.');

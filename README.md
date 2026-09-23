@@ -79,7 +79,9 @@ open build/level-gallery/index.html
 ```
 
 The gallery shows seeded levels assembled from authored room templates. Its TMX
-files expose the critical route, room ports, spawn, and exit in Tiled.
+files expose the critical route, room ports, spawn, and exit in Tiled. Batch
+validation checks both hard-limit mutual room reachability and the declared
+ordinary or ledge-catch passage through every ordered critical-route room.
 
 The semantic room templates can be regenerated and checked separately:
 
@@ -94,8 +96,9 @@ Open `gfx/room_template_fixture.tmx` in Tiled to inspect all 15 nonzero port
 masks. Their source is `data/room-templates/dining-room.json`.
 
 The default ROM uses `gfx/seeded_level.tmx`. Seed 0 now includes a reciprocally
-matched wide seam and a generated ledge-catch boundary room. The focused
-prototype remains available in `gfx/room_variant_playtest.tmx`.
+matched wide seam, a generated ledge-catch boundary room, and generator-enforced
+spawn/exit clearances. The focused prototype remains available in
+`gfx/room_variant_playtest.tmx`.
 
 ## Documentation map
 
