@@ -93,9 +93,9 @@ node tools/verify-room-template-playtest.mjs
 Open `gfx/room_template_fixture.tmx` in Tiled to inspect all 15 nonzero port
 masks. Their source is `data/room-templates/dining-room.json`.
 
-The default ROM temporarily uses `gfx/room_variant_playtest.tmx` to review a
-paired wide seam and a required ledge catch. Seed 0 remains available in
-`gfx/seeded_level.tmx` and has been accepted in SameBoy.
+The default ROM uses `gfx/seeded_level.tmx`. Seed 0 now includes a reciprocally
+matched wide seam and a generated ledge-catch boundary room. The focused
+prototype remains available in `gfx/room_variant_playtest.tmx`.
 
 ## Documentation map
 

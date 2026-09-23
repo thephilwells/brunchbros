@@ -3,6 +3,7 @@ import {
   generateLevel,
   routeFromColumns,
   topologySignature,
+  validateLevel,
 } from './lib/level-generation.mjs';
 
 const topologies = new Set();
@@ -10,6 +11,7 @@ const firstBatchTopologies = new Set();
 const seededTopologies = new Set();
 let minimumLength = 16;
 let maximumLength = 0;
+let levelsWithLedgeCatch = 0;
 
 for (let spawn = 0; spawn < 4; spawn++) {
   for (let firstDescent = 0; firstDescent < 4; firstDescent++) {
@@ -36,11 +38,22 @@ for (let seed = 0; seed < 4096; seed++) {
   const second = generateLevel(seed);
   assert.deepEqual(first, second);
   assert.equal(first.validation.valid, true, `Seed ${seed}: ${first.validation.errors.join(', ')}`);
+  if (first.roomTraversalClasses.includes('ledge_catch')) levelsWithLedgeCatch++;
   seededTopologies.add(topologySignature(first));
   if (seed < 256) firstBatchTopologies.add(topologySignature(first));
 }
 
 assert.equal(firstBatchTopologies.size, 256);
 assert.equal(seededTopologies.size, 1024);
+assert(levelsWithLedgeCatch > 0);
+
+const mismatchedSeam = structuredClone(generateLevel(0));
+mismatchedSeam.roomWidePorts[5] = 0;
+assert(validateLevel(mismatchedSeam).errors.some(error => error.includes('wide seam is mismatched')));
+
+const consecutiveBoundaries = structuredClone(generateLevel(0));
+consecutiveBoundaries.roomTraversalClasses[consecutiveBoundaries.criticalRoute[0]] = 'ledge_catch';
+consecutiveBoundaries.roomTraversalClasses[consecutiveBoundaries.criticalRoute[1]] = 'ledge_catch';
+assert(validateLevel(consecutiveBoundaries).errors.some(error => error.includes('consecutive boundary traversals')));
 
 console.log('All 1,024 route topologies and 4,096 deterministic seeds verified.');

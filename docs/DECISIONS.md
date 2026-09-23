@@ -4,6 +4,23 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Seeded variants use reciprocal seams and traversal classes
+
+**Decision:** Each seeded level initially selects one horizontal wide seam,
+recorded as reciprocal port bits on its paired rooms. Eligible rooms may receive
+the `ledge_catch` traversal class, which materializes the accepted four-tile
+solid rise. Boundary-class rooms cannot be consecutive on the critical route.
+
+**Why:** Keeping seam shape and traversal character separate from the 15 base
+port masks adds meaningful spatial variation without multiplying every topology
+template. Reciprocal and sequencing validation prevents incompatible room edges
+and clusters of maximum-tolerance traversal.
+
+**Status:** Implemented in host generation and loaded as revised seed 0;
+awaiting SameBoy acceptance.
+
+---
+
 ## 2026-09-23 — Prototype wide seams and required ledge-catch rooms separately
 
 **Decision:** Before expanding seeded template selection, test two experimental

@@ -90,7 +90,13 @@ export function validateRoomTemplateReachability(template) {
         [y - 1, y - 2].every(bodyY => bodyY < 0 || template.rows[bodyY][x] !== '#');
       if (supported && start === null) start = x;
       if (!supported && start !== null) {
-        if (x - start >= 2) supports.push({ y, start, end: x - 1 });
+        if (x - start >= 2) {
+          const end = x - 1;
+          const solid = template.rows[y].slice(start, x).split('').every(cell => cell === '#');
+          const leftExposed = start > 0 && template.rows[y][start - 1] !== '#' && (y === 0 || template.rows[y - 1][start] !== '#');
+          const rightExposed = end < template.rows[y].length - 1 && template.rows[y][end + 1] !== '#' && (y === 0 || template.rows[y - 1][end] !== '#');
+          supports.push({ y, start, end, catchable: solid && (leftExposed || rightExposed) });
+        }
         start = null;
       }
     }
@@ -103,7 +109,8 @@ export function validateRoomTemplateReachability(template) {
       const rise = supports[from].y - supports[to].y;
       const drop = -rise;
       const gap = Math.max(0, supports[from].start - supports[to].end - 1, supports[to].start - supports[from].end - 1);
-      if (gap <= 3 && ((rise >= 0 && rise <= 3) || (drop > 0 && drop <= 8))) graph[from].push(to);
+      const upward = rise >= 0 && (rise <= 3 || (rise === 4 && template.traversalClass === 'ledge_catch' && supports[to].catchable));
+      if (gap <= 3 && (upward || (drop > 0 && drop <= 8))) graph[from].push(to);
     }
   }
 

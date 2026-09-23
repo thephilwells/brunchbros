@@ -112,11 +112,11 @@ with tile-level mutual-port validation. Seed 0 was assembled with generated
 spawn coordinates and the shared exit doorway, then accepted as playable in
 SameBoy. A focused fixture proves that a six-row seam makes paired cells read as
 one large room and that a one-way-free 32-pixel rise makes ledge catch useful.
-Next, add seam profiles and traversal classes to seeded selection, then expand
-the accepted variants across the template library without making boundary
-transitions consecutive.
-Protected-clearance and route-transition validation still precede the assembly
-port. Directional look poses and camera
+Seeded selection now assigns one reciprocal wide seam and, when eligible, one
+ledge-catch boundary room; validation rejects seam mismatches and consecutive
+critical-route boundary rooms. Next, accept the revised seed 0 in SameBoy, then
+add protected-clearance and remaining route-transition validation before the
+assembly port. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.

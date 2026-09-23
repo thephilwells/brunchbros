@@ -2,6 +2,7 @@ import {
   loadRoomTemplateSet,
   semanticCellsToTileIds,
   validateRoomTemplateSet,
+  validateRoomTemplateReachability,
 } from './room-templates.mjs';
 
 export const GRID_WIDTH = 4;
@@ -15,6 +16,8 @@ export const PORT_WEST = 0x01;
 export const PORT_EAST = 0x02;
 export const PORT_NORTH = 0x04;
 export const PORT_SOUTH = 0x08;
+export const TRAVERSAL_ORDINARY = 'ordinary';
+export const TRAVERSAL_LEDGE_CATCH = 'ledge_catch';
 
 const ROOM_TEMPLATE_SET = loadRoomTemplateSet(new URL('../../data/room-templates/dining-room.json', import.meta.url));
 const templateErrors = validateRoomTemplateSet(ROOM_TEMPLATE_SET);
@@ -74,9 +77,10 @@ export function routeFromColumns(columns, seed = null, randomState = 0xace1) {
   const branchResult = connectRemainingRooms(roomPorts, criticalRoute, randomState);
 
   const selectedTemplates = roomPorts.map(mask => TEMPLATE_BY_MASK.get(mask));
+  const variants = selectRoomVariants(roomPorts, criticalRoute, branchResult.randomState);
 
   const level = {
-    version: 1,
+    version: 2,
     seed,
     columns: [...columns],
     criticalRouteLength: criticalRoute.length,
@@ -86,6 +90,9 @@ export function routeFromColumns(columns, seed = null, randomState = 0xace1) {
     branchEdges: branchResult.edges,
     roomTemplates: selectedTemplates.map(template => template.numericId),
     roomTemplateNames: selectedTemplates.map(template => template.id),
+    roomWidePorts: variants.roomWidePorts,
+    roomSeamProfiles: roomPorts.map((ports, room) => describeSeams(ports, variants.roomWidePorts[room])),
+    roomTraversalClasses: variants.roomTraversalClasses,
     spawnRoom: criticalRoute[0],
     exitRoom: criticalRoute.at(-1),
     finalRandomState: branchResult.randomState,
@@ -145,13 +152,65 @@ function portFromRoomToRoom(from, to) {
   throw new Error(`Rooms ${from} and ${to} are not adjacent`);
 }
 
+function selectRoomVariants(roomPorts, criticalRoute, randomState) {
+  const roomWidePorts = Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+  const roomTraversalClasses = Array(GRID_WIDTH * GRID_HEIGHT).fill(TRAVERSAL_ORDINARY);
+  const candidates = criticalRoute.slice(1, -1).filter(room =>
+    roomPorts[room] & PORT_NORTH && !(roomPorts[room] & PORT_SOUTH) && roomPorts[room] & (PORT_WEST | PORT_EAST));
+
+  let wideEdge;
+  if (candidates.length) {
+    const room = candidates[randomState % candidates.length];
+    const directions = [PORT_WEST, PORT_EAST].filter(port => roomPorts[room] & port);
+    const direction = directions[(randomState >>> 8) % directions.length];
+    const neighbor = room + (direction === PORT_WEST ? -1 : 1);
+    roomTraversalClasses[room] = TRAVERSAL_LEDGE_CATCH;
+    wideEdge = direction === PORT_WEST ? [neighbor, room] : [room, neighbor];
+  } else {
+    const horizontalEdges = roomPorts.flatMap((ports, room) => ports & PORT_EAST ? [[room, room + 1]] : []);
+    wideEdge = horizontalEdges[randomState % horizontalEdges.length];
+  }
+
+  roomWidePorts[wideEdge[0]] |= PORT_EAST;
+  roomWidePorts[wideEdge[1]] |= PORT_WEST;
+  return { roomWidePorts, roomTraversalClasses };
+}
+
+function describeSeams(ports, widePorts) {
+  return {
+    west: !(ports & PORT_WEST) ? 'closed' : widePorts & PORT_WEST ? 'wide' : 'standard',
+    east: !(ports & PORT_EAST) ? 'closed' : widePorts & PORT_EAST ? 'wide' : 'standard',
+    north: ports & PORT_NORTH ? 'standard' : 'closed',
+    south: ports & PORT_SOUTH ? 'standard' : 'closed',
+  };
+}
+
+function materializeTemplate(template, traversalClass, widePorts) {
+  const rows = template.rows.map(row => [...row]);
+  if (traversalClass === TRAVERSAL_LEDGE_CATCH) {
+    for (let y = 1; y <= 6; y++) {
+      for (let x = 1; x <= 8; x++) rows[y][x] = '.';
+    }
+    for (let x = 4; x <= 6; x++) rows[1][x] = '=';
+    if (widePorts & PORT_WEST) {
+      for (let x = 6; x <= 8; x++) rows[3][x] = '#';
+    } else {
+      for (let x = 1; x <= 3; x++) rows[3][x] = '#';
+    }
+  }
+  if (widePorts & PORT_WEST) for (let y = 1; y <= 6; y++) rows[y][0] = '.';
+  if (widePorts & PORT_EAST) for (let y = 1; y <= 6; y++) rows[y][9] = '.';
+  return { ...template, traversalClass, rows: rows.map(row => row.join('')) };
+}
+
 function assembleTemplateLevel(level, selectedTemplates) {
   const cells = Array.from({ length: LEVEL_HEIGHT }, () => Array(LEVEL_WIDTH).fill('.'));
   for (let room = 0; room < selectedTemplates.length; room++) {
+    const template = materializeTemplate(selectedTemplates[room], level.roomTraversalClasses[room], level.roomWidePorts[room]);
     const roomX = (room % GRID_WIDTH) * ROOM_WIDTH;
     const roomY = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT;
     for (let y = 0; y < ROOM_HEIGHT; y++) {
-      for (let x = 0; x < ROOM_WIDTH; x++) cells[roomY + y][roomX + x] = selectedTemplates[room].rows[y][x];
+      for (let x = 0; x < ROOM_WIDTH; x++) cells[roomY + y][roomX + x] = template.rows[y][x];
     }
   }
 
@@ -213,6 +272,7 @@ export function validateLevel(level) {
 
   for (let room = 0; room < level.roomPorts.length; room++) {
     const ports = level.roomPorts[room];
+    const widePorts = level.roomWidePorts[room];
     const row = Math.floor(room / GRID_WIDTH);
     const column = room % GRID_WIDTH;
     if ((ports & expectedPorts[room]) !== expectedPorts[room]) errors.push(`room ${room} is missing a critical-route port`);
@@ -224,6 +284,11 @@ export function validateLevel(level) {
     if (ports & PORT_WEST && !(level.roomPorts[room - 1] & PORT_EAST)) errors.push(`room ${room} west port is unpaired`);
     if (ports & PORT_SOUTH && !(level.roomPorts[room + GRID_WIDTH] & PORT_NORTH)) errors.push(`room ${room} south port is unpaired`);
     if (ports & PORT_NORTH && !(level.roomPorts[room - GRID_WIDTH] & PORT_SOUTH)) errors.push(`room ${room} north port is unpaired`);
+    if (widePorts & ~ports) errors.push(`room ${room} has a wide seam without a port`);
+    if (widePorts & (PORT_NORTH | PORT_SOUTH)) errors.push(`room ${room} uses an unsupported vertical wide seam`);
+    if (widePorts & PORT_EAST && !(level.roomWidePorts[room + 1] & PORT_WEST)) errors.push(`room ${room} east wide seam is mismatched`);
+    if (widePorts & PORT_WEST && !(level.roomWidePorts[room - 1] & PORT_EAST)) errors.push(`room ${room} west wide seam is mismatched`);
+    if (JSON.stringify(level.roomSeamProfiles[room]) !== JSON.stringify(describeSeams(ports, widePorts))) errors.push(`room ${room} seam profile metadata is inconsistent`);
   }
 
   const reachable = new Set([level.spawnRoom]);
@@ -252,6 +317,24 @@ export function validateLevel(level) {
   for (let room = 0; room < level.roomTemplates.length; room++) {
     const template = ROOM_TEMPLATE_SET.templates[level.roomTemplates[room] - 1];
     if (!template || template.portMask !== level.roomPorts[room]) errors.push(`room ${room} template does not match port mask ${level.roomPorts[room]}`);
+    const traversalClass = level.roomTraversalClasses[room];
+    if (![TRAVERSAL_ORDINARY, TRAVERSAL_LEDGE_CATCH].includes(traversalClass)) errors.push(`room ${room} has unknown traversal class ${traversalClass}`);
+    if (traversalClass === TRAVERSAL_LEDGE_CATCH) {
+      const eligible = level.roomPorts[room] & PORT_NORTH && !(level.roomPorts[room] & PORT_SOUTH) && level.roomWidePorts[room] & (PORT_WEST | PORT_EAST);
+      if (!eligible) errors.push(`room ${room} cannot host a ledge-catch boundary`);
+    }
+    if (template) {
+      const materialized = materializeTemplate(template, traversalClass, level.roomWidePorts[room]);
+      for (const error of validateRoomTemplateReachability(materialized)) errors.push(`room ${room}: ${error}`);
+    }
+  }
+
+  const wideConnectionCount = level.roomWidePorts.reduce((total, ports) => total + Boolean(ports & PORT_EAST), 0);
+  if (wideConnectionCount !== 1) errors.push(`level has ${wideConnectionCount} wide seams instead of 1`);
+  for (let index = 1; index < route.length; index++) {
+    if (level.roomTraversalClasses[route[index - 1]] !== TRAVERSAL_ORDINARY && level.roomTraversalClasses[route[index]] !== TRAVERSAL_ORDINARY) {
+      errors.push(`critical-route rooms ${route[index - 1]} and ${route[index]} contain consecutive boundary traversals`);
+    }
   }
 
   if (level.tiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push(`tile map has ${level.tiles.length} cells instead of 1280`);
@@ -273,7 +356,7 @@ export function levelToTmx(level, tilesetSource) {
   const roomObjects = level.roomTemplateNames.map((name, room) => {
     const x = (room % GRID_WIDTH) * ROOM_WIDTH * 8;
     const y = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT * 8;
-    return `  <object id="${room + 4}" name="${xmlEscape(name)}" type="room_template" x="${x}" y="${y}" width="${ROOM_WIDTH * 8}" height="${ROOM_HEIGHT * 8}"><properties><property name="port_mask" type="int" value="${level.roomPorts[room]}"/></properties></object>`;
+    return `  <object id="${room + 4}" name="${xmlEscape(name)}" type="room_template" x="${x}" y="${y}" width="${ROOM_WIDTH * 8}" height="${ROOM_HEIGHT * 8}"><properties><property name="port_mask" type="int" value="${level.roomPorts[room]}"/><property name="wide_ports" type="int" value="${level.roomWidePorts[room]}"/><property name="traversal_class" value="${level.roomTraversalClasses[room]}"/><property name="seams" value='${JSON.stringify(level.roomSeamProfiles[room])}'/></properties></object>`;
   });
   const seed = level.seed ?? 'topology';
   return [

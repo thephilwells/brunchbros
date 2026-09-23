@@ -19,6 +19,18 @@ assert.match(tmx, /name="chef_spawn" type="spawn"/);
 assert.match(tmx, /name="descent_exit" type="exit"/);
 for (const name of expected.roomTemplateNames) assert.match(tmx, new RegExp(`name="${name}" type="room_template"`));
 
+const wideEastRooms = expected.roomWidePorts.flatMap((ports, room) => ports & 2 ? [room] : []);
+assert.equal(wideEastRooms.length, 1);
+for (const room of wideEastRooms) assert(expected.roomWidePorts[room + 1] & 1);
+for (let index = 1; index < expected.criticalRoute.length; index++) {
+  const previous = expected.roomTraversalClasses[expected.criticalRoute[index - 1]];
+  const current = expected.roomTraversalClasses[expected.criticalRoute[index]];
+  assert(previous === 'ordinary' || current === 'ordinary');
+}
+assert.equal(expected.roomTraversalClasses.filter(value => value === 'ledge_catch').length, 1);
+assert.match(tmx, /name="wide_ports" type="int" value="[12]"/);
+assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
+
 const at = (x, y) => expected.tiles[y * 40 + x];
 const spawnFloorY = expected.spawnPosition.y / 8;
 const spawnCenterX = Math.floor(expected.spawnPosition.x / 8);

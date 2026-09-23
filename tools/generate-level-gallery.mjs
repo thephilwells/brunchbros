@@ -38,7 +38,8 @@ function renderGallery(levels, summary) {
   const cards = levels.map(level => {
     const name = String(level.seed).padStart(5, '0');
     const status = level.validation.valid ? 'valid' : 'invalid';
-    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')}</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
+    const boundaryRooms = level.roomTraversalClasses.filter(value => value !== 'ordinary').length;
+    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · 1 wide seam · ${boundaryRooms} boundary</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
   }).join('\n');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Brunch Bros level gallery</title><style>
@@ -66,7 +67,7 @@ for (let offset = 0; offset < options.count; offset++) {
 const failures = levels.filter(level => !level.validation.valid).map(level => ({ seed: level.seed, errors: level.validation.errors }));
 const portEntries = levels.flatMap(level => level.roomPorts);
 const summary = {
-  version: 1,
+  version: 2,
   biome: options.biome,
   firstSeed: options.seed,
   count: options.count,
@@ -77,6 +78,8 @@ const summary = {
   spawnColumns: histogram(levels, level => level.columns[0]),
   exitColumns: histogram(levels, level => level.columns[4]),
   roomPortMasks: histogram(portEntries, value => value),
+  wideSeams: levels.reduce((total, level) => total + level.roomWidePorts.filter(ports => ports & 2).length, 0),
+  traversalClasses: histogram(levels.flatMap(level => level.roomTraversalClasses), value => value),
 };
 
 writeFileSync(resolve(outputDirectory, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);

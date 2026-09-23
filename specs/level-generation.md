@@ -32,6 +32,8 @@ the ordinary 4×4 generator.
 | `CriticalRoute` | 16 bytes | Ordered room indices from spawn through exit |
 | `RoomPorts` | 16 bytes | Four low bits describe open room interfaces |
 | `RoomTemplates` | 16 bytes | Selected template ID for each grid cell |
+| `RoomWidePorts` | 16 bytes | Port bits whose horizontal seams use the wide profile |
+| `RoomTraversalClasses` | 16 bytes | Ordinary or boundary traversal class for each room |
 | `SpawnRoom` | 1 byte | First critical-route room index |
 | `ExitRoom` | 1 byte | Last critical-route room index |
 
@@ -46,7 +48,9 @@ Unused `CriticalRoute` entries contain `$ff`. Port bits are:
 
 Critical-route membership and direction come from the ordered route rather
 than duplicated room flags. The host-side export uses the same fields with
-descriptive JSON names.
+descriptive JSON names. `RoomWidePorts` reuses the port-bit assignments and is
+zero for standard or closed seams. Runtime traversal values are `0=ordinary`
+and `1=ledge_catch`; host exports retain their descriptive strings.
 
 ## Critical-route construction
 
@@ -85,18 +89,26 @@ Room-local coordinates are zero-based within a 10×8 tile template.
 - Ports cannot face outside the 4×4 grid. All non-port boundary cells remain
   sealed against accidental room-to-room passage.
 
-### Experimental seam and traversal variants
+### Seam and traversal variants
 
-`data/room-templates/dining-room-prototypes.json` contains variants that are
-not yet part of seeded selection. The first pair replaces the ordinary
+`data/room-templates/dining-room-prototypes.json` retains the focused fixtures
+that established the initial variants. The first pair replaces the ordinary
 two-tile-high east/west interface with a matching six-row opening, allowing two
 10×8 cells to read and play as one larger room. Its right-hand template also
 contains a full-solid ledge four tiles above the departure floor, with an
 exposed corner and open headroom. It contains no one-way fallback, so upward
 progress specifically exercises ledge catch. SameBoy review accepted both the
-large-room effect and required catch. Seam profiles and traversal classes may
-now become generator metadata, subject to paired-seam and nonconsecutive-
-boundary validation.
+large-room effect and required catch.
+
+Seeded selection assigns exactly one horizontal wide seam per level. Both rooms
+store reciprocal wide-port bits, and assembly clears boundary rows 1–6 on both
+sides. When an eligible non-spawn/non-exit room has a north port, no south port,
+and a horizontal approach, it may receive the `ledge_catch` class. That class
+replaces its ordinary internal staircase with the accepted four-tile solid
+ledge plus one high interface platform. At most one such boundary room is
+selected initially. Validation rejects mismatched wide seams, unsupported
+vertical wide seams, ineligible traversal classes, and consecutive boundary
+rooms on the critical route.
 
 ## Critical room templates
 
@@ -163,6 +175,8 @@ remains as a regression fixture while the ROM loads an assembled seed.
   tables, and template IDs. The PRNG is xorshift16 with left/right/left shifts
   of 7/9/8 bits. Seed zero is normalized to `$ace1`; generation draws five
   values and uses each value's low two bits as one route column.
+- Initial seam and traversal selection derives its candidate indices from the
+  PRNG state left after branch construction without consuming another draw.
 - Given the same generator version, biome, and seed, both implementations must
   produce identical route descriptors and 1,280 tile bytes.
 - A failing seed is always printed and can be regenerated individually.
@@ -202,10 +216,14 @@ The implemented host phase checks every generated level for:
    and exactly 15 room-to-room connections in the initial branch tree.
 6. Exact template-to-port-mask matches and mutual tile-level traversal between
    every port declared by each selected template.
+7. Reciprocal wide-seam profiles, eligible traversal classes, catchable
+   four-tile ledges, and no consecutive boundary rooms on the critical route.
 
 `RoomTemplates` stores stable one-based authored template IDs for all 16 rooms.
-Protected spawn/exit clearances, ordinary/boundary sequencing, and reserved
-cells after dressing and object placement remain to be validated.
+`RoomWidePorts` and `RoomTraversalClasses` describe the transformations applied
+before connectivity tile IDs are derived. Protected spawn/exit clearances,
+full transition sequencing beyond the initial boundary rule, and reserved cells
+after dressing and object placement remain to be validated.
 
 The batch command exits nonzero if any seed fails, while retaining its report
 and inspectable map. Exhaust all 1,024 macro topologies in the topology test;

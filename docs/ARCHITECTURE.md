@@ -14,7 +14,7 @@ source files yet:
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000` and all 12 chef
-  animation frames at `$8010`, copies the 40×32 room-variant fixture into
+  animation frames at `$8010`, copies host-generated dining-room seed 0 into
   `LevelMap`, loads its first 32 columns into the background tile map, sets
   `BGP=$E4`/`OBP0=$E0`, zeroes the camera and streaming state, clears OAM,
   sets the player's starting WRAM state, and turns the LCD back on with
@@ -72,10 +72,10 @@ source files yet:
   dining tiles, then generates its TSX, fixture TMX, raw tile map, and
   128-byte collision-type table. `tools/generate-room-template-playtest.mjs`
   retains the accepted three-room regression map.
-  `tools/generate-seeded-level.mjs` retains the accepted seed 0 map.
-  `tools/generate-room-variant-playtest.mjs` emits the active paired-wide-seam
-  fixture, its raw map, and player-start constants. `rgbgfx` converts the dining
-  PNG to 2bpp.
+  `tools/generate-seeded-level.mjs` emits the active seed 0 map, including its
+  reciprocal wide seam, ledge-catch traversal room, and player-start constants.
+  `tools/generate-room-variant-playtest.mjs` retains the focused regression
+  fixture. `rgbgfx` converts the dining PNG to 2bpp.
 
 ## Memory map
 
@@ -107,11 +107,10 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. The
-room-variant fixture lives in `LevelMap`; `$9800–$9BFF` contains its streamed
-32-column view. The active fixture uses no one-way tiles so its 32-pixel rise
-requires the ledge-catch mechanic. The accepted generated seed 0 and shared
-descent exit remain in generated artifacts but are not loaded by this ROM.
-Biome-transition runtime code does not exist yet. See
+host-generated seed 0 lives in `LevelMap`; `$9800–$9BFF` contains its streamed
+32-column view. The map includes one reciprocal six-row seam, one generated
+ledge-catch room, and the shared descent exit. Biome-transition runtime code
+does not exist yet. See
 `specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates
@@ -127,6 +126,6 @@ across X=256 because the visible difference is always less than 256 pixels.
 ## Not yet in place
 
 - No ROM banking (everything fits in `ROM0`/bank 0 so far).
-- No procedural generation yet — the current map is a static dining-room
-  fixture. Kitchen, patio, and deep-freezer art remain unstarted.
+- No runtime procedural generation yet — the current map is generated on the
+  host during the build. Kitchen, patio, and deep-freezer art remain unstarted.
 - No enemies, hazards, HUD, audio, or title/menu flow.
