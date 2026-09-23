@@ -1,3 +1,9 @@
+import {
+  loadRoomTemplateSet,
+  semanticCellsToTileIds,
+  validateRoomTemplateSet,
+} from './room-templates.mjs';
+
 export const GRID_WIDTH = 4;
 export const GRID_HEIGHT = 4;
 export const ROOM_WIDTH = 10;
@@ -10,13 +16,10 @@ export const PORT_EAST = 0x02;
 export const PORT_NORTH = 0x04;
 export const PORT_SOUTH = 0x08;
 
-const PORT_ORDINAL = new Map([
-  [0, 0],
-  [PORT_WEST, 1],
-  [PORT_EAST, 2],
-  [PORT_NORTH, 3],
-  [PORT_SOUTH, 4],
-]);
+const ROOM_TEMPLATE_SET = loadRoomTemplateSet(new URL('../../data/room-templates/dining-room.json', import.meta.url));
+const templateErrors = validateRoomTemplateSet(ROOM_TEMPLATE_SET);
+if (templateErrors.length) throw new Error(templateErrors.join('\n'));
+const TEMPLATE_BY_MASK = new Map(ROOM_TEMPLATE_SET.templates.map((template, index) => [template.portMask, { ...template, numericId: index + 1 }]));
 
 function nextRandom(state) {
   state = (state ^ (state << 7)) & 0xffff;
@@ -70,13 +73,7 @@ export function routeFromColumns(columns, seed = null, randomState = 0xace1) {
 
   const branchResult = connectRemainingRooms(roomPorts, criticalRoute, randomState);
 
-  const roomTemplates = Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
-  for (let index = 0; index < criticalRoute.length; index++) {
-    const room = criticalRoute[index];
-    const entry = index === 0 ? 0 : portFromRoomToRoom(room, criticalRoute[index - 1]);
-    const exit = index === criticalRoute.length - 1 ? 0 : portFromRoomToRoom(room, criticalRoute[index + 1]);
-    roomTemplates[room] = 1 + PORT_ORDINAL.get(entry) * 5 + PORT_ORDINAL.get(exit);
-  }
+  const selectedTemplates = roomPorts.map(mask => TEMPLATE_BY_MASK.get(mask));
 
   const level = {
     version: 1,
@@ -87,12 +84,16 @@ export function routeFromColumns(columns, seed = null, randomState = 0xace1) {
     criticalRouteStorage: [...criticalRoute, ...Array(16 - criticalRoute.length).fill(0xff)],
     roomPorts,
     branchEdges: branchResult.edges,
-    roomTemplates,
+    roomTemplates: selectedTemplates.map(template => template.numericId),
+    roomTemplateNames: selectedTemplates.map(template => template.id),
     spawnRoom: criticalRoute[0],
     exitRoom: criticalRoute.at(-1),
     finalRandomState: branchResult.randomState,
   };
-  level.tiles = buildConnectivityScaffold(level);
+  const assembled = assembleTemplateLevel(level, selectedTemplates);
+  level.tiles = assembled.tiles;
+  level.spawnPosition = assembled.spawnPosition;
+  level.exitDoor = assembled.exitDoor;
   level.validation = validateLevel(level);
   return level;
 }
@@ -144,49 +145,32 @@ function portFromRoomToRoom(from, to) {
   throw new Error(`Rooms ${from} and ${to} are not adjacent`);
 }
 
-function buildConnectivityScaffold(level) {
-  const solid = Array.from({ length: LEVEL_HEIGHT }, () => Array(LEVEL_WIDTH).fill(false));
-
-  for (let room = 0; room < GRID_WIDTH * GRID_HEIGHT; room++) {
+function assembleTemplateLevel(level, selectedTemplates) {
+  const cells = Array.from({ length: LEVEL_HEIGHT }, () => Array(LEVEL_WIDTH).fill('.'));
+  for (let room = 0; room < selectedTemplates.length; room++) {
     const roomX = (room % GRID_WIDTH) * ROOM_WIDTH;
     const roomY = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT;
-    for (let x = 0; x < ROOM_WIDTH; x++) {
-      solid[roomY][roomX + x] = true;
-      solid[roomY + ROOM_HEIGHT - 1][roomX + x] = true;
-    }
     for (let y = 0; y < ROOM_HEIGHT; y++) {
-      solid[roomY + y][roomX] = true;
-      solid[roomY + y][roomX + ROOM_WIDTH - 1] = true;
+      for (let x = 0; x < ROOM_WIDTH; x++) cells[roomY + y][roomX + x] = selectedTemplates[room].rows[y][x];
     }
-
-    const ports = level.roomPorts[room];
-    if (ports & PORT_WEST) for (let y = 5; y <= 6; y++) solid[roomY + y][roomX] = false;
-    if (ports & PORT_EAST) for (let y = 5; y <= 6; y++) solid[roomY + y][roomX + ROOM_WIDTH - 1] = false;
-    if (ports & PORT_NORTH) {
-      for (let x = 4; x <= 6; x++) {
-        solid[roomY][roomX + x] = false;
-        solid[roomY + 3][roomX + x] = true;
-      }
-    }
-    if (ports & PORT_SOUTH) for (let x = 4; x <= 6; x++) solid[roomY + ROOM_HEIGHT - 1][roomX + x] = false;
   }
 
-  const tiles = solid.map((row, y) => row.map((occupied, x) => {
-    if (!occupied) return 17;
-    return 1 +
-      (y > 0 && solid[y - 1][x] ? 1 : 0) +
-      (x < LEVEL_WIDTH - 1 && solid[y][x + 1] ? 2 : 0) +
-      (y < LEVEL_HEIGHT - 1 && solid[y + 1][x] ? 4 : 0) +
-      (x > 0 && solid[y][x - 1] ? 8 : 0);
-  }));
+  const tiles = semanticCellsToTileIds(cells);
 
-  const exitX = (level.exitRoom % GRID_WIDTH) * ROOM_WIDTH + 4;
+  const exitX = (level.exitRoom % GRID_WIDTH) * ROOM_WIDTH + 1;
   const exitY = Math.floor(level.exitRoom / GRID_WIDTH) * ROOM_HEIGHT + 4;
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 2; column++) tiles[exitY + row][exitX + column] = 25 + row * 2 + column;
   }
 
-  return tiles.flat();
+  return {
+    tiles: tiles.flat(),
+    spawnPosition: {
+      x: (level.spawnRoom % GRID_WIDTH) * ROOM_WIDTH * 8 + 20,
+      y: Math.floor(level.spawnRoom / GRID_WIDTH) * ROOM_HEIGHT * 8 + 56,
+    },
+    exitDoor: { x: exitX, y: exitY },
+  };
 }
 
 export function validateLevel(level) {
@@ -265,6 +249,11 @@ export function validateLevel(level) {
     Boolean(ports & PORT_EAST) + Boolean(ports & PORT_SOUTH), 0);
   if (connectionCount !== GRID_WIDTH * GRID_HEIGHT - 1) errors.push(`room graph has ${connectionCount} connections instead of 15`);
 
+  for (let room = 0; room < level.roomTemplates.length; room++) {
+    const template = ROOM_TEMPLATE_SET.templates[level.roomTemplates[room] - 1];
+    if (!template || template.portMask !== level.roomPorts[room]) errors.push(`room ${room} template does not match port mask ${level.roomPorts[room]}`);
+  }
+
   if (level.tiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push(`tile map has ${level.tiles.length} cells instead of 1280`);
   if (level.tiles.some(tile => tile < 0 || tile > 127)) errors.push('tile map contains an invalid tile ID');
 
@@ -281,19 +270,27 @@ export function levelToTmx(level, tilesetSource) {
     const y = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT * 8 + ROOM_HEIGHT * 4;
     return `${x},${y}`;
   }).join(' ');
+  const roomObjects = level.roomTemplateNames.map((name, room) => {
+    const x = (room % GRID_WIDTH) * ROOM_WIDTH * 8;
+    const y = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT * 8;
+    return `  <object id="${room + 4}" name="${xmlEscape(name)}" type="room_template" x="${x}" y="${y}" width="${ROOM_WIDTH * 8}" height="${ROOM_HEIGHT * 8}"><properties><property name="port_mask" type="int" value="${level.roomPorts[room]}"/></properties></object>`;
+  });
   const seed = level.seed ?? 'topology';
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="${LEVEL_WIDTH}" height="${LEVEL_HEIGHT}" tilewidth="8" tileheight="8" infinite="0" backgroundcolor="#ffffff">`,
     ` <properties><property name="seed" value="${xmlEscape(seed)}"/><property name="route_length" type="int" value="${level.criticalRouteLength}"/></properties>`,
     ` <tileset firstgid="1" source="${xmlEscape(tilesetSource)}"/>`,
-    ` <layer id="1" name="Connectivity Scaffold" width="${LEVEL_WIDTH}" height="${LEVEL_HEIGHT}">`,
+    ` <layer id="1" name="Seeded Terrain" width="${LEVEL_WIDTH}" height="${LEVEL_HEIGHT}">`,
     '  <data encoding="csv">',
     Array.from({ length: LEVEL_HEIGHT }, (_, row) => level.tiles.slice(row * LEVEL_WIDTH, (row + 1) * LEVEL_WIDTH).map(tile => tile + 1).join(',')).join(',\n'),
     '  </data>',
     ' </layer>',
     ' <objectgroup id="2" name="Critical Route">',
     `  <object id="1" name="seed-${xmlEscape(seed)}" x="0" y="0"><polyline points="${points}"/></object>`,
+    `  <object id="2" name="chef_spawn" type="spawn" x="${level.spawnPosition.x}" y="${level.spawnPosition.y}"><point/></object>`,
+    `  <object id="3" name="descent_exit" type="exit" x="${level.exitDoor.x * 8}" y="${level.exitDoor.y * 8}" width="16" height="24"/>`,
+    ...roomObjects,
     ' </objectgroup>',
     '</map>',
     '',

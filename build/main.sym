@@ -90,9 +90,9 @@
 00:0803 TryLedgeCatch.caught
 00:0820 TryLedgeCatch.notCaught
 00:0822 TileData
-00:1022 FixtureMap
+00:1022 GeneratedLevelMap
 00:1522 CollisionTypes
-00:1522 FixtureMapEnd
+00:1522 GeneratedLevelMapEnd
 00:15a2 ChefFrames
 00:c000 PlayerY
 00:c001 PlayerX

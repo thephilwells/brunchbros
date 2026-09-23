@@ -97,9 +97,9 @@ ROM0 bank #0:
 	         $0803 = TryLedgeCatch.caught
 	         $0820 = TryLedgeCatch.notCaught
 	         $0822 = TileData
-	         $1022 = FixtureMap
+	         $1022 = GeneratedLevelMap
 	         $1522 = CollisionTypes
-	         $1522 = FixtureMapEnd
+	         $1522 = GeneratedLevelMapEnd
 	         $15a2 = ChefFrames
 	EMPTY: $18a2-$3fff ($275e bytes)
 	TOTAL EMPTY: $285e bytes

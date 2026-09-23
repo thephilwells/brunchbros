@@ -1,8 +1,8 @@
 # Level generation
 
-Status: **macro-route generator, structural gallery, semantic template format,
-and three representative room templates implemented; remaining templates,
-tile-level validation, and runtime parity pending**.
+Status: **macro-route generator, seeded gallery, all 15 room port masks,
+tile-level mutual-port validation, and build-time ROM map implemented;
+protected-clearance validation and runtime parity pending**.
 
 ## Purpose
 
@@ -120,14 +120,12 @@ every other boundary position. Rendering derives IDs 1–16 from neighboring
 `#` cells, maps `.` to the dining-room rear tile, and maps `=` to the existing
 one-way pilot tile.
 
-The initial review fixture contains W|E, N|S, and N|E ordinary templates.
-Static validation currently proves dimensions, symbols, exact boundary ports,
-tile conversion, connected seams, and vertical rises no greater than three
-tiles. It also rejects required one-way landings with fewer than three empty
-rows beneath a full-solid ceiling. The ROM's static playtest map composes the three rooms into one
-bidirectional route. Mutual port reachability remains provisional until that
-layout is accepted in SameBoy and the tile-level traversal validator is
-implemented.
+The library contains one baseline template for each of the 15 nonzero port
+masks. Static validation proves dimensions, symbols, exact boundary ports,
+tile conversion, transition limits, and directed reachability between every
+declared port. It also rejects required one-way landings with fewer than three
+empty rows beneath a full-solid ceiling. The accepted W|E, N|S, and N|E map
+remains as a regression fixture while the ROM loads an assembled seed.
 
 ## Non-critical rooms and optional branches
 
@@ -174,14 +172,14 @@ The generated directory contains:
 - `levels/<seed>.tmx`: the complete map referencing the biome TSX, directly
   inspectable in Tiled.
 - `levels/<seed>.json`: seed, selected columns, route order, room ports,
-  provisional template IDs, scaffold tiles, and validation results.
+  selected template IDs and names, assembled tiles, and validation results.
 - `summary.json`: batch failure list and distributions for route length, room
   masks, spawn column, exit column, and unique macro topologies covered.
 
 The gallery is generated output and is not committed. A selected failing seed
 may become a committed regression fixture.
 
-The implemented structural phase checks every generated level for:
+The implemented host phase checks every generated level for:
 
 1. Correct dimensions, valid tile IDs, and deterministic regeneration.
 2. A top-row spawn and bottom-row exit.
@@ -189,13 +187,12 @@ The implemented structural phase checks every generated level for:
 4. Exactly three downward route edges and no upward route edge.
 5. Reciprocal ports, sealed outer boundaries, all 16 rooms connected to spawn,
    and exactly 15 room-to-room connections in the initial branch tree.
+6. Exact template-to-port-mask matches and mutual tile-level traversal between
+   every port declared by each selected template.
 
-The provisional `RoomTemplates` values encode each critical room's entry/exit
-pair for gallery inspection; they do not yet identify authored templates. Once
-those templates exist, validation also checks their metadata, protected
-spawn/exit clearances, ordinary/boundary sequencing, transition limits,
-tile-level spawn-to-exit reachability, and reserved cells after dressing and
-object placement.
+`RoomTemplates` stores stable one-based authored template IDs for all 16 rooms.
+Protected spawn/exit clearances, ordinary/boundary sequencing, and reserved
+cells after dressing and object placement remain to be validated.
 
 The batch command exits nonzero if any seed fails, while retaining its report
 and inspectable map. Exhaust all 1,024 macro topologies in the topology test;

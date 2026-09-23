@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="40" height="32" tilewidth="8" tileheight="8" infinite="0" backgroundcolor="#ffffff">
+ <properties><property name="seed" value="0"/><property name="route_length" type="int" value="10"/></properties>
+ <tileset firstgid="1" source="dining_room.tsx"/>
+ <layer id="1" name="Seeded Terrain" width="40" height="32">
+  <data encoding="csv">
+8,12,12,12,12,12,12,12,12,16,16,12,12,12,12,12,12,12,12,16,16,12,12,12,12,12,12,12,12,16,16,12,12,12,12,12,12,12,12,14,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+9,16,16,14,18,18,18,8,16,17,17,16,16,14,18,18,18,8,16,16,16,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,15,
+9,13,13,11,18,18,18,5,13,17,17,13,13,11,18,18,18,5,13,17,17,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,15,
+7,18,18,18,51,51,51,18,18,9,15,18,18,18,51,51,51,18,18,9,15,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,7,
+7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,7,
+9,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,17,17,16,16,16,16,16,16,16,16,17,17,16,16,14,18,18,18,8,16,15,
+9,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,17,17,13,13,13,13,13,13,13,13,17,17,13,13,11,18,18,18,5,13,15,
+7,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,51,51,51,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,5,11,18,18,18,18,18,18,18,18,5,11,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,7,
+7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+9,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,15,
+9,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,17,17,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,15,
+7,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,9,15,26,27,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,7,
+7,18,18,18,18,18,18,18,18,9,15,28,29,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,9,15,30,31,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+5,12,12,12,12,12,12,12,12,13,13,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,11
+  </data>
+ </layer>
+ <objectgroup id="2" name="Critical Route">
+  <object id="1" name="seed-0" x="0" y="0"><polyline points="280,32 200,32 120,32 120,96 40,96 40,160 120,160 200,160 200,224 120,224"/></object>
+  <object id="2" name="chef_spawn" type="spawn" x="260" y="56"><point/></object>
+  <object id="3" name="descent_exit" type="exit" x="88" y="224" width="16" height="24"/>
+  <object id="4" name="s_ordinary_0" type="room_template" x="0" y="0" width="80" height="64"><properties><property name="port_mask" type="int" value="8"/></properties></object>
+  <object id="5" name="es_ordinary_0" type="room_template" x="80" y="0" width="80" height="64"><properties><property name="port_mask" type="int" value="10"/></properties></object>
+  <object id="6" name="wes_ordinary_0" type="room_template" x="160" y="0" width="80" height="64"><properties><property name="port_mask" type="int" value="11"/></properties></object>
+  <object id="7" name="w_ordinary_0" type="room_template" x="240" y="0" width="80" height="64"><properties><property name="port_mask" type="int" value="1"/></properties></object>
+  <object id="8" name="ens_ordinary_0" type="room_template" x="0" y="64" width="80" height="64"><properties><property name="port_mask" type="int" value="14"/></properties></object>
+  <object id="9" name="wn_ordinary_0" type="room_template" x="80" y="64" width="80" height="64"><properties><property name="port_mask" type="int" value="5"/></properties></object>
+  <object id="10" name="n_ordinary_0" type="room_template" x="160" y="64" width="80" height="64"><properties><property name="port_mask" type="int" value="4"/></properties></object>
+  <object id="11" name="s_ordinary_0" type="room_template" x="240" y="64" width="80" height="64"><properties><property name="port_mask" type="int" value="8"/></properties></object>
+  <object id="12" name="ens_ordinary_0" type="room_template" x="0" y="128" width="80" height="64"><properties><property name="port_mask" type="int" value="14"/></properties></object>
+  <object id="13" name="we_ordinary_0" type="room_template" x="80" y="128" width="80" height="64"><properties><property name="port_mask" type="int" value="3"/></properties></object>
+  <object id="14" name="wes_ordinary_0" type="room_template" x="160" y="128" width="80" height="64"><properties><property name="port_mask" type="int" value="11"/></properties></object>
+  <object id="15" name="wn_ordinary_0" type="room_template" x="240" y="128" width="80" height="64"><properties><property name="port_mask" type="int" value="5"/></properties></object>
+  <object id="16" name="n_ordinary_0" type="room_template" x="0" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="4"/></properties></object>
+  <object id="17" name="e_ordinary_0" type="room_template" x="80" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="2"/></properties></object>
+  <object id="18" name="wen_ordinary_0" type="room_template" x="160" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="7"/></properties></object>
+  <object id="19" name="w_ordinary_0" type="room_template" x="240" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="1"/></properties></object>
+ </objectgroup>
+</map>

@@ -30,6 +30,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate Seeded Level",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-seeded-level.mjs", "--seed", "0"],
+      "problemMatcher": []
+    },
+    {
       "label": "Convert Dining Room",
       "type": "shell",
       "command": "rgbgfx",
@@ -62,6 +69,13 @@
       "type": "shell",
       "command": "node",
       "args": ["tools/verify-room-template-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify Seeded Level",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/verify-seeded-level.mjs"],
       "problemMatcher": []
     },
     {
@@ -118,7 +132,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Room Template Fixture", "Generate Room Template Playtest", "Convert Dining Room", "Verify Dining Room", "Verify Room Templates", "Verify Room Template Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Convert Dining Room", "Verify Dining Room", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true

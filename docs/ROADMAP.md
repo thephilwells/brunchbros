@@ -107,11 +107,11 @@ back. The row-monotone 4×4 critical-route representation, fixed room ports,
 template contract, and offline gallery/validation format are now defined. The
 host-side route generator exhaustively validates all 1,024 macro topologies and
 connects every room through optional branch trees before exporting seeded
-HTML/TMX/JSON connectivity galleries. The semantic template format and initial
-W|E, N|S, and N|E rooms are composed into a static bidirectional ROM playtest.
-Their ascent and Down+A return route are accepted in SameBoy. Next, add
-tile-level reachability checks and complete the remaining port masks before porting the same
-deterministic contract to assembly. Directional look poses and camera
+HTML/TMX/JSON galleries. All 15 nonzero port masks now have authored templates
+with tile-level mutual-port validation. Seed 0 is assembled into the build-time
+ROM map with generated spawn coordinates and the shared exit doorway. Next,
+accept that map in SameBoy, then add protected-clearance and route-transition
+validation before porting the deterministic contract to assembly. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.

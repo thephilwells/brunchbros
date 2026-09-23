@@ -45,8 +45,14 @@ Aseprite are installed in `/Applications`. Verification history:
 ```sh
 node tools/generate-structural-pilot.mjs
 node tools/generate-dining-room.mjs
+node tools/generate-room-template-fixture.mjs
+node tools/generate-room-template-playtest.mjs
+node tools/generate-seeded-level.mjs --seed 0
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 node tools/verify-dining-room.mjs
+node tools/verify-room-templates.mjs
+node tools/verify-room-template-playtest.mjs
+node tools/verify-seeded-level.mjs
 for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge; do
   rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
 done
@@ -70,11 +76,10 @@ node tools/generate-level-gallery.mjs
 open build/level-gallery/index.html
 ```
 
-The gallery currently shows connectivity scaffolds. Its TMX files are useful
-for inspecting routes and room ports in Tiled; the remaining playable room
-templates and tile-level reachability validation are the next generation step.
+The gallery shows seeded levels assembled from authored room templates. Its TMX
+files expose the critical route, room ports, spawn, and exit in Tiled.
 
-The first semantic room templates can be regenerated and checked separately:
+The semantic room templates can be regenerated and checked separately:
 
 ```sh
 node tools/generate-room-template-fixture.mjs
@@ -83,12 +88,11 @@ node tools/generate-room-template-playtest.mjs
 node tools/verify-room-template-playtest.mjs
 ```
 
-Open `gfx/room_template_fixture.tmx` in Tiled to inspect the W|E, N|S, and N|E
-rooms. Their source is `data/room-templates/dining-room.json`.
+Open `gfx/room_template_fixture.tmx` in Tiled to inspect all 15 nonzero port
+masks. Their source is `data/room-templates/dining-room.json`.
 
-The default ROM currently uses `gfx/room_template_playtest.tmx`. Chef starts at
-the far right: travel left through W|E, climb through N|E and N|S into the
-upper chamber, then return along the same route to test both directions.
+The default ROM uses seed 0 from `gfx/seeded_level.tmx`. Change the seed passed
+to `tools/generate-seeded-level.mjs` to build a different host-generated map.
 
 ## Documentation map
 

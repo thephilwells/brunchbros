@@ -12,6 +12,13 @@ const PORT_CELLS = new Map([
   [PORT_SOUTH, [[4, 7], [5, 7], [6, 7]]],
 ]);
 
+const PORT_NAMES = new Map([
+  [PORT_WEST, 'W'],
+  [PORT_EAST, 'E'],
+  [PORT_NORTH, 'N'],
+  [PORT_SOUTH, 'S'],
+]);
+
 export function loadRoomTemplateSet(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
@@ -62,6 +69,68 @@ export function validateRoomTemplateSet(set) {
           break;
         }
       }
+    }
+
+    errors.push(...validateRoomTemplateReachability(template).map(error => `${label}: ${error}`));
+  }
+
+  const masks = (set.templates ?? []).map(template => template.portMask).sort((a, b) => a - b);
+  if (JSON.stringify(masks) !== JSON.stringify(Array.from({ length: 15 }, (_, index) => index + 1))) {
+    errors.push('template set must contain exactly one template for each nonzero port mask');
+  }
+  return errors;
+}
+
+export function validateRoomTemplateReachability(template) {
+  const supports = [];
+  for (let y = 0; y < template.rows.length; y++) {
+    let start = null;
+    for (let x = 0; x <= template.rows[y].length; x++) {
+      const supported = x < template.rows[y].length && ['#', '='].includes(template.rows[y][x]) &&
+        [y - 1, y - 2].every(bodyY => bodyY < 0 || template.rows[bodyY][x] !== '#');
+      if (supported && start === null) start = x;
+      if (!supported && start !== null) {
+        if (x - start >= 2) supports.push({ y, start, end: x - 1 });
+        start = null;
+      }
+    }
+  }
+
+  const graph = supports.map(() => []);
+  for (let from = 0; from < supports.length; from++) {
+    for (let to = 0; to < supports.length; to++) {
+      if (from === to) continue;
+      const rise = supports[from].y - supports[to].y;
+      const drop = -rise;
+      const gap = Math.max(0, supports[from].start - supports[to].end - 1, supports[to].start - supports[from].end - 1);
+      if (gap <= 3 && ((rise >= 0 && rise <= 3) || (drop > 0 && drop <= 8))) graph[from].push(to);
+    }
+  }
+
+  function findAnchor(port) {
+    if (port === PORT_WEST) return supports.findIndex(support => support.y === 7 && support.start === 0);
+    if (port === PORT_EAST) return supports.findIndex(support => support.y === 7 && support.end === 9);
+    if (port === PORT_NORTH) return supports.findIndex(support => support.y === 1 && support.start <= 6 && support.end >= 4);
+    return supports.findIndex(support => support.y === 6 && support.start <= 6 && support.end >= 4);
+  }
+
+  const errors = [];
+  const anchors = [...PORT_NAMES].filter(([port]) => template.portMask & port).map(([port, name]) => ({ name, index: findAnchor(port) }));
+  for (const anchor of anchors) if (anchor.index < 0) errors.push(`${anchor.name} port has no reachable support surface`);
+  if (errors.length || anchors.length < 2) return errors;
+
+  for (const origin of anchors) {
+    const reached = new Set([origin.index]);
+    const pending = [origin.index];
+    while (pending.length) {
+      for (const next of graph[pending.pop()]) {
+        if (reached.has(next)) continue;
+        reached.add(next);
+        pending.push(next);
+      }
+    }
+    for (const target of anchors) {
+      if (!reached.has(target.index)) errors.push(`${origin.name} port cannot reach ${target.name} port`);
     }
   }
   return errors;

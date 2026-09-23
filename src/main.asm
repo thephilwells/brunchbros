@@ -7,6 +7,7 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
+INCLUDE "build/seeded_level.inc"
 
 ; Persistent game state — uninitialized at power-on, set explicitly in Start
 SECTION "Player State", WRAM0
@@ -62,7 +63,7 @@ Start:
 	dec b
 	jr nz, .copyTilesOuter
 
-	ld de, FixtureMap
+	ld de, GeneratedLevelMap
 	ld hl, LevelMap
 	ld b, 5
 .copyLevelOuter
@@ -134,11 +135,11 @@ Start:
 	jr nz, .copyChefOuter
 
 ; Set the player's starting position and initial animation frame, then place all 4 sprites from it
-	ld a, 184
+	ld a, GENERATED_PLAYER_Y
 	ld [PlayerY], a
-	ld a, 24
+	ld a, LOW(GENERATED_PLAYER_X)
 	ld [PlayerX], a
-	ld a, 1
+	ld a, HIGH(GENERATED_PLAYER_X)
 	ld [PlayerX + 1], a
 	ld a, 1
 	ld [PlayerTileBase], a
@@ -1166,10 +1167,10 @@ TryLedgeCatch:
 TileData:
 	INCBIN "build/dining_room.2bpp"
 
-FixtureMap:
-	INCBIN "build/room_template_playtest.tilemap"
-FixtureMapEnd:
-ASSERT FixtureMapEnd - FixtureMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+GeneratedLevelMap:
+	INCBIN "build/seeded_level.tilemap"
+GeneratedLevelMapEnd:
+ASSERT GeneratedLevelMapEnd - GeneratedLevelMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
 CollisionTypes:
 	INCBIN "build/dining_room_collision.bin"

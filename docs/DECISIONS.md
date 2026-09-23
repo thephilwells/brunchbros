@@ -29,8 +29,9 @@ declared port, rather than multiplying templates by directed entry/exit pairs.
 branch, and branch traversal cannot strand the player based on which doorway
 was used. Semantic cells keep collision geometry independent from biome art.
 
-**Status:** Format and W|E, N|S, and N|E review templates implemented. Full
-tile-level certification remains pending. See `specs/level-generation.md`.
+**Status:** Implemented for all 15 nonzero port masks. The validator certifies
+fixed boundaries, support surfaces, traversal limits, and directed reachability
+between every declared port. See `specs/level-generation.md`.
 
 ---
 
@@ -45,8 +46,8 @@ graph is a tree: dead ends are allowed, sealed filler rooms and loops are not.
 to reach the exit. Growing outward from the already-valid critical route adds
 optional branches without weakening or rerouting the solution path.
 
-**Status:** Implemented in the host generator; playable room templates and the
-assembly port remain pending. See `specs/level-generation.md`.
+**Status:** Implemented in the host generator and build-time seeded ROM map.
+Runtime assembly generation remains pending. See `specs/level-generation.md`.
 
 ---
 
@@ -63,8 +64,9 @@ termination, staying in bounds, and avoiding revisited rooms without repair
 logic. The ordered sequence records critical direction independently from any
 later optional connections.
 
-**Status:** Implemented in the host-side structural generator. Authored room
-templates and the assembly port remain pending. See `specs/level-generation.md`.
+**Status:** Implemented in the host generator with authored templates selected
+by exact port mask. The runtime assembly port remains pending. See
+`specs/level-generation.md`.
 
 ---
 
@@ -81,9 +83,10 @@ corner cases much faster than playing every seed. Machine validation rejects
 structural failures, while retained seeds and SameBoy sampling still test real
 physics, feel, and hardware timing.
 
-**Status:** Implemented for macro topology and connectivity scaffolds. Template
-metadata, traversal classification, tile-level reachability, and runtime parity
-remain pending. See `specs/level-generation.md`.
+**Status:** Implemented for macro topology, authored-template assembly,
+per-template port reachability, and seeded TMX/JSON output. Protected-clearance
+validation, transition classification, and runtime parity remain pending. See
+`specs/level-generation.md`.
 
 ---
 
