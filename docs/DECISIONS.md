@@ -197,8 +197,8 @@ overlap, so three tiles is suitable as a hard limit rather than a routine gap.
 **Decision:** Holding Down while grounded gives the Chef the existing crouch
 pose and suppresses horizontal movement. His terrain collision remains 12×16;
 crouching does not permit shorter passages or change structural reachability.
-Landing squash reuses the same pose. Exit descent and future Down+A one-way
-drop-through take priority over ordinary crouching when implemented.
+Landing squash reuses the same pose. Exit descent and Down+A one-way
+drop-through take priority over ordinary crouching.
 
 **Why:** A pose-only terrain rule prevents generated rooms from depending on
 crouch tunnels while leaving room for a shorter combat or hazard hurtbox once
@@ -238,8 +238,9 @@ The input never permits passage through full-solid structural tiles.
 **Why:** One-way furniture should support intentional downward traversal
 without weakening the collision contract of opaque walls and floors.
 
-**Status:** Implemented; awaiting SameBoy acceptance in the vertical-room
-playtest. Full-solid support takes priority if the hitbox overlaps both kinds.
+**Status:** Implemented and accepted in the vertical-room SameBoy playtest.
+The Chef can traverse from the start to the summit and return. Full-solid
+support takes priority if the hitbox overlaps both kinds.
 
 ---
 
@@ -328,8 +329,8 @@ backs and legs remain passable. A generated per-tile collision table uses
 `0=empty`, `1=full solid`, and `2=one-way top`. ID 50 is a repeatable test
 surface in the current dining-room fixture; IDs 51–55 form the dining
 table, IDs 56–58 form the chair, IDs 59–63 form the booth, and IDs
-112–115 form the counter. Down+A drop-through is planned but not yet
-implemented.
+112–115 form the counter. Down+A drops the Chef through these surfaces without
+permitting passage through full-solid tiles.
 
 **Why:** The existing full-solid structural tiles block all directions.
 Distinct collision types keep visual furniture parts separate from the

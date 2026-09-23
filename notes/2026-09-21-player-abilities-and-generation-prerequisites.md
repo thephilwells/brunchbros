@@ -10,8 +10,8 @@ their focused specifications and playtests.
 - Down at an exit takes priority over crouching and begins a diagonal
   stair-descent presentation.
 - Down+A while supported by a one-way surface drops the Chef through it. It
-  has no effect on full-solid structural tiles. This is implemented and awaits
-  SameBoy acceptance in the vertical-room playtest.
+  has no effect on full-solid structural tiles. This is implemented and
+  accepted in the vertical-room SameBoy playtest.
 - Holding Down or Up long enough shifts the camera in that direction;
   releasing returns it to the ordinary follow offset.
 - Up needs a new upward-looking Chef pose.

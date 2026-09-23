@@ -109,9 +109,8 @@ host-side route generator exhaustively validates all 1,024 macro topologies and
 connects every room through optional branch trees before exporting seeded
 HTML/TMX/JSON connectivity galleries. The semantic template format and initial
 W|E, N|S, and N|E rooms are composed into a static bidirectional ROM playtest.
-Their ascent is accepted; Down+A one-way drop-through is implemented for the
-return route and awaits SameBoy acceptance. Next, accept the descent, add
-tile-level reachability checks, and complete the remaining port masks before porting the same
+Their ascent and Down+A return route are accepted in SameBoy. Next, add
+tile-level reachability checks and complete the remaining port masks before porting the same
 deterministic contract to assembly. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See
