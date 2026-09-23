@@ -4,6 +4,20 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Upward one-way landings require jump headroom
+
+**Decision:** A required one-way landing under a full-solid ceiling needs at
+least three empty tile rows between the platform surface and ceiling.
+
+**Why:** Two rows exactly fit the Chef's 16-pixel standing hitbox but leave no
+room for the upward arc and horizontal alignment needed to land from below.
+SameBoy review exposed this in the initial N|S room playtest.
+
+**Status:** Implemented in the semantic-template validator and representative
+vertical rooms. See `specs/level-design-rules.md`.
+
+---
+
 ## 2026-09-23 — Baseline room templates certify all declared ports
 
 **Decision:** Room templates use 10×8 semantic grids containing empty,

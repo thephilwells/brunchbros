@@ -108,9 +108,9 @@ template contract, and offline gallery/validation format are now defined. The
 host-side route generator exhaustively validates all 1,024 macro topologies and
 connects every room through optional branch trees before exporting seeded
 HTML/TMX/JSON connectivity galleries. The semantic template format and initial
-W|E, N|S, and N|E review rooms are implemented. Next, review those vertical
-shapes in play, add tile-level reachability checks, and complete the remaining
-port masks before porting the same
+W|E, N|S, and N|E rooms are composed into a static bidirectional ROM playtest.
+Next, accept those shapes in SameBoy, add tile-level reachability checks, and
+complete the remaining port masks before porting the same
 deterministic contract to assembly. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See

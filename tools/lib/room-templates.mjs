@@ -52,6 +52,17 @@ export function validateRoomTemplateSet(set) {
         if (template.rows[y][x] !== expected) errors.push(`${label}: boundary cell ${x},${y} must be '${expected}'`);
       }
     }
+
+    for (let y = 0; y < set.roomHeight; y++) {
+      for (let x = 0; x < set.roomWidth; x++) {
+        if (template.rows[y][x] !== '=') continue;
+        for (let ceilingY = y - 1; ceilingY >= 0; ceilingY--) {
+          if (template.rows[ceilingY][x] !== '#') continue;
+          if (y - ceilingY - 1 < 3) errors.push(`${label}: one-way cell ${x},${y} has less than three empty rows below a solid ceiling`);
+          break;
+        }
+      }
+    }
   }
   return errors;
 }
@@ -74,7 +85,13 @@ export function templateSetToFixture(set) {
     }
   }
 
-  const tiles = cells.map((row, y) => row.map((cell, x) => {
+  return { width, height, placements, tiles: semanticCellsToTileIds(cells) };
+}
+
+export function semanticCellsToTileIds(cells) {
+  const height = cells.length;
+  const width = cells[0].length;
+  return cells.map((row, y) => row.map((cell, x) => {
     if (cell === '.') return 17;
     if (cell === '=') return 50;
     const neighborMask =
@@ -84,6 +101,4 @@ export function templateSetToFixture(set) {
       (x > 0 && cells[y][x - 1] === '#' ? 8 : 0);
     return 1 + neighborMask;
   }));
-
-  return { width, height, placements, tiles };
 }

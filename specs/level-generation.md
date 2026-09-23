@@ -122,9 +122,12 @@ one-way pilot tile.
 
 The initial review fixture contains W|E, N|S, and N|E ordinary templates.
 Static validation currently proves dimensions, symbols, exact boundary ports,
-and tile conversion. Mutual port reachability remains provisional until the
-tile-level traversal validator is implemented and the vertical shapes are
-reviewed in play.
+tile conversion, connected seams, and vertical rises no greater than three
+tiles. It also rejects required one-way landings with fewer than three empty
+rows beneath a full-solid ceiling. The ROM's static playtest map composes the three rooms into one
+bidirectional route. Mutual port reachability remains provisional until that
+layout is accepted in SameBoy and the tile-level traversal validator is
+implemented.
 
 ## Non-critical rooms and optional branches
 

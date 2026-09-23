@@ -134,11 +134,11 @@ Start:
 	jr nz, .copyChefOuter
 
 ; Set the player's starting position and initial animation frame, then place all 4 sprites from it
-	ld a, 88
+	ld a, 184
 	ld [PlayerY], a
-	ld a, 88
+	ld a, 24
 	ld [PlayerX], a
-	xor a
+	ld a, 1
 	ld [PlayerX + 1], a
 	ld a, 1
 	ld [PlayerTileBase], a
@@ -1098,7 +1098,7 @@ TileData:
 	INCBIN "build/dining_room.2bpp"
 
 FixtureMap:
-	INCBIN "build/dining_room_fixture.tilemap"
+	INCBIN "build/room_template_playtest.tilemap"
 FixtureMapEnd:
 ASSERT FixtureMapEnd - FixtureMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 

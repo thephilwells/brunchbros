@@ -71,18 +71,24 @@ open build/level-gallery/index.html
 ```
 
 The gallery currently shows connectivity scaffolds. Its TMX files are useful
-for inspecting routes and room ports in Tiled; authored playable room templates
-and tile-level reachability validation are the next generation step.
+for inspecting routes and room ports in Tiled; the remaining playable room
+templates and tile-level reachability validation are the next generation step.
 
 The first semantic room templates can be regenerated and checked separately:
 
 ```sh
 node tools/generate-room-template-fixture.mjs
 node tools/verify-room-templates.mjs
+node tools/generate-room-template-playtest.mjs
+node tools/verify-room-template-playtest.mjs
 ```
 
 Open `gfx/room_template_fixture.tmx` in Tiled to inspect the W|E, N|S, and N|E
 rooms. Their source is `data/room-templates/dining-room.json`.
+
+The default ROM currently uses `gfx/room_template_playtest.tmx`. Chef starts at
+the far right: travel left through W|E, climb through N|E and N|S into the
+upper chamber, then return along the same route to test both directions.
 
 ## Documentation map
 

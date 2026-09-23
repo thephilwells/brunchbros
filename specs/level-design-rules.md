@@ -67,6 +67,9 @@ map. No vertical streaming is required for this level size.
   hard boundary case and requires empty space above and beside the catch edge.
 - One-way surfaces cannot terminate a four-tile upward transition because they
   cannot be ledge-caught.
+- A required one-way landing beneath a full-solid ceiling has at least three
+  empty tile rows between its surface and the ceiling. Two rows fit the
+  standing hitbox exactly but do not leave enough headroom to jump onto it.
 - A required downward transition may drop at most eight tiles, or 64 pixels.
   At the normal camera offset, the complete first tile row of that landing
   remains visible at the bottom of the 144-pixel viewport before the drop.

@@ -14,7 +14,7 @@ source files yet:
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000` and all 12 chef
-  animation frames at `$8010`, copies the 40×32 dining-room fixture into
+  animation frames at `$8010`, copies the 40×32 room-template playtest into
   `LevelMap`, loads its first 32 columns into the background tile map, sets
   `BGP=$E4`/`OBP0=$E0`, zeroes the camera and streaming state, clears OAM,
   sets the player's starting WRAM state, and turns the LCD back on with
@@ -62,8 +62,9 @@ source files yet:
   `tools/generate-structural-pilot.mjs` generates the base atlas and test
   map. `tools/generate-dining-room.mjs` extends that atlas with rear and
   dining tiles, then generates its TSX, fixture TMX, raw tile map, and
-  128-byte collision-type table;
-  `rgbgfx` converts the dining PNG to 2bpp.
+  128-byte collision-type table. `tools/generate-room-template-playtest.mjs`
+  composes the W|E, N|S, and N|E semantic templates into the raw map currently
+  included by the ROM. `rgbgfx` converts the dining PNG to 2bpp.
 
 ## Memory map
 
@@ -95,10 +96,11 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. The
-static 40×32 test map lives in `LevelMap`; `$9800–$9BFF` contains its streamed
-32-column view. IDs 25–30 draw the shared descent exit, while IDs 50–63 and
-112–115 provide one-way test/furniture surfaces. The exit is metadata and art
-only; biome-transition runtime code does not exist yet. See
+static 40×32 room-template playtest lives in `LevelMap`; `$9800–$9BFF`
+contains its streamed 32-column view. It uses ID 50 for the vertical rooms'
+one-way steps. IDs 25–30 still provide the shared descent-exit art, but the
+current playtest does not place it and biome-transition runtime code does not
+exist yet. See
 `specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates
