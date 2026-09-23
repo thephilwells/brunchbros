@@ -4,11 +4,16 @@ DEF PLAYER_HITBOX_TOP EQU 16
 DEF PLAYER_LEDGE_TILE EQU 45
 DEF LEDGE_RIGHT EQU 1
 DEF LEDGE_LEFT EQU 2
+DEF LEVEL_WIDTH_TILES EQU 40
+DEF LEVEL_HEIGHT_TILES EQU 32
+DEF STREAMED_COLUMN_COUNT EQU 8
 
 ; Persistent game state — uninitialized at power-on, set explicitly in Start
 SECTION "Player State", WRAM0
 PlayerY: db
-PlayerX: db
+PlayerX: dw
+CameraX: dw
+StreamedColumns: db
 PlayerTileBase: db
 AnimTimer: db
 FacingFlip: db
@@ -19,6 +24,7 @@ CurrentDpad: db
 LedgeSide: db
 LedgeTop: db
 PlayerGrounded: db
+LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
 SECTION "Entry Point", ROM0[$100]
@@ -57,26 +63,49 @@ Start:
 	jr nz, .copyTilesOuter
 
 	ld de, FixtureMap
-	ld hl, $9800
-	ld b, 4
-.copyMapOuter
+	ld hl, LevelMap
+	ld b, 5
+.copyLevelOuter
 	ld c, 0
-.copyMapInner
+.copyLevelInner
 	ld a, [de]
 	ld [hl+], a
 	inc de
 	dec c
-	jr nz, .copyMapInner
+	jr nz, .copyLevelInner
 	dec b
-	jr nz, .copyMapOuter
+	jr nz, .copyLevelOuter
+
+	ld de, LevelMap
+	ld hl, $9800
+	ld b, LEVEL_HEIGHT_TILES
+.copyVisibleRows
+	ld c, 32
+.copyVisibleColumns
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyVisibleColumns
+	ld a, e
+	add a, LEVEL_WIDTH_TILES - 32
+	ld e, a
+	jr nc, .visibleRowReady
+	inc d
+.visibleRowReady
+	dec b
+	jr nz, .copyVisibleRows
 
 	ld a, $e4
 	ldh [$ff47], a
 	ld a, $e0
 	ldh [$ff48], a
 
-; Camera scroll: no scrolling yet, start at (0,0)
-	ld a, 0
+; Camera starts at (0,0).
+	xor a
+	ld [CameraX], a
+	ld [CameraX + 1], a
+	ld [StreamedColumns], a
 	ldh [$ff42], a
 	ldh [$ff43], a
 
@@ -109,6 +138,8 @@ Start:
 	ld [PlayerY], a
 	ld a, 88
 	ld [PlayerX], a
+	xor a
+	ld [PlayerX + 1], a
 	ld a, 1
 	ld [PlayerTileBase], a
 	ld a, 0
@@ -142,21 +173,48 @@ MainLoop:
 	cp a, 144
 	jr c, .waitVBlank
 
-; Commit camera and sprite state while OAM is accessible.
+; Commit streamed background, camera, and sprite state while VRAM/OAM are accessible.
+	ld a, [PlayerX + 1]
+	and a, a
+	jr nz, .scxSubtract
 	ld a, [PlayerX]
 	cp a, 80
 	jr c, .scxMin
 
+.scxSubtract
+	ld a, [PlayerX]
 	sub a, 80
-	cp a, 97
-	jr c, .scxDone
-	ld a, 96
-	jr .scxDone
+	ld e, a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	and a, a
+	jr nz, .scxMax
+	ld a, e
+	cp a, 161
+	jr c, .scxStore
+
+.scxMax
+	ld a, 160
+	ld [CameraX], a
+	xor a
+	ld [CameraX + 1], a
+	jr .scxReady
 
 .scxMin
-	ld a, 0
+	xor a
+	ld [CameraX], a
+	ld [CameraX + 1], a
+	jr .scxReady
 
-.scxDone
+.scxStore
+	ld a, e
+	ld [CameraX], a
+	xor a
+	ld [CameraX + 1], a
+
+.scxReady
+	call UpdateStreaming
+	ld a, [CameraX]
 	ldh [$ff43], a
 
 	ld a, [PlayerY]
@@ -228,17 +286,13 @@ MainLoop:
 	ld a, c
 	cp a, LEDGE_RIGHT
 	jr nz, .jumpFromLeftLedge
-	ld a, [PlayerX]
-	dec a
-	ld [PlayerX], a
+	call DecrementPlayerX
 	ld a, $20
 	ld [FacingFlip], a
 	jp .applyGravity
 
 .jumpFromLeftLedge
-	ld a, [PlayerX]
-	inc a
-	ld [PlayerX], a
+	call IncrementPlayerX
 	ld a, 0
 	ld [FacingFlip], a
 	jp .applyGravity
@@ -320,24 +374,19 @@ MainLoop:
 	cp a, 255
 	jr z, .grounded
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT
-	ld e, a
+	call LoadPlayerXLeft
 	ld a, [PlayerY]
 	ld d, a
 	call IsSupport
 	jr z, .grounded
 
-	ld a, [PlayerX]
-	ld e, a
+	call LoadPlayerX
 	ld a, [PlayerY]
 	ld d, a
 	call IsSupport
 	jr z, .grounded
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT
-	ld e, a
+	call LoadPlayerXRight
 	ld a, [PlayerY]
 	ld d, a
 	call IsSupport
@@ -360,72 +409,56 @@ MainLoop:
 .checkRight
 	bit 0, b
 	jr nz, .notRight
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT + 1
-	ld e, a
+	call LoadPlayerXRightEdge
 	ld a, [PlayerY]
 	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .notRight
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT + 1
-	ld e, a
+	call LoadPlayerXRightEdge
 	ld a, [PlayerY]
 	sub a, 8
 	ld d, a
 	call IsWall
 	jr z, .notRight
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT + 1
-	ld e, a
+	call LoadPlayerXRightEdge
 	ld a, [PlayerY]
 	sub a, 1
 	ld d, a
 	call IsWall
 	jr z, .notRight
 
-	ld a, [PlayerX]
-	inc a
-	ld [PlayerX], a
+	call IncrementPlayerX
 	ld a, 0
 	ld [FacingFlip], a
 .notRight
 
 	bit 1, b
 	jr nz, .notLeft
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT + 1
-	ld e, a
+	call LoadPlayerXLeftEdge
 	ld a, [PlayerY]
 	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .notLeft
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT + 1
-	ld e, a
+	call LoadPlayerXLeftEdge
 	ld a, [PlayerY]
 	sub a, 8
 	ld d, a
 	call IsWall
 	jr z, .notLeft
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT + 1
-	ld e, a
+	call LoadPlayerXLeftEdge
 	ld a, [PlayerY]
 	sub a, 1
 	ld d, a
 	call IsWall
 	jr z, .notLeft
 
-	ld a, [PlayerX]
-	dec a
-	ld [PlayerX], a
+	call DecrementPlayerX
 	ld a, $20
 	ld [FacingFlip], a
 .notLeft
@@ -470,28 +503,23 @@ MainLoop:
 	jr z, .checkFallTop
 	jp nc, .checkLedges
 .checkFallTop
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT
-	ld e, a
 	ld d, c
 	push bc
+	call LoadPlayerXLeft
 	call IsSupport
 	pop bc
 	jr z, .landedAtTop
 
-	ld a, [PlayerX]
-	ld e, a
 	ld d, c
 	push bc
+	call LoadPlayerX
 	call IsSupport
 	pop bc
 	jr z, .landedAtTop
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT
-	ld e, a
 	ld d, c
 	push bc
+	call LoadPlayerXRight
 	call IsSupport
 	pop bc
 	jr z, .landedAtTop
@@ -532,26 +560,21 @@ MainLoop:
 
 .checkRising
 ; Rising: check the top edge at the tentative Y
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT
-	ld e, a
+	call LoadPlayerXLeft
 	ld a, b
 	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .headBump
 
-	ld a, [PlayerX]
-	ld e, a
+	call LoadPlayerX
 	ld a, b
 	sub a, PLAYER_HITBOX_TOP
 	ld d, a
 	call IsWall
 	jr z, .headBump
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT
-	ld e, a
+	call LoadPlayerXRight
 	ld a, b
 	sub a, PLAYER_HITBOX_TOP
 	ld d, a
@@ -587,18 +610,30 @@ MainLoop:
 
 .gravityDone
 
-; Clamp player position: X to the 256px-wide world, Y to the screen (unchanged for now)
+; Clamp player position to the 320×256px logical world.
+	ld a, [PlayerX + 1]
+	and a, a
+	jr nz, .xNotTooLow
 	ld a, [PlayerX]
 	cp a, 8
 	jr nc, .xNotTooLow
 	ld a, 8
 	ld [PlayerX], a
+	xor a
+	ld [PlayerX + 1], a
 .xNotTooLow
-	ld a, [PlayerX]
-	cp a, 249
+	ld a, [PlayerX + 1]
+	cp a, 1
 	jr c, .xNotTooHigh
-	ld a, 248
+	jr nz, .clampXHigh
+	ld a, [PlayerX]
+	cp a, 57
+	jr c, .xNotTooHigh
+.clampXHigh
+	ld a, 56
 	ld [PlayerX], a
+	ld a, 1
+	ld [PlayerX + 1], a
 .xNotTooHigh
 
 	ld a, [PlayerY]
@@ -656,6 +691,132 @@ MainLoop:
 .poseOverrideDone
 
 	jp MainLoop
+
+IncrementPlayerX:
+	ld hl, PlayerX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+
+DecrementPlayerX:
+	ld hl, PlayerX
+	ld a, [hl]
+	and a, a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+	ret
+
+LoadPlayerX:
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld c, a
+	ret
+
+LoadPlayerXLeft:
+	call LoadPlayerX
+	ld a, e
+	sub a, PLAYER_HITBOX_LEFT
+	ld e, a
+	ld a, c
+	sbc a, 0
+	ld c, a
+	ret
+
+LoadPlayerXRight:
+	call LoadPlayerX
+	ld a, e
+	add a, PLAYER_HITBOX_RIGHT
+	ld e, a
+	ld a, c
+	adc a, 0
+	ld c, a
+	ret
+
+LoadPlayerXLeftEdge:
+	call LoadPlayerX
+	ld a, e
+	sub a, PLAYER_HITBOX_LEFT + 1
+	ld e, a
+	ld a, c
+	sbc a, 0
+	ld c, a
+	ret
+
+LoadPlayerXRightEdge:
+	call LoadPlayerX
+	ld a, e
+	add a, PLAYER_HITBOX_RIGHT + 1
+	ld e, a
+	ld a, c
+	adc a, 0
+	ld c, a
+	ret
+
+UpdateStreaming:
+	ld a, [CameraX]
+	srl a
+	srl a
+	srl a
+	cp a, STREAMED_COLUMN_COUNT + 1
+	jr c, .desiredReady
+	ld a, STREAMED_COLUMN_COUNT
+.desiredReady
+	ld b, a
+	ld a, [StreamedColumns]
+	cp a, b
+	ret z
+	jr c, .streamForward
+
+	dec a
+	ld [StreamedColumns], a
+	ld c, a
+	call StreamColumn
+	ret
+
+.streamForward
+	ld c, a
+	add a, 32
+	call StreamColumn
+	ld a, [StreamedColumns]
+	inc a
+	ld [StreamedColumns], a
+	ret
+
+StreamColumn:
+	ld e, a
+	ld d, 0
+	ld hl, LevelMap
+	add hl, de
+	ld d, h
+	ld e, l
+	ld h, $98
+	ld l, c
+	ld b, LEVEL_HEIGHT_TILES
+.copyRow
+	ld a, [de]
+	ld [hl], a
+	ld a, e
+	add a, LEVEL_WIDTH_TILES
+	ld e, a
+	jr nc, .sourceReady
+	inc d
+.sourceReady
+	ld a, l
+	add a, 32
+	ld l, a
+	jr nc, .destinationReady
+	inc h
+.destinationReady
+	dec b
+	jr nz, .copyRow
+	ret
 
 ; Projects PlayerY/PlayerX (world coords) into the 4 OAM entries, converting to screen coords via SCX/SCY
 UpdateSprites:
@@ -777,12 +938,17 @@ UpdateSprites:
 
 	ret
 
-ReadBgTile:
+ReadLevelTile:
+	push bc
 	ld a, e
 	srl a
 	srl a
 	srl a
-	ld c, a
+	bit 0, c
+	jr z, .columnReady
+	add a, 32
+.columnReady
+	push af
 
 	ld a, d
 	srl a
@@ -793,21 +959,24 @@ ReadBgTile:
 	add hl, hl
 	add hl, hl
 	add hl, hl
+	ld b, h
+	ld c, l
 	add hl, hl
 	add hl, hl
+	add hl, bc
 
-	ld de, $9800
-	add hl, de
-
-	ld d, 0
-	ld e, c
-	add hl, de
-
+	pop af
+	ld c, a
+	ld b, 0
+	add hl, bc
+	ld bc, LevelMap
+	add hl, bc
 	ld a, [hl]
+	pop bc
 	ret
 
 CollisionAt:
-	call ReadBgTile
+	call ReadLevelTile
 	ld e, a
 	ld d, 0
 	ld hl, CollisionTypes
@@ -839,36 +1008,33 @@ TryLedgeCatch:
 	bit 0, a
 	jr nz, .tryLeft
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT + 1
-	ld e, a
+	call LoadPlayerXRightEdge
 	ld a, [LedgeTop]
 	ld d, a
 	call IsWall
 	jr nz, .tryLeft
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT + 1
-	ld e, a
+	call LoadPlayerXRightEdge
 	ld a, [LedgeTop]
 	dec a
 	ld d, a
 	call IsWall
 	jr z, .tryLeft
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT
-	ld e, a
+	call LoadPlayerXRight
 	ld a, [LedgeTop]
 	ld d, a
 	call IsWall
 	jr z, .tryLeft
 
-	ld a, [PlayerX]
-	add a, PLAYER_HITBOX_RIGHT + 1
+	call LoadPlayerXRightEdge
+	ld a, e
 	and a, $f8
 	sub a, PLAYER_HITBOX_RIGHT + 1
 	ld [PlayerX], a
+	ld a, c
+	sbc a, 0
+	ld [PlayerX + 1], a
 	ld a, 0
 	ld [FacingFlip], a
 	ld a, LEDGE_RIGHT
@@ -879,36 +1045,33 @@ TryLedgeCatch:
 	bit 1, a
 	jr nz, .notCaught
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT + 1
-	ld e, a
+	call LoadPlayerXLeftEdge
 	ld a, [LedgeTop]
 	ld d, a
 	call IsWall
 	jr nz, .notCaught
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT + 1
-	ld e, a
+	call LoadPlayerXLeftEdge
 	ld a, [LedgeTop]
 	dec a
 	ld d, a
 	call IsWall
 	jr z, .notCaught
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT
-	ld e, a
+	call LoadPlayerXLeft
 	ld a, [LedgeTop]
 	ld d, a
 	call IsWall
 	jr z, .notCaught
 
-	ld a, [PlayerX]
-	sub a, PLAYER_HITBOX_LEFT + 1
+	call LoadPlayerXLeftEdge
+	ld a, e
 	and a, $f8
 	add a, 8 + PLAYER_HITBOX_LEFT
 	ld [PlayerX], a
+	ld a, c
+	adc a, 0
+	ld [PlayerX + 1], a
 	ld a, $20
 	ld [FacingFlip], a
 	ld a, LEDGE_LEFT
@@ -936,6 +1099,8 @@ TileData:
 
 FixtureMap:
 	INCBIN "build/dining_room_fixture.tilemap"
+FixtureMapEnd:
+ASSERT FixtureMapEnd - FixtureMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
 CollisionTypes:
 	INCBIN "build/dining_room_collision.bin"

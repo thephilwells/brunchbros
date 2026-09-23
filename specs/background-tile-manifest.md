@@ -123,10 +123,10 @@ first three biomes use this doorway to reach the next one. The Deep Freezer
 contains the final boss, so its completion behavior is deferred to the boss
 and game-completion design rather than implied by this ordinary exit.
 
-The dining fixture places the doorway at columns 28–29, rows 24–26, beyond
-the right-hand structural wall. Its threshold meets the solid floor at row
+The 40×32 dining fixture places the doorway at columns 36–37, rows 24–26,
+beyond the VRAM wrap at column 32. Its threshold meets the solid floor at row
 27. This placement tests reaching an exit that is separated from the spawn
-area by traversal geometry.
+area by traversal geometry and requires streamed columns to render.
 
 ## Passable dining-room groups: IDs 32–49, 64–75, 80
 
@@ -144,8 +144,9 @@ and `part_y` for those parts.
 | 64–75 | `serving_hatch` | 4×3 tiles (32×24 px) | Decorative back-wall pass-through; no transition or collision |
 | 80 | `dining_wallpaper_motif` | 1 tile (8×8 px) | Sparse accent in a field of `rear_plain` |
 
-The dining-room fixture places a menu board at tile (3,4), mirror at
-(24,4), clock at (8,4), sconce at (19,4), and serving hatch at (13,3).
+The dining-room fixture places a menu board at tile (3,4), mirrors at
+(24,4) and (35,4), clock at (8,4), sconce at (19,4), and serving hatch at
+(13,3).
 Sparse wallpaper motifs appear on the left and right wall fields. A
 four-tile-wide recess patch occupies rows 7–9 near the right edge, and
 shared trim spans row 11. The solid platform/wall cells use IDs 1–16 from
@@ -159,6 +160,16 @@ spans columns 1–17 and rows 21–23, with sparse wallpaper below, so the art
 remains visible after the chef lands on the bottom floor. ID 24 also
 appears once as an isolated trim sample. This map is a visual and
 integration fixture, not a procedural room template.
+
+The right-hand wall ends two rows above the floor, leaving a 16-pixel-high
+walk-through beneath it. Its exposed upper corner remains the ledge-catch
+test, while the opening provides a direct route to the streaming extension.
+
+Columns 32–39 form the horizontal-streaming test extension. A solid three-tile
+platform at columns 32–34, row 24 proves collision on 16-bit world X
+coordinates, while the mirror and descent doorway make streamed art easy to
+identify. The floor continues through column 39 so the Chef can cross the
+X=256 seam and return without a forced jump.
 
 These groups exhaust the current *passable wall-decoration* vocabulary,
 not the tile budget. IDs 76–79, 81–111, and 116–127 remain reserved in

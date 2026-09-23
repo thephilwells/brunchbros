@@ -24,8 +24,8 @@ than front-loading a full hardware manual before it's relevant.
   that map is shown; the map wraps at its edges. This is a hardware
   requirement, not a convention — there is no mode that gives a bigger
   background map. A world bigger than 256×256px needs tile-map *streaming*
-  (rewriting map rows/columns near the scroll edges), not built yet —
-  deferred to pair with Level generation. See `docs/ARCHITECTURE.md`.
+  (rewriting map rows/columns near the scroll edges). Horizontal streaming is
+  now implemented for the 320×256px fixture. See `docs/ARCHITECTURE.md`.
 - **Tile data: 8×8 tiles, 2bpp planar** (16 bytes/tile: 2 bytes/row, low +
   high bit-plane as separate bytes, not interleaved per pixel). Tile data
   lives at `$8000`–`$97FF`; `LCDC` bit 4 picks unsigned (`$8000`-based) vs.
@@ -51,16 +51,16 @@ than front-loading a full hardware manual before it's relevant.
   group is selected before it's trustworthy.
 - **WRAM0: our own mutable state, uninitialized at power-on** — a bare `db`
   reserves a byte with no starting value; anything meaningful has to be set
-  by code after boot. Currently just single-byte player state (see
-  `docs/ARCHITECTURE.md`'s Memory map) — no bank switching or larger
-  structures needed yet.
+  by code after boot. It now contains player/camera state and the complete
+  current-biome logical tile map; no WRAM bank switching is used.
 - **A generated 40×32-tile level fits in WRAM but not in one VRAM background
   map.** Its 1,280 one-byte tile IDs fit in the 4 KiB WRAM0 region alongside
-  current state, leaving 2,804 bytes at the present 12-byte baseline. The
+  current state, leaving 2,800 bytes in the current linked build. The
   32×32 VRAM map can hold the full height but only 32 of the 40 columns, so the
   renderer must replace eight wrapped columns as the camera moves. A second
   VRAM background map cannot extend the first one horizontally; `LCDC` selects
-  one whole map at a time.
+  one whole map at a time. Bidirectional horizontal streaming is implemented
+  for the static dining-room fixture.
 - **ROM banking, precise CPU/VBlank cycle timing, and audio channels: not
   yet touched.** Everything so far fits in `ROM0`; no cycle-critical code
   or sound has been written.

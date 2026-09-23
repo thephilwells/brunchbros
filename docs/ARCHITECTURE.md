@@ -14,12 +14,14 @@ source files yet:
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000` and all 12 chef
-  animation frames at `$8010`, copies the 32×32 dining-room fixture into
-  the background tile map, sets `BGP=$E4`/`OBP0=$E0`, zeroes `SCX`/`SCY`,
-  clears OAM, sets the player's starting WRAM state, and turns the LCD
-  back on with signed background addressing. Falls through into `MainLoop`.
+  animation frames at `$8010`, copies the 40×32 dining-room fixture into
+  `LevelMap`, loads its first 32 columns into the background tile map, sets
+  `BGP=$E4`/`OBP0=$E0`, zeroes the camera and streaming state, clears OAM,
+  sets the player's starting WRAM state, and turns the LCD back on with
+  signed background addressing. Falls through into `MainLoop`.
 - **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
-  At the start of VBlank it commits the camera registers and all four player
+  At the start of VBlank it streams one newly exposed or restored background
+  column when needed, then commits the camera registers and all four player
   OAM entries together. It then reads the D-pad for animation state, drives
   idle/walk tile-swap animation, reads the A button (edge-detected) for
   jumping, applies horizontal movement with full-solid wall checks, applies
@@ -39,11 +41,16 @@ source files yet:
   makes them track it anyway). Has a normal-facing block and a `.flipped`
   block (horizontal-flip attribute bit set, left/right tile quadrants
   swapped) selected by `FacingFlip`.
-- **`ReadBgTile` / `CollisionAt`** — map a world-space pixel (`D`=Y,
-  `E`=X) to a BG tile ID, then use that ID to read its generated collision
-  type. `IsWall` tests full solid only; `IsSupport` accepts full solid and
-  one-way top surfaces. Rising and side movement use `IsWall`, while
-  grounded and falling checks use `IsSupport`.
+- **`ReadLevelTile` / `CollisionAt`** — map a world-space pixel (`D`=Y,
+  `C:E`=16-bit X) to the 40-wide WRAM level's tile ID, then use that ID to
+  read its generated collision type. Collision never reads the wrapped VRAM
+  view. `IsWall` tests full solid only; `IsSupport` accepts full solid and
+  one-way top surfaces. Rising and side movement use `IsWall`, while grounded
+  and falling checks use `IsSupport`.
+- **`UpdateStreaming` / `StreamColumn`** — treat `$9800–$9BFF` as a horizontal
+  ring buffer. As `CameraX` passes eight-pixel boundaries, logical columns
+  32–39 replace physical columns 0–7 after those columns leave the viewport;
+  moving left restores logical columns 0–7 before they reappear.
 - **Player terrain hitbox** — 12×16 pixels centered on `PlayerX`, with
   `PlayerY` as its feet line. The 16×16 sprite extends two pixels beyond the
   hitbox on each side. Horizontal edges use top/middle/bottom probes and
@@ -60,12 +67,14 @@ source files yet:
 
 ## Memory map
 
-WRAM0, `SECTION "Player State"` — all single bytes, uninitialized at
-power-on, set explicitly in `Start`:
+WRAM0, `SECTION "Player State"` — uninitialized at power-on and set explicitly
+in `Start`:
 
 | Symbol | Meaning |
 |---|---|
-| `PlayerY` / `PlayerX` | Authoritative feet line and horizontal center of the 12×16 terrain hitbox, in **world coordinates** |
+| `PlayerY` / `PlayerX` | Authoritative feet line and horizontal center of the 12×16 terrain hitbox, in **world coordinates**; X is 16-bit and Y is 8-bit |
+| `CameraX` | 16-bit logical horizontal camera position; its low byte is committed to `SCX` |
+| `StreamedColumns` | Number of wrapped columns currently representing logical columns 32–39 |
 | `PlayerTileBase` | Index of the current animation frame's first tile (idle/walk/jump/ascent/crouch/ledge all reuse this one mechanism) |
 | `AnimTimer` | Frame counter gating animation speed, decoupled from the 60fps loop |
 | `FacingFlip` | `0` or `$20` (the OAM horizontal-flip attribute bit), selects which `UpdateSprites` block runs |
@@ -76,6 +85,7 @@ power-on, set explicitly in `Start`:
 | `LedgeSide` | `0` when free, `1` while hanging from a wall on the right, `2` for a wall on the left |
 | `LedgeTop` | Scratch world Y coordinate for the tile top currently considered by swept ledge detection |
 | `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
+| `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 
 Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`SCY`/`SCX`), `$FF44` (`LY`), `$FF47`/`$FF48` (`BGP`/`OBP0`), `$FF00`
@@ -84,24 +94,22 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
-all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. Its
-static 32×32 map lives at `$9800–$9BFF`. IDs 25–30 draw the shared descent
-exit, while IDs 50–63 and 112–115 provide one-way test/furniture surfaces.
-The exit is metadata and art only; biome-transition runtime code does not
-exist yet. See `specs/background-assets.md` for the remaining VRAM allocation.
+all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. The
+static 40×32 test map lives in `LevelMap`; `$9800–$9BFF` contains its streamed
+32-column view. IDs 25–30 draw the shared descent exit, while IDs 50–63 and
+112–115 provide one-way test/furniture surfaces. The exit is metadata and art
+only; biome-transition runtime code does not exist yet. See
+`specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates
 
-`PlayerX`/`PlayerY` and all collision checks operate in
-**world space** — the coordinate system of the full scrollable
-background. `SCX`/`SCY` pick which 160×144 window of that world is
-currently visible. Because OAM sprite coordinates are always screen-space
-on real hardware, `UpdateSprites` is the only place world coordinates get
-converted (`world − scroll`) before anything touches the screen. The world
-is currently capped at 256×256px (one full 32×32 tile map — the hardware's
-physical ceiling); worlds bigger than that need tile-map streaming, not
-built yet (see `docs/ROADMAP.md`'s Camera / room traversal entry and
-`docs/LEARNING.md`).
+`PlayerX`/`PlayerY` and all collision checks operate in **world space** over
+the 320×256px logical level. `SCX`/`SCY` pick the 160×144 hardware view;
+horizontal streaming keeps its wrapped tile columns synchronized with the
+logical map. Because OAM sprite coordinates are always screen-space on real
+hardware, `UpdateSprites` derives the on-screen position every frame as
+`world − camera` before writing OAM. The low-byte subtraction remains correct
+across X=256 because the visible difference is always less than 256 pixels.
 
 ## Not yet in place
 

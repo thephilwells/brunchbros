@@ -1,94 +1,121 @@
 SUMMARY:
-	ROM0: 5456 bytes used / 10928 free
-	WRAM0: 12 bytes used / 4084 free
+	ROM0: 5927 bytes used / 10457 free
+	WRAM0: 1296 bytes used / 2800 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$164f ($1500 bytes) ["Main"]
+	SECTION: $0150-$1826 ($16d7 bytes) ["Main"]
 	         $0150 = Start
 	         $0153 = Start.waitVBlank
 	         $0166 = Start.copyTilesOuter
 	         $0168 = Start.copyTilesInner
-	         $0179 = Start.copyMapOuter
-	         $017b = Start.copyMapInner
-	         $0199 = Start.clearOAM
-	         $01a5 = Start.copyChefOuter
-	         $01a7 = Start.copyChefInner
-	         $01e5 = MainLoop.waitNotVBlank
-	         $01e5 = MainLoop
-	         $01eb = MainLoop.waitVBlank
-	         $0202 = MainLoop.scxMin
-	         $0204 = MainLoop.scxDone
-	         $0217 = MainLoop.scyMin
-	         $0219 = MainLoop.scyDone
-	         $0255 = MainLoop.dropFromLedge
-	         $0260 = MainLoop.jumpFromLedge
-	         $0282 = MainLoop.jumpFromLeftLedge
-	         $0291 = MainLoop.notHanging
-	         $02a3 = MainLoop.walkStart
-	         $02af = MainLoop.walkContinue
-	         $02ca = MainLoop.walkStore
-	         $02cf = MainLoop.doIdle
-	         $02e2 = MainLoop.idleContinue
-	         $02fa = MainLoop.animDone
-	         $0331 = MainLoop.grounded
-	         $033b = MainLoop.noJump
-	         $0346 = MainLoop.checkRight
-	         $0389 = MainLoop.notRight
-	         $03cc = MainLoop.applyGravity
-	         $03cc = MainLoop.notLeft
-	         $03e0 = MainLoop.velDone
-	         $03ff = MainLoop.scanFall
-	         $0406 = MainLoop.checkFallTop
-	         $0437 = MainLoop.checkLedges
-	         $0441 = MainLoop.scanLedges
-	         $0457 = MainLoop.landedAtTop
-	         $045e = MainLoop.checkRising
-	         $0489 = MainLoop.applyFall
-	         $048f = MainLoop.headBump
-	         $0496 = MainLoop.worldBottom
-	         $049d = MainLoop.landed
-	         $04a9 = MainLoop.noLandFX
-	         $04b3 = MainLoop.gravityDone
-	         $04bf = MainLoop.xNotTooLow
-	         $04cb = MainLoop.xNotTooHigh
-	         $04dc = MainLoop.yNotTooLow
-	         $04ed = MainLoop.checkAirborne
-	         $0506 = MainLoop.checkVelocity
-	         $051b = MainLoop.showAscent
-	         $0520 = MainLoop.poseOverrideDone
-	         $0523 = UpdateSprites
-	         $0585 = UpdateSprites.flipped
-	         $05d8 = ReadBgTile
-	         $05f9 = CollisionAt
-	         $0605 = IsWall
-	         $060b = IsSupport
-	         $0613 = IsSupport.empty
-	         $0617 = TryLedgeCatch
-	         $0669 = TryLedgeCatch.tryLeft
-	         $06b1 = TryLedgeCatch.caught
-	         $06ce = TryLedgeCatch.notCaught
-	         $06d0 = TileData
-	         $0ed0 = FixtureMap
-	         $12d0 = CollisionTypes
-	         $1350 = ChefFrames
-	EMPTY: $1650-$3fff ($29b0 bytes)
-	TOTAL EMPTY: $2ab0 bytes
+	         $0179 = Start.copyLevelOuter
+	         $017b = Start.copyLevelInner
+	         $018c = Start.copyVisibleRows
+	         $018e = Start.copyVisibleColumns
+	         $019b = Start.visibleRowReady
+	         $01bb = Start.clearOAM
+	         $01c7 = Start.copyChefOuter
+	         $01c9 = Start.copyChefInner
+	         $020b = MainLoop.waitNotVBlank
+	         $020b = MainLoop
+	         $0211 = MainLoop.waitVBlank
+	         $0224 = MainLoop.scxSubtract
+	         $0237 = MainLoop.scxMax
+	         $0242 = MainLoop.scxMin
+	         $024b = MainLoop.scxStore
+	         $0253 = MainLoop.scxReady
+	         $026c = MainLoop.scyMin
+	         $026e = MainLoop.scyDone
+	         $02aa = MainLoop.dropFromLedge
+	         $02b5 = MainLoop.jumpFromLedge
+	         $02d3 = MainLoop.jumpFromLeftLedge
+	         $02de = MainLoop.notHanging
+	         $02f0 = MainLoop.walkStart
+	         $02fc = MainLoop.walkContinue
+	         $0317 = MainLoop.walkStore
+	         $031c = MainLoop.doIdle
+	         $032f = MainLoop.idleContinue
+	         $0347 = MainLoop.animDone
+	         $0377 = MainLoop.grounded
+	         $0381 = MainLoop.noJump
+	         $038c = MainLoop.checkRight
+	         $03c2 = MainLoop.notRight
+	         $03f8 = MainLoop.applyGravity
+	         $03f8 = MainLoop.notLeft
+	         $040c = MainLoop.velDone
+	         $042b = MainLoop.scanFall
+	         $0432 = MainLoop.checkFallTop
+	         $045c = MainLoop.checkLedges
+	         $0466 = MainLoop.scanLedges
+	         $047c = MainLoop.landedAtTop
+	         $0483 = MainLoop.checkRising
+	         $04a7 = MainLoop.applyFall
+	         $04ad = MainLoop.headBump
+	         $04b4 = MainLoop.worldBottom
+	         $04bb = MainLoop.landed
+	         $04c7 = MainLoop.noLandFX
+	         $04d1 = MainLoop.gravityDone
+	         $04e7 = MainLoop.xNotTooLow
+	         $04f7 = MainLoop.clampXHigh
+	         $0501 = MainLoop.xNotTooHigh
+	         $0512 = MainLoop.yNotTooLow
+	         $0523 = MainLoop.checkAirborne
+	         $053c = MainLoop.checkVelocity
+	         $0551 = MainLoop.showAscent
+	         $0556 = MainLoop.poseOverrideDone
+	         $0559 = IncrementPlayerX
+	         $0561 = DecrementPlayerX
+	         $056b = DecrementPlayerX.decrementLow
+	         $056d = LoadPlayerX
+	         $0576 = LoadPlayerXLeft
+	         $0582 = LoadPlayerXRight
+	         $058e = LoadPlayerXLeftEdge
+	         $059a = LoadPlayerXRightEdge
+	         $05a6 = UpdateStreaming
+	         $05b5 = UpdateStreaming.desiredReady
+	         $05c6 = UpdateStreaming.streamForward
+	         $05d4 = StreamColumn
+	         $05e2 = StreamColumn.copyRow
+	         $05eb = StreamColumn.sourceReady
+	         $05f2 = StreamColumn.destinationReady
+	         $05f6 = UpdateSprites
+	         $0658 = UpdateSprites.flipped
+	         $06ab = ReadLevelTile
+	         $06b9 = ReadLevelTile.columnReady
+	         $06d8 = CollisionAt
+	         $06e4 = IsWall
+	         $06ea = IsSupport
+	         $06f2 = IsSupport.empty
+	         $06f6 = TryLedgeCatch
+	         $0744 = TryLedgeCatch.tryLeft
+	         $0788 = TryLedgeCatch.caught
+	         $07a5 = TryLedgeCatch.notCaught
+	         $07a7 = TileData
+	         $0fa7 = FixtureMap
+	         $14a7 = CollisionTypes
+	         $14a7 = FixtureMapEnd
+	         $1527 = ChefFrames
+	EMPTY: $1827-$3fff ($27d9 bytes)
+	TOTAL EMPTY: $28d9 bytes
 
 WRAM0 bank #0:
-	SECTION: $c000-$c00b ($000c bytes) ["Player State"]
+	SECTION: $c000-$c50f ($0510 bytes) ["Player State"]
 	         $c000 = PlayerY
 	         $c001 = PlayerX
-	         $c002 = PlayerTileBase
-	         $c003 = AnimTimer
-	         $c004 = FacingFlip
-	         $c005 = PlayerVelY
-	         $c006 = PrevButtons
-	         $c007 = LandTimer
-	         $c008 = CurrentDpad
-	         $c009 = LedgeSide
-	         $c00a = LedgeTop
-	         $c00b = PlayerGrounded
-	EMPTY: $c00c-$cfff ($0ff4 bytes)
-	TOTAL EMPTY: $0ff4 bytes
+	         $c003 = CameraX
+	         $c005 = StreamedColumns
+	         $c006 = PlayerTileBase
+	         $c007 = AnimTimer
+	         $c008 = FacingFlip
+	         $c009 = PlayerVelY
+	         $c00a = PrevButtons
+	         $c00b = LandTimer
+	         $c00c = CurrentDpad
+	         $c00d = LedgeSide
+	         $c00e = LedgeTop
+	         $c00f = PlayerGrounded
+	         $c010 = LevelMap
+	EMPTY: $c510-$cfff ($0af0 bytes)
+	TOTAL EMPTY: $0af0 bytes

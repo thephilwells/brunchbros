@@ -301,13 +301,19 @@ milestone) if useful.
   not a true overflow).
 
 - **The background tile map is a hard 32×32-tile (256×256px) hardware
-  ceiling, not a softly extensible size.** A world genuinely bigger than
-  that (Spelunky-scale, ~4 screens each direction) needs *streaming* —
-  dynamically rewriting map rows/columns near the scroll edges, exploiting
-  the map's hardware wraparound instead of fighting it. Deliberately
-  deferred: streaming needs real level content to stream from, so it
-  belongs paired with the future Level generation milestone, not built
-  against placeholder test blocks now.
+  ceiling, but it can be used as a ring buffer for a larger logical map.**
+  The 40×32 fixture lives completely in WRAM. As the camera moves right,
+  logical columns 32–39 replace physical VRAM columns 0–7 only after their
+  original contents leave the viewport; moving left restores columns 0–7
+  before they reappear. Collision reads WRAM rather than VRAM because one
+  physical column can represent two different logical columns over time.
+
+- **A 320-pixel world needs 16-bit horizontal world coordinates even though
+  `SCX` and OAM X remain eight-bit.** `PlayerX` and `CameraX` use two bytes.
+  The camera itself only ranges from 0–160 for this world, and the visible
+  player-to-camera difference stays below 256, so the low byte of their
+  subtraction is the correct OAM coordinate even after `PlayerX` crosses
+  X=256.
 
 - **Direct OAM writes must happen during a known writable display period.**
   The CPU cannot access OAM during LCD modes 2 and 3. Writing four sprite

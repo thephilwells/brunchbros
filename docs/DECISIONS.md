@@ -19,8 +19,8 @@ displayed as one static hardware map because the Game Boy background is fixed
 at 32×32 tiles. Separating the authoritative logical map from its streamed VRAM
 view preserves deterministic collision and backtracking.
 
-**Status:** Accepted architecture; implementation pending. See
-`specs/level-design-rules.md`.
+**Status:** Implemented for the static 40×32 dining-room fixture; pending
+SameBoy review. See `specs/level-design-rules.md`.
 
 ---
 

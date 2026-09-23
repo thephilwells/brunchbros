@@ -100,11 +100,13 @@ same-height gap is now the authoritative hard maximum. Two-tile minimum
 platforms and the 24/32/64-pixel vertical transition limits are also accepted.
 Spawn/exit safety envelopes and ordinary versus isolated boundary-case
 tolerances are now defined. The common 40×32-tile level size and pre-generated
-WRAM map with horizontal VRAM streaming are also settled. Next, prove 16-bit
-horizontal coordinates and bidirectional column streaming, then define the
-critical-route representation. Directional look poses and camera look-ahead
-can ship in the same milestone but are not blockers for procedural generation.
-See `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
+WRAM map with horizontal VRAM streaming are also settled. The static fixture
+now implements 16-bit horizontal coordinates and bidirectional column
+streaming, pending SameBoy review across the X=256 seam and back. After that,
+define the critical-route representation. Directional look poses and camera
+look-ahead can ship in the same milestone but are not blockers for procedural
+generation. See
+`notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed
 

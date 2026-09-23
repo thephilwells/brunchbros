@@ -127,6 +127,5 @@ occupy.
 
 - Whether crouch later shortens the combat/hazard hurtbox.
 - The first generator's macro topology and critical-route representation.
-- Conversion from eight-bit to 16-bit horizontal world coordinates.
-- A bidirectional horizontal VRAM column-streaming test before procedural room
-  assembly depends on it.
+- SameBoy acceptance of the implemented 16-bit horizontal coordinates and
+  bidirectional VRAM column streaming across the X=256 seam.

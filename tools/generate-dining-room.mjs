@@ -363,18 +363,21 @@ writeFileSync('gfx/dining_room.tsx', [
 ].join('\n'));
 writeFileSync('build/dining_room_collision.bin', collisionTypes);
 
-const solid = Array.from({ length: 32 }, () => Array(32).fill(false));
-for (let y = 27; y < 32; y++) for (let x = 0; x < 32; x++) solid[y][x] = true;
+const mapWidth = 40;
+const mapHeight = 32;
+const solid = Array.from({ length: mapHeight }, () => Array(mapWidth).fill(false));
+for (let y = 27; y < mapHeight; y++) for (let x = 0; x < mapWidth; x++) solid[y][x] = true;
 for (let x = 1; x <= 8; x++) solid[20][x] = true;
 for (let x = 12; x <= 19; x++) solid[20][x] = true;
 for (let x = 20; x <= 25; x++) solid[21][x] = true;
-for (let y = 22; y <= 26; y++) solid[y][25] = true;
+for (let y = 22; y <= 24; y++) solid[y][25] = true;
+for (let x = 32; x <= 34; x++) solid[24][x] = true;
 
 const ids = solid.map((row, y) => row.map((occupied, x) => {
   if (occupied) return 1 +
     (y > 0 && solid[y - 1][x] ? 1 : 0) +
-    (x < 31 && solid[y][x + 1] ? 2 : 0) +
-    (y < 31 && solid[y + 1][x] ? 4 : 0) +
+    (x < mapWidth - 1 && solid[y][x + 1] ? 2 : 0) +
+    (y < mapHeight - 1 && solid[y + 1][x] ? 4 : 0) +
     (x > 0 && solid[y][x - 1] ? 8 : 0);
   if (x >= 27 && x <= 30 && y >= 7 && y <= 9) return 20;
   if ((y <= 10 && (x <= 9 || x >= 22)) || (y >= 20 && y <= 26 && x <= 19)) {
@@ -398,7 +401,7 @@ function placeComponent(x, y, id, tileWidth, tileHeight) {
   }
 }
 
-for (let x = 0; x < 32; x++) place(x, 11, x === 0 ? 21 : x === 31 ? 23 : 22);
+for (let x = 0; x < mapWidth; x++) place(x, 11, x === 0 ? 21 : x === mapWidth - 1 ? 23 : 22);
 place(18, 4, 24);
 placeComponent(3, 4, 32, 4, 2);
 placeComponent(24, 4, 40, 2, 2);
@@ -410,6 +413,7 @@ placeComponent(6, 22, 44, 2, 2);
 placeComponent(9, 21, 64, 4, 3);
 placeComponent(14, 22, 48, 1, 2);
 placeComponent(16, 22, 40, 2, 2);
+placeComponent(35, 4, 40, 2, 2);
 for (let x = 15; x <= 16; x++) place(x, 17, 50);
 for (let x = 9; x <= 12; x++) place(x, 24, 50);
 for (const [x, id] of [[14, 51], [15, 52], [16, 52], [17, 53]]) place(x, 25, id);
@@ -428,13 +432,13 @@ for (let x = 2; x <= 5; x++) {
 }
 for (const [x, id] of [[21, 112], [22, 113], [23, 113], [24, 114]]) place(x, 25, id);
 for (let x = 21; x <= 24; x++) place(x, 26, 115);
-placeComponent(28, 24, 25, 2, 3);
+placeComponent(36, 24, 25, 2, 3);
 
 writeFileSync('gfx/dining_room_fixture.tmx', [
   '<?xml version="1.0" encoding="UTF-8"?>',
-  '<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="8" tileheight="8" infinite="0" backgroundcolor="#ffffff">',
+  `<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="${mapWidth}" height="${mapHeight}" tilewidth="8" tileheight="8" infinite="0" backgroundcolor="#ffffff">`,
   ' <tileset firstgid="1" source="dining_room.tsx"/>',
-  ' <layer id="1" name="Terrain" width="32" height="32">',
+  ` <layer id="1" name="Terrain" width="${mapWidth}" height="${mapHeight}">`,
   '  <data encoding="csv">',
   ids.map(row => row.map(id => id + 1).join(',')).join(',\n'),
   '  </data>',
