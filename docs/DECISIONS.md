@@ -15,8 +15,9 @@ ledge catch. The prototype remains separate from the accepted 15-mask library.
 fixed narrow seams make every grid cell read as a separate room, while repeated
 one-way staircases make the accepted ledge ability unnecessary.
 
-**Status:** Implemented as a static ROM fixture; awaiting SameBoy acceptance.
-See `data/room-templates/dining-room-prototypes.json`.
+**Status:** Accepted in SameBoy. The six-row seam reads as one large chamber,
+and the one-way-free 32-pixel rise successfully requires ledge catch. See
+`data/room-templates/dining-room-prototypes.json`.
 
 ---
 

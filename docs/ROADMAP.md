@@ -110,9 +110,11 @@ connects every room through optional branch trees before exporting seeded
 HTML/TMX/JSON galleries. All 15 nonzero port masks now have authored templates
 with tile-level mutual-port validation. Seed 0 was assembled with generated
 spawn coordinates and the shared exit doorway, then accepted as playable in
-SameBoy. A focused fixture now prototypes a six-row wide seam between paired
-rooms and a one-way-free 32-pixel ledge-catch rise. Next, accept or revise those
-two variants before expanding the template library and seeded selector.
+SameBoy. A focused fixture proves that a six-row seam makes paired cells read as
+one large room and that a one-way-free 32-pixel rise makes ledge catch useful.
+Next, add seam profiles and traversal classes to seeded selection, then expand
+the accepted variants across the template library without making boundary
+transitions consecutive.
 Protected-clearance and route-transition validation still precede the assembly
 port. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural

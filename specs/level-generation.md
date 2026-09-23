@@ -93,8 +93,10 @@ two-tile-high east/west interface with a matching six-row opening, allowing two
 10×8 cells to read and play as one larger room. Its right-hand template also
 contains a full-solid ledge four tiles above the departure floor, with an
 exposed corner and open headroom. It contains no one-way fallback, so upward
-progress specifically exercises ledge catch. The focused ROM fixture must be
-accepted before seam profiles and traversal classes become generator metadata.
+progress specifically exercises ledge catch. SameBoy review accepted both the
+large-room effect and required catch. Seam profiles and traversal classes may
+now become generator metadata, subject to paired-seam and nonconsecutive-
+boundary validation.
 
 ## Critical room templates
 
