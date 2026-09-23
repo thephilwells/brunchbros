@@ -61,6 +61,19 @@ Tiled to inspect the current dining-room sheet. Its external tileset is
 `gfx/dining_room.tsx`. The structural test remains in
 `gfx/structural_fixture.tmx` for inspecting all 16 solid masks.
 
+The host-side level generator can verify every macro-route topology and render
+a 256-seed inspection gallery without launching the ROM:
+
+```sh
+node tools/verify-level-generation.mjs
+node tools/generate-level-gallery.mjs
+open build/level-gallery/index.html
+```
+
+The gallery currently shows connectivity scaffolds. Its TMX files are useful
+for inspecting routes and room ports in Tiled; authored playable room templates
+and tile-level reachability validation are the next generation step.
+
 ## Documentation map
 
 - `AGENTS.md` — durable AI operating rules and doc index

@@ -1,6 +1,7 @@
 # Level generation
 
-Status: **authoritative design baseline; implementation pending**.
+Status: **macro-route generator and structural gallery implemented; authored
+room templates, tile-level validation, and runtime parity pending**.
 
 ## Purpose
 
@@ -103,31 +104,35 @@ Room-local coordinates are zero-based within a 10×8 tile template.
 
 ## Non-critical rooms and optional branches
 
-- The first generator may leave every non-critical room sealed with a zero port
-  mask while still filling it with biome-appropriate visual structure.
-- A later optional-branch pass may open only reciprocal ports between adjacent
-  rooms. It cannot remove or redirect a critical-route connection.
-- Every reachable optional component attaches to the critical route at one or
-  two rooms. A one-attachment branch must provide a baseline-valid return path;
-  a two-attachment branch may rejoin a later critical room.
+- Every room belongs to the spawn room's connected component. Inaccessible
+  filler rooms are invalid.
+- After constructing the critical route, the generator repeatedly chooses a
+  seeded edge from any connected room to an unconnected orthogonal neighbor.
+  It opens reciprocal ports and adds that room to the connected set until all
+  16 rooms are included.
+- The initial branch pass creates no loops: each optional subtree attaches to
+  the already-connected graph once. A later pass may add reciprocal loop edges,
+  but cannot remove or redirect a critical-route connection.
+- Optional branches provide a baseline-valid return path. Dead ends are
+  permitted; permanent traps are not.
 - Optional directed drops must still lead back to the critical route or forward
   to the exit. Entering an optional branch cannot permanently trap the player.
-- Unreachable filler rooms may contain arbitrary internal structure, but their
-  interfaces stay sealed and they cannot overlap critical-route reservations.
 
 ## Determinism
 
 - Generation accepts a recorded 16-bit seed and a biome identifier.
 - The runtime and host-side generator use the same PRNG, draw order, room
-  tables, and template IDs. The exact PRNG is selected with implementation.
+  tables, and template IDs. The PRNG is xorshift16 with left/right/left shifts
+  of 7/9/8 bits. Seed zero is normalized to `$ace1`; generation draws five
+  values and uses each value's low two bits as one route column.
 - Given the same generator version, biome, and seed, both implementations must
   produce identical route descriptors and 1,280 tile bytes.
 - A failing seed is always printed and can be regenerated individually.
 
 ## Offline validation and inspection
 
-`tools/generate-level-gallery.mjs` will run the host-side generator without an
-emulator. Its intended interface is:
+`tools/generate-level-gallery.mjs` runs the host-side generator without an
+emulator. Its interface is:
 
 ```sh
 node tools/generate-level-gallery.mjs \
@@ -138,28 +143,32 @@ node tools/generate-level-gallery.mjs \
 The generated directory contains:
 
 - `index.html`: a contact-sheet gallery with seed labels, validation status,
-  an art thumbnail, and a 4×4 route/port overlay for every level.
+  a structural thumbnail, and a 4×4 route overlay for every level.
 - `levels/<seed>.tmx`: the complete map referencing the biome TSX, directly
   inspectable in Tiled.
-- `levels/<seed>.json`: seed, route order, room ports, template IDs, transition
-  classifications, validation results, and aggregate counts.
+- `levels/<seed>.json`: seed, selected columns, route order, room ports,
+  provisional template IDs, scaffold tiles, and validation results.
 - `summary.json`: batch failure list and distributions for route length, room
-  masks, template usage, boundary transitions, spawn column, exit column, and
-  unique macro topologies covered.
+  masks, spawn column, exit column, and unique macro topologies covered.
 
 The gallery is generated output and is not committed. A selected failing seed
 may become a committed regression fixture.
 
-Every generated level is checked for:
+The implemented structural phase checks every generated level for:
 
 1. Correct dimensions, valid tile IDs, and deterministic regeneration.
-2. A unique top-row spawn and bottom-row exit with their protected clearances.
+2. A top-row spawn and bottom-row exit.
 3. An ordered, non-repeating, orthogonally adjacent critical route.
 4. Exactly three downward route edges and no upward route edge.
-5. Reciprocal ports, sealed outer boundaries, and matching template metadata.
-6. Valid ordinary/boundary sequencing and no forbidden combination of limits.
-7. Tile-level spawn-to-exit reachability on the assembled collision map.
-8. Unobstructed reserved cells after dressing and object-placement passes.
+5. Reciprocal ports, sealed outer boundaries, all 16 rooms connected to spawn,
+   and exactly 15 room-to-room connections in the initial branch tree.
+
+The provisional `RoomTemplates` values encode each critical room's entry/exit
+pair for gallery inspection; they do not yet identify authored templates. Once
+those templates exist, validation also checks their metadata, protected
+spawn/exit clearances, ordinary/boundary sequencing, transition limits,
+tile-level spawn-to-exit reachability, and reserved cells after dressing and
+object placement.
 
 The batch command exits nonzero if any seed fails, while retaining its report
 and inspectable map. Exhaust all 1,024 macro topologies in the topology test;

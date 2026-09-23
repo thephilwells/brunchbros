@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Every ordinary room is reachable
+
+**Decision:** After creating the guaranteed critical route, generation adds
+seeded reciprocal connections from the connected graph to one unconnected
+neighbor at a time until all 16 rooms are reachable. The initial optional-room
+graph is a tree: dead ends are allowed, sealed filler rooms and loops are not.
+
+**Why:** Every generated room should be explorable even when it is not needed
+to reach the exit. Growing outward from the already-valid critical route adds
+optional branches without weakening or rerouting the solution path.
+
+**Status:** Implemented in the host generator; playable room templates and the
+assembly port remain pending. See `specs/level-generation.md`.
+
+---
+
 ## 2026-09-23 — Critical routes use one directed horizontal run per row
 
 **Decision:** A seeded route starts in any top-row room. On each of the first
@@ -17,8 +33,8 @@ termination, staying in bounds, and avoiding revisited rooms without repair
 logic. The ordered sequence records critical direction independently from any
 later optional connections.
 
-**Status:** Accepted design; implementation pending. See
-`specs/level-generation.md`.
+**Status:** Implemented in the host-side structural generator. Authored room
+templates and the assembly port remain pending. See `specs/level-generation.md`.
 
 ---
 
@@ -35,8 +51,9 @@ corner cases much faster than playing every seed. Machine validation rejects
 structural failures, while retained seeds and SameBoy sampling still test real
 physics, feel, and hardware timing.
 
-**Status:** Accepted design; tooling and generator implementation pending. See
-`specs/level-generation.md`.
+**Status:** Implemented for macro topology and connectivity scaffolds. Template
+metadata, traversal classification, tile-level reachability, and runtime parity
+remain pending. See `specs/level-generation.md`.
 
 ---
 

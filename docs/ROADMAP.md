@@ -104,8 +104,11 @@ WRAM map with horizontal VRAM streaming are also settled. The static fixture
 now implements 16-bit horizontal coordinates and bidirectional column
 streaming, accepted after seamless SameBoy traversal across the X=256 seam and
 back. The row-monotone 4×4 critical-route representation, fixed room ports,
-template contract, and offline gallery/validation format are now defined. Next,
-implement the host-side route generator and gallery before porting the same
+template contract, and offline gallery/validation format are now defined. The
+host-side route generator exhaustively validates all 1,024 macro topologies and
+connects every room through optional branch trees before exporting seeded
+HTML/TMX/JSON connectivity galleries. Next, author playable room templates and
+add tile-level reachability checks before porting the same
 deterministic contract to assembly. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See
