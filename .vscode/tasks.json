@@ -16,6 +16,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate Room Template Fixture",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-room-template-fixture.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Convert Dining Room",
       "type": "shell",
       "command": "rgbgfx",
@@ -34,6 +41,13 @@
       "type": "shell",
       "command": "node",
       "args": ["tools/verify-level-generation.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify Room Templates",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/verify-room-templates.mjs"],
       "problemMatcher": []
     },
     {

@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Baseline room templates certify all declared ports
+
+**Decision:** Room templates use 10×8 semantic grids containing empty,
+full-solid, and one-way cells. A baseline template matches one exact nonzero
+port mask and must eventually certify bidirectional traversal between every
+declared port, rather than multiplying templates by directed entry/exit pairs.
+
+**Why:** The same room can safely appear on the critical route or an optional
+branch, and branch traversal cannot strand the player based on which doorway
+was used. Semantic cells keep collision geometry independent from biome art.
+
+**Status:** Format and W|E, N|S, and N|E review templates implemented. Full
+tile-level certification remains pending. See `specs/level-generation.md`.
+
+---
+
 ## 2026-09-23 — Every ordinary room is reachable
 
 **Decision:** After creating the guaranteed critical route, generation adds

@@ -74,6 +74,16 @@ The gallery currently shows connectivity scaffolds. Its TMX files are useful
 for inspecting routes and room ports in Tiled; authored playable room templates
 and tile-level reachability validation are the next generation step.
 
+The first semantic room templates can be regenerated and checked separately:
+
+```sh
+node tools/generate-room-template-fixture.mjs
+node tools/verify-room-templates.mjs
+```
+
+Open `gfx/room_template_fixture.tmx` in Tiled to inspect the W|E, N|S, and N|E
+rooms. Their source is `data/room-templates/dining-room.json`.
+
 ## Documentation map
 
 - `AGENTS.md` — durable AI operating rules and doc index

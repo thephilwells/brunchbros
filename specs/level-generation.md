@@ -1,7 +1,8 @@
 # Level generation
 
-Status: **macro-route generator and structural gallery implemented; authored
-room templates, tile-level validation, and runtime parity pending**.
+Status: **macro-route generator, structural gallery, semantic template format,
+and three representative room templates implemented; remaining templates,
+tile-level validation, and runtime parity pending**.
 
 ## Purpose
 
@@ -86,12 +87,10 @@ Room-local coordinates are zero-based within a 10×8 tile template.
 
 ## Critical room templates
 
-- Each template declares its port mask plus the directed entry and exit ports
-  it certifies. Spawn and exit templates declare their special role instead of
-  a missing entry or exit port.
-- A critical room template guarantees a route from its declared entry to exit
-  using only baseline movement and the ordinary/boundary classification in
-  `specs/level-design-rules.md`.
+- Each baseline template declares one exact nonzero port mask and makes every
+  declared port mutually reachable using baseline movement. It can therefore
+  serve either a critical-route room or an optional branch without separate
+  directed entry/exit variants.
 - Template selection matches the exact required port mask. It cannot introduce
   an undeclared opening at a room seam.
 - The spawn template contains the protected spawn envelope and an ordinary
@@ -101,6 +100,31 @@ Room-local coordinates are zero-based within a 10×8 tile template.
 - Structural templates store semantic cells such as empty, full-solid, and
   one-way. The assembled 40×32 map derives final connectivity tile IDs after
   all neighboring room cells are known.
+
+### Semantic source format
+
+`data/room-templates/dining-room.json` is the authoritative source for the
+initial template library. Format version 1 fixes every template at 10×8 cells
+and uses three symbols:
+
+| Symbol | Meaning | Collision |
+|---|---|---|
+| `.` | Empty structural space | Empty |
+| `#` | Full structural block | Solid |
+| `=` | Jump-through platform | One-way from above |
+
+Each template has a stable string ID, a numeric port mask using the shared
+W/E/N/S bits, and eight ten-character rows. The source validator requires
+declared boundary openings at the fixed port cells and full-solid cells at
+every other boundary position. Rendering derives IDs 1–16 from neighboring
+`#` cells, maps `.` to the dining-room rear tile, and maps `=` to the existing
+one-way pilot tile.
+
+The initial review fixture contains W|E, N|S, and N|E ordinary templates.
+Static validation currently proves dimensions, symbols, exact boundary ports,
+and tile conversion. Mutual port reachability remains provisional until the
+tile-level traversal validator is implemented and the vertical shapes are
+reviewed in play.
 
 ## Non-critical rooms and optional branches
 
@@ -186,7 +210,7 @@ playtests remain authoritative for movement feel and hardware timing.
 
 ## Initial non-goals
 
-- Optional branches, hazards, enemies, loot, and furniture placement.
+- Optional-branch content, hazards, enemies, loot, and furniture placement.
 - Streaming or generating rooms during play; the complete current biome is
   generated before control begins.
 - Boss arenas or the Deep Freezer victory room.
