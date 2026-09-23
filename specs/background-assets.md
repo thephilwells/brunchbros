@@ -122,10 +122,10 @@ At the first horizontally overlapping full-solid or one-way surface, snap
 ignore one-way cells. Grounded/jump checks accept both surface types. The
 seat line of a booth or chair is the landing plane; backs and legs are
 passable art. Each landing plane aligns with the upper edge of an 8×8 tile;
-table and counter tops follow the same rule. No drop-through input is
-currently implemented. The accepted future rule is that Down+A suppresses
-one-way support long enough for the chef to pass below the landing plane;
-full-solid cells remain impassable.
+table and counter tops follow the same rule. Down+A while grounded exclusively
+on one-way support moves the chef's feet one pixel below the current landing
+plane before gravity resumes. Full-solid cells remain impassable and take
+priority when the hitbox overlaps both collision types.
 
 For each solid cell, the four cardinal neighbors determine which edges are
 exposed. There are 16 possible combinations, enumerated in the manifest.

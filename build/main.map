@@ -1,11 +1,11 @@
 SUMMARY:
-	ROM0: 5928 bytes used / 10456 free
+	ROM0: 6050 bytes used / 10334 free
 	WRAM0: 1296 bytes used / 2800 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
 	SECTION: $0100-$014f ($0050 bytes) ["Entry Point"]
-	SECTION: $0150-$1827 ($16d8 bytes) ["Main"]
+	SECTION: $0150-$18a1 ($1752 bytes) ["Main"]
 	         $0150 = Start
 	         $0153 = Start.waitVBlank
 	         $0166 = Start.copyTilesOuter
@@ -38,67 +38,71 @@ ROM0 bank #0:
 	         $031d = MainLoop.doIdle
 	         $0330 = MainLoop.idleContinue
 	         $0348 = MainLoop.animDone
-	         $0378 = MainLoop.grounded
-	         $0382 = MainLoop.noJump
-	         $038d = MainLoop.checkRight
-	         $03c3 = MainLoop.notRight
-	         $03f9 = MainLoop.applyGravity
-	         $03f9 = MainLoop.notLeft
-	         $040d = MainLoop.velDone
-	         $042c = MainLoop.scanFall
-	         $0433 = MainLoop.checkFallTop
-	         $045d = MainLoop.checkLedges
-	         $0467 = MainLoop.scanLedges
-	         $047d = MainLoop.landedAtTop
-	         $0484 = MainLoop.checkRising
-	         $04a8 = MainLoop.applyFall
-	         $04ae = MainLoop.headBump
-	         $04b5 = MainLoop.worldBottom
-	         $04bc = MainLoop.landed
-	         $04c8 = MainLoop.noLandFX
-	         $04d2 = MainLoop.gravityDone
-	         $04e8 = MainLoop.xNotTooLow
-	         $04f8 = MainLoop.clampXHigh
-	         $0502 = MainLoop.xNotTooHigh
-	         $0513 = MainLoop.yNotTooLow
-	         $0524 = MainLoop.checkAirborne
-	         $053d = MainLoop.checkVelocity
-	         $0552 = MainLoop.showAscent
-	         $0557 = MainLoop.poseOverrideDone
-	         $055a = IncrementPlayerX
-	         $0562 = DecrementPlayerX
-	         $056c = DecrementPlayerX.decrementLow
-	         $056e = LoadPlayerX
-	         $0577 = LoadPlayerXLeft
-	         $0583 = LoadPlayerXRight
-	         $058f = LoadPlayerXLeftEdge
-	         $059b = LoadPlayerXRightEdge
-	         $05a7 = UpdateStreaming
-	         $05b6 = UpdateStreaming.desiredReady
-	         $05c7 = UpdateStreaming.streamForward
-	         $05d5 = StreamColumn
-	         $05e3 = StreamColumn.copyRow
-	         $05ec = StreamColumn.sourceReady
-	         $05f3 = StreamColumn.destinationReady
-	         $05f7 = UpdateSprites
-	         $0659 = UpdateSprites.flipped
-	         $06ac = ReadLevelTile
-	         $06ba = ReadLevelTile.columnReady
-	         $06d9 = CollisionAt
-	         $06e5 = IsWall
-	         $06eb = IsSupport
-	         $06f3 = IsSupport.empty
-	         $06f7 = TryLedgeCatch
-	         $0745 = TryLedgeCatch.tryLeft
-	         $0789 = TryLedgeCatch.caught
-	         $07a6 = TryLedgeCatch.notCaught
-	         $07a8 = TileData
-	         $0fa8 = FixtureMap
-	         $14a8 = CollisionTypes
-	         $14a8 = FixtureMapEnd
-	         $1528 = ChefFrames
-	EMPTY: $1828-$3fff ($27d8 bytes)
-	TOTAL EMPTY: $28d8 bytes
+	         $0358 = MainLoop.checkJumpSupport
+	         $0383 = MainLoop.grounded
+	         $038d = MainLoop.noJump
+	         $0398 = MainLoop.checkRight
+	         $03ce = MainLoop.notRight
+	         $0404 = MainLoop.applyGravity
+	         $0404 = MainLoop.notLeft
+	         $0418 = MainLoop.velDone
+	         $0437 = MainLoop.scanFall
+	         $043e = MainLoop.checkFallTop
+	         $0468 = MainLoop.checkLedges
+	         $0472 = MainLoop.scanLedges
+	         $0488 = MainLoop.landedAtTop
+	         $048f = MainLoop.checkRising
+	         $04b3 = MainLoop.applyFall
+	         $04b9 = MainLoop.headBump
+	         $04c0 = MainLoop.worldBottom
+	         $04c7 = MainLoop.landed
+	         $04d3 = MainLoop.noLandFX
+	         $04dd = MainLoop.gravityDone
+	         $04f3 = MainLoop.xNotTooLow
+	         $0503 = MainLoop.clampXHigh
+	         $050d = MainLoop.xNotTooHigh
+	         $051e = MainLoop.yNotTooLow
+	         $052f = MainLoop.checkAirborne
+	         $0548 = MainLoop.checkVelocity
+	         $055d = MainLoop.showAscent
+	         $0562 = MainLoop.poseOverrideDone
+	         $0565 = IncrementPlayerX
+	         $056d = DecrementPlayerX
+	         $0577 = DecrementPlayerX.decrementLow
+	         $0579 = LoadPlayerX
+	         $0582 = LoadPlayerXLeft
+	         $058e = LoadPlayerXRight
+	         $059a = LoadPlayerXLeftEdge
+	         $05a6 = LoadPlayerXRightEdge
+	         $05b2 = UpdateStreaming
+	         $05c1 = UpdateStreaming.desiredReady
+	         $05d2 = UpdateStreaming.streamForward
+	         $05e0 = StreamColumn
+	         $05ee = StreamColumn.copyRow
+	         $05f7 = StreamColumn.sourceReady
+	         $05fe = StreamColumn.destinationReady
+	         $0602 = UpdateSprites
+	         $0664 = UpdateSprites.flipped
+	         $06b7 = ReadLevelTile
+	         $06c5 = ReadLevelTile.columnReady
+	         $06e4 = CollisionAt
+	         $06f0 = IsWall
+	         $06f6 = IsSupport
+	         $06fe = IsSupport.empty
+	         $0702 = TryDropThrough
+	         $075c = TryDropThrough.drop
+	         $076f = TryDropThrough.notOneWay
+	         $0771 = TryLedgeCatch
+	         $07bf = TryLedgeCatch.tryLeft
+	         $0803 = TryLedgeCatch.caught
+	         $0820 = TryLedgeCatch.notCaught
+	         $0822 = TileData
+	         $1022 = FixtureMap
+	         $1522 = CollisionTypes
+	         $1522 = FixtureMapEnd
+	         $15a2 = ChefFrames
+	EMPTY: $18a2-$3fff ($275e bytes)
+	TOTAL EMPTY: $285e bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c50f ($0510 bytes) ["Player State"]

@@ -238,8 +238,8 @@ The input never permits passage through full-solid structural tiles.
 **Why:** One-way furniture should support intentional downward traversal
 without weakening the collision contract of opaque walls and floors.
 
-**Status:** Accepted for later implementation; current runtime still treats
-one-way surfaces as support whenever the Chef is grounded or falling.
+**Status:** Implemented; awaiting SameBoy acceptance in the vertical-room
+playtest. Full-solid support takes priority if the hitbox overlaps both kinds.
 
 ---
 

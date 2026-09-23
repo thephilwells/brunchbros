@@ -34,6 +34,11 @@ source files yet:
   upward and away, while Down drops. One-way cells are never catchable.
 - **Crouch** — holding Down while grounded selects the existing crouch frame
   and suppresses horizontal movement. The terrain hitbox stays 12×16.
+- **One-way drop-through** — pressing A while holding Down first checks the
+  three support probes. If any probe is full-solid, ordinary jump handling
+  remains in force. Otherwise, one-way support moves the Chef's feet one pixel
+  below the landing plane and resumes gravity, preventing immediate re-landing
+  on the same tile top.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
   into the 4 OAM entries that make up the 16×16 player, converting to
   screen coordinates by subtracting the current `SCX`/`SCY` (sprites don't
@@ -47,6 +52,9 @@ source files yet:
   view. `IsWall` tests full solid only; `IsSupport` accepts full solid and
   one-way top surfaces. Rising and side movement use `IsWall`, while grounded
   and falling checks use `IsSupport`.
+- **`TryDropThrough`** — distinguishes collision type 2 from full-solid support
+  across the complete terrain hitbox and reports a successful Down+A drop in
+  the carry flag.
 - **`UpdateStreaming` / `StreamColumn`** — treat `$9800–$9BFF` as a horizontal
   ring buffer. As `CameraX` passes eight-pixel boundaries, logical columns
   32–39 replace physical columns 0–7 after those columns leave the viewport;

@@ -369,7 +369,13 @@ MainLoop:
 	ld a, e
 	bit 0, a
 	jr z, .noJump
+	ld a, b
+	bit 3, a
+	jr nz, .checkJumpSupport
+	call TryDropThrough
+	jp c, .applyGravity
 
+.checkJumpSupport
 	ld a, [PlayerY]
 	cp a, 255
 	jr z, .grounded
@@ -998,6 +1004,69 @@ IsSupport:
 .empty
 	ld a, 1
 	or a
+	ret
+
+TryDropThrough:
+	ld a, [PlayerGrounded]
+	and a, a
+	jr z, .notOneWay
+
+	call LoadPlayerXLeft
+	ld a, [PlayerY]
+	ld d, a
+	call CollisionAt
+	cp a, 1
+	jr z, .notOneWay
+
+	call LoadPlayerX
+	ld a, [PlayerY]
+	ld d, a
+	call CollisionAt
+	cp a, 1
+	jr z, .notOneWay
+
+	call LoadPlayerXRight
+	ld a, [PlayerY]
+	ld d, a
+	call CollisionAt
+	cp a, 1
+	jr z, .notOneWay
+
+	call LoadPlayerXLeft
+	ld a, [PlayerY]
+	ld d, a
+	call CollisionAt
+	cp a, 2
+	jr z, .drop
+
+	call LoadPlayerX
+	ld a, [PlayerY]
+	ld d, a
+	call CollisionAt
+	cp a, 2
+	jr z, .drop
+
+	call LoadPlayerXRight
+	ld a, [PlayerY]
+	ld d, a
+	call CollisionAt
+	cp a, 2
+	jr nz, .notOneWay
+
+.drop
+; Start below the current tile-top boundary so swept falling collision cannot re-land on it.
+	ld a, [PlayerY]
+	inc a
+	ld [PlayerY], a
+	xor a
+	ld [PlayerVelY], a
+	ld [PlayerGrounded], a
+	ld [LandTimer], a
+	scf
+	ret
+
+.notOneWay
+	and a, a
 	ret
 
 TryLedgeCatch:
