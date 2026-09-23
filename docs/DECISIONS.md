@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Prototype wide seams and required ledge-catch rooms separately
+
+**Decision:** Before expanding seeded template selection, test two experimental
+variants in one focused fixture: a matched six-row horizontal seam that merges
+two subrooms visually and a sparse room whose 32-pixel solid rise requires
+ledge catch. The prototype remains separate from the accepted 15-mask library.
+
+**Why:** Seed 0 proved the placement pipeline but exposed two content problems:
+fixed narrow seams make every grid cell read as a separate room, while repeated
+one-way staircases make the accepted ledge ability unnecessary.
+
+**Status:** Implemented as a static ROM fixture; awaiting SameBoy acceptance.
+See `data/room-templates/dining-room-prototypes.json`.
+
+---
+
 ## 2026-09-23 — Upward one-way landings require jump headroom
 
 **Decision:** A required one-way landing under a full-solid ceiling needs at

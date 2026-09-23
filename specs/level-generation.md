@@ -85,6 +85,17 @@ Room-local coordinates are zero-based within a 10×8 tile template.
 - Ports cannot face outside the 4×4 grid. All non-port boundary cells remain
   sealed against accidental room-to-room passage.
 
+### Experimental seam and traversal variants
+
+`data/room-templates/dining-room-prototypes.json` contains variants that are
+not yet part of seeded selection. The first pair replaces the ordinary
+two-tile-high east/west interface with a matching six-row opening, allowing two
+10×8 cells to read and play as one larger room. Its right-hand template also
+contains a full-solid ledge four tiles above the departure floor, with an
+exposed corner and open headroom. It contains no one-way fallback, so upward
+progress specifically exercises ledge catch. The focused ROM fixture must be
+accepted before seam profiles and traversal classes become generator metadata.
+
 ## Critical room templates
 
 - Each baseline template declares one exact nonzero port mask and makes every

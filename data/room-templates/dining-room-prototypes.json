@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "roomWidth": 10,
+  "roomHeight": 8,
+  "templates": [
+    {
+      "id": "e_wide_ordinary_0",
+      "seams": {
+        "east": "wide"
+      },
+      "traversalClass": "ordinary",
+      "rows": [
+        "##########",
+        "#.........",
+        "#.........",
+        "#.........",
+        "#.........",
+        "#.........",
+        "#.........",
+        "##########"
+      ]
+    },
+    {
+      "id": "wn_wide_ledge_0",
+      "seams": {
+        "west": "wide",
+        "north": "ledge_clearance"
+      },
+      "traversalClass": "ledge_catch",
+      "ledge": {
+        "departureSurfaceRow": 7,
+        "targetSurfaceRow": 3,
+        "exposedEdgeColumn": 6
+      },
+      "rows": [
+        "####.....#",
+        ".........#",
+        ".........#",
+        "......####",
+        ".........#",
+        ".........#",
+        ".........#",
+        "##########"
+      ]
+    }
+  ]
+}

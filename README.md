@@ -48,11 +48,13 @@ node tools/generate-dining-room.mjs
 node tools/generate-room-template-fixture.mjs
 node tools/generate-room-template-playtest.mjs
 node tools/generate-seeded-level.mjs --seed 0
+node tools/generate-room-variant-playtest.mjs
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 node tools/verify-dining-room.mjs
 node tools/verify-room-templates.mjs
 node tools/verify-room-template-playtest.mjs
 node tools/verify-seeded-level.mjs
+node tools/verify-room-variant-playtest.mjs
 for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge; do
   rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
 done
@@ -91,8 +93,9 @@ node tools/verify-room-template-playtest.mjs
 Open `gfx/room_template_fixture.tmx` in Tiled to inspect all 15 nonzero port
 masks. Their source is `data/room-templates/dining-room.json`.
 
-The default ROM uses seed 0 from `gfx/seeded_level.tmx`. Change the seed passed
-to `tools/generate-seeded-level.mjs` to build a different host-generated map.
+The default ROM temporarily uses `gfx/room_variant_playtest.tmx` to review a
+paired wide seam and a required ledge catch. Seed 0 remains available in
+`gfx/seeded_level.tmx` and has been accepted in SameBoy.
 
 ## Documentation map
 

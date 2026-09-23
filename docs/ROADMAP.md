@@ -108,10 +108,13 @@ template contract, and offline gallery/validation format are now defined. The
 host-side route generator exhaustively validates all 1,024 macro topologies and
 connects every room through optional branch trees before exporting seeded
 HTML/TMX/JSON galleries. All 15 nonzero port masks now have authored templates
-with tile-level mutual-port validation. Seed 0 is assembled into the build-time
-ROM map with generated spawn coordinates and the shared exit doorway. Next,
-accept that map in SameBoy, then add protected-clearance and route-transition
-validation before porting the deterministic contract to assembly. Directional look poses and camera
+with tile-level mutual-port validation. Seed 0 was assembled with generated
+spawn coordinates and the shared exit doorway, then accepted as playable in
+SameBoy. A focused fixture now prototypes a six-row wide seam between paired
+rooms and a one-way-free 32-pixel ledge-catch rise. Next, accept or revise those
+two variants before expanding the template library and seeded selector.
+Protected-clearance and route-transition validation still precede the assembly
+port. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.

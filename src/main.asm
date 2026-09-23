@@ -7,7 +7,7 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
-INCLUDE "build/seeded_level.inc"
+INCLUDE "build/room_variant_playtest.inc"
 
 ; Persistent game state — uninitialized at power-on, set explicitly in Start
 SECTION "Player State", WRAM0
@@ -135,11 +135,11 @@ Start:
 	jr nz, .copyChefOuter
 
 ; Set the player's starting position and initial animation frame, then place all 4 sprites from it
-	ld a, GENERATED_PLAYER_Y
+	ld a, PLAYTEST_PLAYER_Y
 	ld [PlayerY], a
-	ld a, LOW(GENERATED_PLAYER_X)
+	ld a, LOW(PLAYTEST_PLAYER_X)
 	ld [PlayerX], a
-	ld a, HIGH(GENERATED_PLAYER_X)
+	ld a, HIGH(PLAYTEST_PLAYER_X)
 	ld [PlayerX + 1], a
 	ld a, 1
 	ld [PlayerTileBase], a
@@ -1168,7 +1168,7 @@ TileData:
 	INCBIN "build/dining_room.2bpp"
 
 GeneratedLevelMap:
-	INCBIN "build/seeded_level.tilemap"
+	INCBIN "build/room_variant_playtest.tilemap"
 GeneratedLevelMapEnd:
 ASSERT GeneratedLevelMapEnd - GeneratedLevelMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
