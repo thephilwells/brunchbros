@@ -102,8 +102,11 @@ Spawn/exit safety envelopes and ordinary versus isolated boundary-case
 tolerances are now defined. The common 40×32-tile level size and pre-generated
 WRAM map with horizontal VRAM streaming are also settled. The static fixture
 now implements 16-bit horizontal coordinates and bidirectional column
-streaming, pending SameBoy review across the X=256 seam and back. After that,
-define the critical-route representation. Directional look poses and camera
+streaming, accepted after seamless SameBoy traversal across the X=256 seam and
+back. The row-monotone 4×4 critical-route representation, fixed room ports,
+template contract, and offline gallery/validation format are now defined. Next,
+implement the host-side route generator and gallery before porting the same
+deterministic contract to assembly. Directional look poses and camera
 look-ahead can ship in the same milestone but are not blockers for procedural
 generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.

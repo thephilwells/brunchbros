@@ -4,6 +4,42 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Critical routes use one directed horizontal run per row
+
+**Decision:** A seeded route starts in any top-row room. On each of the first
+three rows it makes one non-reversing horizontal run to a selected descent
+column, then moves south. On the bottom row it makes one horizontal run to the
+exit. The ordered route contains 4–16 unique room indices; reciprocal port bits
+use west/east/north/south in the low nibble of a 16-byte room table.
+
+**Why:** This retains horizontal and downward layout variety while guaranteeing
+termination, staying in bounds, and avoiding revisited rooms without repair
+logic. The ordered sequence records critical direction independently from any
+later optional connections.
+
+**Status:** Accepted design; implementation pending. See
+`specs/level-generation.md`.
+
+---
+
+## 2026-09-23 — Generated levels have offline galleries and batch validation
+
+**Decision:** A host-side generator will export each seed as TMX and JSON plus
+an HTML contact-sheet gallery and aggregate summary. It validates topology,
+ports, clearances, transition limits, and tile-level spawn-to-exit reachability.
+The host and assembly generators use the same deterministic contract and are
+compared byte-for-byte on golden seeds.
+
+**Why:** Reviewing hundreds of labeled layouts together reveals repetition and
+corner cases much faster than playing every seed. Machine validation rejects
+structural failures, while retained seeds and SameBoy sampling still test real
+physics, feel, and hardware timing.
+
+**Status:** Accepted design; tooling and generator implementation pending. See
+`specs/level-generation.md`.
+
+---
+
 ## 2026-09-21 — Biome levels use a pre-generated 40×32 logical map
 
 **Decision:** Every biome uses a 4×4 grid of 10×8-tile subrooms, producing a
@@ -19,8 +55,9 @@ displayed as one static hardware map because the Game Boy background is fixed
 at 32×32 tiles. Separating the authoritative logical map from its streamed VRAM
 view preserves deterministic collision and backtracking.
 
-**Status:** Implemented for the static 40×32 dining-room fixture; pending
-SameBoy review. See `specs/level-design-rules.md`.
+**Status:** Implemented and accepted in SameBoy, including seamless forward
+streaming and restoration while backtracking. See
+`specs/level-design-rules.md`.
 
 ---
 
@@ -193,9 +230,9 @@ ledges, passages, and landing areas are valid. Building a reachability
 validator against temporary movement rules would encode incorrect level
 constraints and force avoidable rework.
 
-**Status:** Hitbox and ledge mechanics are implemented pending final SameBoy
-review. Crouch semantics and traversal measurements remain open in
-`notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
+**Status:** Hitbox, ledge mechanics, crouch semantics, and the initial
+traversal envelope are implemented and accepted. Generated-room rules now live
+in `specs/level-design-rules.md` and `specs/level-generation.md`.
 
 ---
 

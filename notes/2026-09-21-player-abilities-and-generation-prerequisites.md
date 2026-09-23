@@ -111,10 +111,8 @@ their focused specifications and playtests.
 - Separate structural layout, reachability validation, biome dressing,
   furniture/object placement, and encounter placement so later systems can
   change without invalidating the core route algorithm.
-- Decide deliberately whether the first generator fills the current 32×32
-  hardware tile map or introduces tile-map streaming for larger levels. The
-  current camera cannot address a larger world without streaming map data as
-  the view moves.
+- The 40×32 logical map is generated completely before play and rendered with
+  the implemented horizontal VRAM column streamer.
 
 The authoritative generation envelope is now recorded in
 `specs/level-design-rules.md`. Ordinary route edges stay comfortably inside
@@ -126,6 +124,5 @@ occupy.
 ## Focused decisions for the next step
 
 - Whether crouch later shortens the combat/hazard hurtbox.
-- The first generator's macro topology and critical-route representation.
-- SameBoy acceptance of the implemented 16-bit horizontal coordinates and
-  bidirectional VRAM column streaming across the X=256 seam.
+- Host-side implementation of the critical-route generator, validator, and
+  inspectable multi-seed gallery defined in `specs/level-generation.md`.

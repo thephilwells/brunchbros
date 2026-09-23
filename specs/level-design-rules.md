@@ -147,9 +147,9 @@ variation.
 - Structural layout, reachability validation, biome dressing, object
   placement, and encounter placement remain separate passes. Later passes may
   not occupy reserved route, spawn, or exit clearance cells.
-- Macro topology and room-grid dimensions remain separate decisions. These
-  guarantees apply whether the first generator uses room templates, a random
-  walk, or another seeded layout strategy.
+- Macro topology, route representation, and room interfaces are defined in
+  `specs/level-generation.md`. This file remains the authority for whether each
+  generated transition is legal.
 
 ## Current measured bounds
 
