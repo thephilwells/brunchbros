@@ -63,19 +63,9 @@ Start:
 	dec b
 	jr nz, .copyTilesOuter
 
-	ld de, GeneratedLevelMap
-	ld hl, LevelMap
-	ld b, 5
-.copyLevelOuter
-	ld c, 0
-.copyLevelInner
-	ld a, [de]
-	ld [hl+], a
-	inc de
-	dec c
-	jr nz, .copyLevelInner
-	dec b
-	jr nz, .copyLevelOuter
+	call GenerateLevel
+	call VerifyGeneratedLevel
+	jp nz, GenerationFailure
 
 	ld de, LevelMap
 	ld hl, $9800
@@ -135,11 +125,11 @@ Start:
 	jr nz, .copyChefOuter
 
 ; Set the player's starting position and initial animation frame, then place all 4 sprites from it
-	ld a, GENERATED_PLAYER_Y
+	ld a, [GeneratedPlayerY]
 	ld [PlayerY], a
-	ld a, LOW(GENERATED_PLAYER_X)
+	ld a, [GeneratedPlayerX]
 	ld [PlayerX], a
-	ld a, HIGH(GENERATED_PLAYER_X)
+	ld a, [GeneratedPlayerX + 1]
 	ld [PlayerX + 1], a
 	ld a, 1
 	ld [PlayerTileBase], a
@@ -1164,13 +1154,20 @@ TryLedgeCatch:
 	and a
 	ret
 
+INCLUDE "src/level_generation.asm"
+
 TileData:
 	INCBIN "build/dining_room.2bpp"
 
-GeneratedLevelMap:
+HostSeedLevelMap:
 	INCBIN "build/seeded_level.tilemap"
-GeneratedLevelMapEnd:
-ASSERT GeneratedLevelMapEnd - GeneratedLevelMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+HostSeedLevelMapEnd:
+ASSERT HostSeedLevelMapEnd - HostSeedLevelMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+
+RoomTemplateData:
+	INCBIN "build/room_templates.bin"
+RoomTemplateDataEnd:
+ASSERT RoomTemplateDataEnd - RoomTemplateData == 15 * 10 * 8
 
 CollisionTypes:
 	INCBIN "build/dining_room_collision.bin"

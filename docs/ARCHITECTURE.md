@@ -1,24 +1,32 @@
 # Architecture — Brunch Bros
 
 Status: **authoritative**. This describes the architecture of the code that
-actually exists in `src/main.asm` — never speculative or planned
-architecture. Update it as real structure changes, not before.
+actually exists in `src/main.asm` and `src/level_generation.asm` — never
+speculative or planned architecture. Update it as real structure changes, not
+before.
 
 ## Source layout
 
-Everything lives in one file, `src/main.asm` — no banking, no additional
-source files yet:
+The runtime is split between `src/main.asm` and the included
+`src/level_generation.asm`. Everything remains in ROM0 without banking:
 
-- **WRAM ("Player State" section, top of file)** — see Memory map below.
+- **WRAM0 state** — see Memory map below.
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000` and all 12 chef
-  animation frames at `$8010`, copies host-generated dining-room seed 0 into
-  `LevelMap`, loads its first 32 columns into the background tile map, sets
-  `BGP=$E4`/`OBP0=$E0`, zeroes the camera and streaming state, clears OAM,
-  sets the player's starting WRAM state, and turns the LCD back on with
-  signed background addressing. Falls through into `MainLoop`.
+  animation frames at `$8010`, generates dining-room seed 0 into `LevelMap`,
+  compares it byte-for-byte with the temporary host oracle, loads its first 32
+  columns into the background tile map, sets `BGP=$E4`/`OBP0=$E0`, zeroes the
+  camera and streaming state, clears OAM, uses the generated spawn position for
+  the player's initial state, and turns the LCD back on with signed background
+  addressing. Falls through into `MainLoop`.
+- **`GenerateLevel`** — reproduces the host xorshift16 draw order, builds the
+  directed route and optional-room tree, selects the wide seam and eligible
+  ledge-catch room, copies semantic room templates into WRAM, applies variants
+  and protected endpoints, converts semantic solids to connectivity tile IDs,
+  and places the exit doorway. Seed 0 is fixed at build time for the initial
+  parity step.
 - **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
   At the start of VBlank it streams one newly exposed or restored background
   column when needed, then commits the camera registers and all four player
@@ -64,17 +72,17 @@ source files yet:
   hitbox on each side. Horizontal edges use top/middle/bottom probes and
   vertical edges use left/center/right probes so an isolated 8×8 solid tile
   cannot fall between corner-only samples.
-- **Tile/map data** (`TileData`, `GeneratedLevelMap`, `CollisionTypes`,
-  `ChefFrames`) — `INCBIN`s of the atlas `.2bpp`, seeded `.tilemap`,
-  collision `.bin`, and chef frame `.2bpp` files.
+- **Tile/map data** (`TileData`, `HostSeedLevelMap`, `RoomTemplateData`,
+  `CollisionTypes`, `ChefFrames`) — `INCBIN`s of the atlas `.2bpp`, temporary
+  parity `.tilemap`, semantic room-template table, collision `.bin`, and chef
+  frame `.2bpp` files.
   `tools/generate-structural-pilot.mjs` generates the base atlas and test
   map. `tools/generate-dining-room.mjs` extends that atlas with rear and
   dining tiles, then generates its TSX, fixture TMX, raw tile map, and
   128-byte collision-type table. `tools/generate-room-template-playtest.mjs`
   retains the accepted three-room regression map.
-  `tools/generate-seeded-level.mjs` emits the active seed 0 map, including its
-  reciprocal wide seam, ledge-catch traversal room, protected spawn/exit
-  envelopes, and player-start constants.
+  `tools/generate-seeded-level.mjs` emits the seed-0 parity map, semantic room
+  template table, and generated metadata.
   `tools/generate-room-variant-playtest.mjs` retains the focused regression
   fixture. Host validation classifies support-to-support moves and checks the
   ordered passage through every critical-route room against its ordinary or
@@ -82,8 +90,7 @@ source files yet:
 
 ## Memory map
 
-WRAM0, `SECTION "Player State"` — uninitialized at power-on and set explicitly
-in `Start`:
+WRAM0 is uninitialized at power-on and set explicitly during startup:
 
 | Symbol | Meaning |
 |---|---|
@@ -101,6 +108,7 @@ in `Start`:
 | `LedgeTop` | Scratch world Y coordinate for the tile top currently considered by swept ledge detection |
 | `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
+| Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
 
 Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`SCY`/`SCX`), `$FF44` (`LY`), `$FF47`/`$FF48` (`BGP`/`OBP0`), `$FF00`
@@ -109,8 +117,8 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
-all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. The
-host-generated seed 0 lives in `LevelMap`; `$9800–$9BFF` contains its streamed
+all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. Runtime-
+generated seed 0 lives in `LevelMap`; `$9800–$9BFF` contains its streamed
 32-column view. The map includes one reciprocal six-row seam, one generated
 ledge-catch room, and the shared descent exit. Biome-transition runtime code
 does not exist yet. See
@@ -129,6 +137,7 @@ across X=256 because the visible difference is always less than 256 pixels.
 ## Not yet in place
 
 - No ROM banking (everything fits in `ROM0`/bank 0 so far).
-- No runtime procedural generation yet — the current map is generated on the
-  host during the build. Kitchen, patio, and deep-freezer art remain unstarted.
+- Runtime generation is fixed to seed 0 and still carries its host parity map;
+  multi-seed parity and player-timed seed selection remain pending. Kitchen,
+  patio, and deep-freezer art remain unstarted.
 - No enemies, hazards, HUD, audio, or title/menu flow.

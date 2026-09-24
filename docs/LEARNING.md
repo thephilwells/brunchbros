@@ -322,6 +322,14 @@ milestone) if useful.
   old Y position. The main loop now commits the camera and all four Chef OAM
   entries immediately after entering VBlank, then calculates the next state.
 
+- **An in-place map conversion can retain source-state information in an
+  unused output bit.** Runtime generation first stores semantic empty, solid,
+  and one-way values in the 1,280-byte `LevelMap`. Connectivity conversion
+  needs neighboring solid state even after earlier cells have become final tile
+  IDs, so converted solids temporarily set bit 7. Both raw solid value 1 and a
+  value with bit 7 set count as solid during the pass; a final sweep clears the
+  marker. This saves the 1,280 bytes a second semantic map would require.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

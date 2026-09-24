@@ -118,9 +118,11 @@ critical-route boundary rooms. Revised seed 0 is accepted in SameBoy. Assembly
 now enforces the protected spawn and exit geometry across every topology, and
 validation keeps boundary traversal out of the ordinary first and final route
 transitions. Every critical-route room now also proves a directed path matching
-its declared ordinary or ledge-catch class. The assembly generator port is
-next. Directional look poses and camera look-ahead can ship in the same
-milestone but are not blockers for procedural generation. See
+its declared ordinary or ledge-catch class. The assembly generator now builds
+fixed seed 0 during boot and compares it in-ROM with the host oracle. SameBoy
+acceptance and multi-seed runtime parity are next, followed by the Press Start
+seed-timing screen. Directional look poses and camera look-ahead can ship in
+the same milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
 ## Completed

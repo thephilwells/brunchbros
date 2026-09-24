@@ -5,12 +5,18 @@ import { generateLevel } from './lib/level-generation.mjs';
 const generated = JSON.parse(readFileSync('build/seeded_level.json', 'utf8'));
 const expected = generateLevel(generated.seed);
 const tilemap = readFileSync('build/seeded_level.tilemap');
+const runtimeTemplates = readFileSync('build/room_templates.bin');
+const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
 const include = readFileSync('build/seeded_level.inc', 'utf8');
 const tmx = readFileSync('gfx/seeded_level.tmx', 'utf8');
 
 assert.deepEqual(generated, expected);
 assert.deepEqual([...tilemap], expected.tiles);
 assert.equal(tilemap.length, 40 * 32);
+assert.equal(runtimeTemplates.length, 15 * 10 * 8);
+const semanticValues = { '.': 0, '#': 1, '=': 2 };
+const expectedRuntimeTemplates = templateSet.templates.flatMap(template => template.rows.flatMap(row => [...row].map(cell => semanticValues[cell])));
+assert.deepEqual([...runtimeTemplates], expectedRuntimeTemplates);
 assert.match(include, new RegExp(`GENERATED_LEVEL_SEED EQU ${expected.seed}`));
 assert.match(include, new RegExp(`GENERATED_PLAYER_X EQU ${expected.spawnPosition.x}`));
 assert.match(include, new RegExp(`GENERATED_PLAYER_Y EQU ${expected.spawnPosition.y}`));

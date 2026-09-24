@@ -4,6 +4,23 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-23 — Runtime generation begins with an embedded parity oracle
+
+**Decision:** The first RGBDS generator runs seed 0 during boot and compares
+all 1,280 generated tile bytes against the host-generated seed-0 map still
+embedded in ROM. A mismatch stops before the LCD is enabled. The oracle remains
+temporary while several fixed seeds are checked, then leaves the production
+ROM once runtime parity is established.
+
+**Why:** A successful build only proves assembly syntax. Comparing inside the
+Game Boy execution path catches PRNG, draw-order, template transformation, and
+tile-connectivity differences before changing how seeds are selected.
+
+**Status:** Implemented; awaiting SameBoy acceptance of the seed-0 runtime
+build. Multi-seed parity is next. See `specs/level-generation.md`.
+
+---
+
 ## 2026-09-23 — Seeded variants use reciprocal seams and traversal classes
 
 **Decision:** Each seeded level initially selects one horizontal wide seam,

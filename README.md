@@ -95,10 +95,11 @@ node tools/verify-room-template-playtest.mjs
 Open `gfx/room_template_fixture.tmx` in Tiled to inspect all 15 nonzero port
 masks. Their source is `data/room-templates/dining-room.json`.
 
-The default ROM uses `gfx/seeded_level.tmx`. Seed 0 now includes a reciprocally
-matched wide seam, a generated ledge-catch boundary room, and generator-enforced
-spawn/exit clearances. The focused prototype remains available in
-`gfx/room_variant_playtest.tmx`.
+The default ROM generates seed 0 during boot. It includes a reciprocally matched
+wide seam, a generated ledge-catch boundary room, and generator-enforced
+spawn/exit clearances. The host-generated seed-0 tilemap remains embedded as a
+temporary byte-for-byte runtime parity oracle. The focused prototype remains
+available in `gfx/room_variant_playtest.tmx`.
 
 ## Documentation map
 

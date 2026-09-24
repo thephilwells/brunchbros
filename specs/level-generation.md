@@ -256,6 +256,15 @@ routes, every port-turn shape, minimum and maximum route lengths, and every
 boundary-transition type. Visual galleries find breadth problems; emulator
 playtests remain authoritative for movement feel and hardware timing.
 
+The initial runtime port fixes `GENERATED_LEVEL_SEED` at zero, generates the
+complete map during boot, and compares it in-ROM against the embedded host
+tilemap before enabling the LCD. Semantic templates use `0=empty`, `1=solid`,
+and `2=one_way`. During in-place connectivity conversion, bit 7 marks solid
+cells already converted so later cells can still inspect their neighbors; a
+final pass removes the marker. This avoids allocating a second 1,280-byte WRAM
+map. Seed-0 SameBoy acceptance and external dumps for multiple golden seeds
+remain pending.
+
 ## Initial non-goals
 
 - Optional-branch content, hazards, enemies, loot, and furniture placement.
