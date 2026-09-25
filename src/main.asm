@@ -7,6 +7,9 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
+IF DEF(ROOM_VARIANT_PLAYTEST)
+INCLUDE "build/room_variant_playtest.inc"
+ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
 DEF TITLE_B_TILE EQU 117
@@ -179,7 +182,11 @@ Start:
 
 	ld hl, $ff40
 	res 7, [hl]
+IF DEF(ROOM_VARIANT_PLAYTEST)
+	call LoadRoomVariantPlaytest
+ELSE
 	call GenerateLevel
+ENDC
 
 	ld de, LevelMap
 	ld hl, $9800
@@ -233,6 +240,30 @@ Start:
 	ld a, %10000011
 	ldh [$ff40], a
 	jp MainLoop
+
+IF DEF(ROOM_VARIANT_PLAYTEST)
+LoadRoomVariantPlaytest:
+	ld de, RoomVariantPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
 
 LoadTitleScreen:
 	ld hl, $9800
@@ -1300,6 +1331,13 @@ RoomTemplateData:
 	INCBIN "build/room_templates.bin"
 RoomTemplateDataEnd:
 ASSERT RoomTemplateDataEnd - RoomTemplateData == 15 * 10 * 8
+
+IF DEF(ROOM_VARIANT_PLAYTEST)
+RoomVariantPlaytestMap:
+	INCBIN "build/room_variant_playtest.tilemap"
+RoomVariantPlaytestMapEnd:
+ASSERT RoomVariantPlaytestMapEnd - RoomVariantPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
 
 CollisionTypes:
 	INCBIN "build/dining_room_collision.bin"

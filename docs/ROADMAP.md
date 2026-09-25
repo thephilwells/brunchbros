@@ -126,6 +126,11 @@ the next parity check. Directional look poses and camera look-ahead can ship in
 the same milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
+The vertical 10×16 domino is accepted in SameBoy. Its focused ROM uses a fully
+open seam, solid wall ledges, two-tile jump-away channels, and three-row cubby
+clearance rather than free-floating one-way stairs. Seeded maximum-matching
+domino selection is next.
+
 ## Completed
 
 - **2026-09-21 — Tileset backgrounds (first-biome baseline).** Completed a

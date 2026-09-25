@@ -164,6 +164,64 @@
       ],
       "dependsOn": "Build ROM",
       "problemMatcher": []
+    },
+    {
+      "label": "Assemble Room Variant Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DROOM_VARIANT_PLAYTEST=1",
+        "-o",
+        "build/room_variant_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link Room Variant Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-room-variant.gb",
+        "-m",
+        "build/room_variant_main.map",
+        "-n",
+        "build/room_variant_main.sym",
+        "build/room_variant_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix Room Variant Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-room-variant.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Room Variant Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Assemble Room Variant Playtest", "Link Room Variant Playtest", "Fix Room Variant Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Room Variant Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-room-variant.gb"
+      ],
+      "dependsOn": "Build Room Variant Playtest ROM",
+      "problemMatcher": []
     }
   ]
 }

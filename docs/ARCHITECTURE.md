@@ -84,7 +84,9 @@ The runtime is split between `src/main.asm` and the included
   `tools/generate-seeded-level.mjs` emits the seed-0 parity map, semantic room
   template table, and generated metadata.
   `tools/generate-room-variant-playtest.mjs` retains the focused regression
-  fixture. Host validation classifies support-to-support moves and checks the
+  fixture. Defining `ROOM_VARIANT_PLAYTEST` assembles that fixture into a
+  separate ROM while the default build keeps runtime generation. Host
+  validation classifies support-to-support moves and checks the
   ordered passage through every critical-route room against its ordinary or
   ledge-catch class. `rgbgfx` converts the dining PNG to 2bpp.
 

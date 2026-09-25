@@ -2,8 +2,8 @@
 
 Status: **macro-route generator, seeded gallery, all 15 room port masks,
 tile-level mutual-port and critical-route transition validation, protected
-endpoint clearances, and build-time ROM map implemented; runtime parity
-pending**.
+endpoint clearances, runtime generation, and title-timed seed selection
+implemented; external multi-seed runtime parity pending**.
 
 ## Purpose
 
@@ -93,13 +93,42 @@ Room-local coordinates are zero-based within a 10×8 tile template.
 ### Seam and traversal variants
 
 `data/room-templates/dining-room-prototypes.json` retains the focused fixtures
-that established the initial variants. The first pair replaces the ordinary
+that establish open-room variants. The horizontal pair replaces the ordinary
 two-tile-high east/west interface with a matching six-row opening, allowing two
-10×8 cells to read and play as one larger room. Its right-hand template also
-contains a full-solid ledge four tiles above the departure floor, with an
-exposed corner and open headroom. It contains no one-way fallback, so upward
-progress specifically exercises ledge catch. SameBoy review accepted both the
-large-room effect and required catch.
+10×8 cells to read and play as one larger room. The vertical pair opens all
+eight interior columns across a north/south interface. Its lower half begins
+with a full-solid ledge four tiles above the floor, then alternates structural
+wall ledges through the high chamber without a one-way fallback. Both domino
+orientations and the required catch are accepted in SameBoy.
+
+#### Accepted vertical-domino contract
+
+- A vertical domino is one matched north/south pair of 10×8 cells. Neither cell
+  may belong to another domino.
+- Both halves declare reciprocal wide bits. Columns 1–8 of the upper room's
+  bottom row and the lower room's top row remain empty; columns 0 and 9 retain
+  the side walls unless a separately declared side port opens them.
+- Validation treats the result as one 10×16 room. Every external declared port
+  must remain mutually reachable through the combined geometry, and the
+  ordered critical-route entry and exit must satisfy their traversal class.
+- Required upward travel is supplied by full-solid structural ledges before
+  furniture dressing. Free-floating one-way platforms and floor-level dining
+  furniture cannot be required links in the ascent.
+- A four-tile rise may require the accepted ledge catch. Alternating opposing
+  ledges leave at least two empty tile columns between their ends so the
+  12-pixel hitbox can execute the forced jump-away without striking the next
+  shelf.
+- A landing that enters beneath an overhead solid has at least three empty tile
+  rows above its surface. Exact standing-height cubbies are invalid required
+  destinations.
+- Downward travel retains the ordinary and boundary drop limits, landing width,
+  and visibility rules from `specs/level-design-rules.md`.
+
+Before vertical dominoes enter seeded selection, the selector and validator
+must support reciprocal north/south wide bits and combined-room reachability.
+Domino selection then uses a seeded maximum matching over the 16-room
+connection tree, preferring unmatched single-port leaves. This makes paired
+rooms the norm while ensuring one cell never participates in two dominoes.
 
 Seeded selection assigns exactly one horizontal wide seam per level. Both rooms
 store reciprocal wide-port bits, and assembly clears boundary rows 1–6 on both
@@ -112,6 +141,10 @@ Validation rejects mismatched wide seams, unsupported vertical wide seams,
 ineligible or multiple boundary classes, boundary traversal inside the
 protected endpoint transitions, and consecutive boundary rooms on the critical
 route.
+
+That paragraph describes the current generator implementation. Its single
+horizontal seam and rejection of vertical wide bits remain in force until the
+maximum-matching selector replaces them.
 
 ## Critical room templates
 

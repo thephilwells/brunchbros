@@ -65,11 +65,17 @@ map. No vertical streaming is required for this level size.
 - A catch-assisted upward transition may reach an exposed full-solid ledge at
   most four tiles, or 32 pixels, above the departure surface. Four tiles is a
   hard boundary case and requires empty space above and beside the catch edge.
+- An alternating ledge-catch ascent leaves at least two empty tile columns
+  between opposing shelf ends. A one-tile channel does not let the 12-pixel
+  hitbox clear the next shelf during the forced jump-away.
 - One-way surfaces cannot terminate a four-tile upward transition because they
   cannot be ledge-caught.
 - A required one-way landing beneath a full-solid ceiling has at least three
   empty tile rows between its surface and the ceiling. Two rows fit the
   standing hitbox exactly but do not leave enough headroom to jump onto it.
+- Any required solid-ledge landing that enters a space beneath a ceiling uses
+  the same three-row minimum. Exact standing-height cubbies cannot be entered
+  reliably from a jump or ledge catch.
 - A required downward transition may drop at most eight tiles, or 64 pixels.
   At the normal camera offset, the complete first tile row of that landing
   remains visible at the bottom of the 144-pixel viewport before the drop.
@@ -139,6 +145,22 @@ variation.
 - Exit activation remains a separate runtime interaction: overlap the doorway
   while grounded at its threshold and press Down. Generation validates only
   the structural footprint and safe approach.
+
+## Room scale and biome dressing
+
+- Most subrooms should be paired across one open horizontal or vertical seam
+  so the resulting space reads as a 20×8 or 10×16-tile domino. Unpaired square
+  rooms are the less frequent exception.
+- Free-floating one-way test platforms are traversal scaffolding, not the
+  assumed final dining-room layout. Tables, benches, booths, and counters are
+  ordinarily placed on a room floor.
+- A high-ceiling room cannot rely on floor-level furniture to provide its
+  vertical route. Its structural pass supplies full-solid wall ledges or
+  overhangs within the accepted jump and ledge-catch limits before furniture
+  dressing begins.
+- Furniture may add optional movement choices, but removing or relocating it
+  cannot break the required route unless that placement is explicitly part of
+  the validated room template.
 
 ## Required-route enforcement
 

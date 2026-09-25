@@ -4,6 +4,24 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-25 — Vertical dominoes use structural ledges, not furniture stairs
+
+**Decision:** Prototype a 10×16 vertical domino with an eight-tile open seam
+and no one-way platforms. Its upward route begins with the accepted 32-pixel
+ledge catch and continues across full-solid wall ledges. Dining tables,
+benches, booths, and counters remain floor-level dressing by default.
+
+**Why:** The free-floating one-way platforms used to measure movement will not
+represent most finished dining rooms. High ceilings therefore need viable
+structural traversal before furniture is placed, making ledge catch a useful
+part of ordinary room composition.
+
+**Status:** Accepted in SameBoy after establishing two-tile horizontal channels
+between opposing catch ledges and three empty rows above the final cubby
+landing. Seeded vertical-domino selection remains pending.
+
+---
+
 ## 2026-09-24 — Start timing selects the runtime level seed
 
 **Decision:** The title screen increments a 16-bit frame counter while waiting
