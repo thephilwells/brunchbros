@@ -25,16 +25,21 @@ assert.match(tmx, /name="chef_spawn" type="spawn"/);
 assert.match(tmx, /name="descent_exit" type="exit"/);
 for (const name of expected.roomTemplateNames) assert.match(tmx, new RegExp(`name="${name}" type="room_template"`));
 
-const wideEastRooms = expected.roomWidePorts.flatMap((ports, room) => ports & 2 ? [room] : []);
-assert.equal(wideEastRooms.length, 1);
-for (const room of wideEastRooms) assert(expected.roomWidePorts[room + 1] & 1);
+const dominoes = expected.roomWidePorts.flatMap((ports, room) => ports & (2 | 8) ? [room] : []);
+assert(dominoes.length >= 4 && dominoes.length <= 8);
+for (let room = 0; room < expected.roomWidePorts.length; room++) {
+  const ports = expected.roomWidePorts[room];
+  assert(!ports || !(ports & (ports - 1)));
+  if (ports & 2) assert(expected.roomWidePorts[room + 1] & 1);
+  if (ports & 8) assert(expected.roomWidePorts[room + 4] & 4);
+}
 for (let index = 1; index < expected.criticalRoute.length; index++) {
   const previous = expected.roomTraversalClasses[expected.criticalRoute[index - 1]];
   const current = expected.roomTraversalClasses[expected.criticalRoute[index]];
   assert(previous === 'ordinary' || current === 'ordinary');
 }
 assert.equal(expected.roomTraversalClasses.filter(value => value === 'ledge_catch').length, 1);
-assert.match(tmx, /name="wide_ports" type="int" value="[12]"/);
+assert.match(tmx, /name="wide_ports" type="int" value="[1-8]"/);
 assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
 
 const at = (x, y) => expected.tiles[y * 40 + x];

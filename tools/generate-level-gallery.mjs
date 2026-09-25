@@ -39,7 +39,9 @@ function renderGallery(levels, summary) {
     const name = String(level.seed).padStart(5, '0');
     const status = level.validation.valid ? 'valid' : 'invalid';
     const boundaryRooms = level.roomTraversalClasses.filter(value => value !== 'ordinary').length;
-    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · 1 wide seam · ${boundaryRooms} boundary</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
+    const horizontalDominoes = level.roomWidePorts.filter(ports => ports & 2).length;
+    const verticalDominoes = level.roomWidePorts.filter(ports => ports & 8).length;
+    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · ${horizontalDominoes}H/${verticalDominoes}V dominoes · ${boundaryRooms} boundary</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
   }).join('\n');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Brunch Bros level gallery</title><style>
@@ -78,7 +80,8 @@ const summary = {
   spawnColumns: histogram(levels, level => level.columns[0]),
   exitColumns: histogram(levels, level => level.columns[4]),
   roomPortMasks: histogram(portEntries, value => value),
-  wideSeams: levels.reduce((total, level) => total + level.roomWidePorts.filter(ports => ports & 2).length, 0),
+  horizontalDominoes: levels.reduce((total, level) => total + level.roomWidePorts.filter(ports => ports & 2).length, 0),
+  verticalDominoes: levels.reduce((total, level) => total + level.roomWidePorts.filter(ports => ports & 8).length, 0),
   traversalClasses: histogram(levels.flatMap(level => level.roomTraversalClasses), value => value),
 };
 

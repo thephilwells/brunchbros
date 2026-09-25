@@ -12,6 +12,9 @@ const seededTopologies = new Set();
 let minimumLength = 16;
 let maximumLength = 0;
 let levelsWithLedgeCatch = 0;
+let minimumDominoes = 8;
+let maximumDominoes = 0;
+let verticalDominoes = 0;
 
 for (let spawn = 0; spawn < 4; spawn++) {
   for (let firstDescent = 0; firstDescent < 4; firstDescent++) {
@@ -39,6 +42,10 @@ for (let seed = 0; seed < 4096; seed++) {
   assert.deepEqual(first, second);
   assert.equal(first.validation.valid, true, `Seed ${seed}: ${first.validation.errors.join(', ')}`);
   if (first.roomTraversalClasses.includes('ledge_catch')) levelsWithLedgeCatch++;
+  const dominoes = first.roomWidePorts.filter(ports => ports & (2 | 8)).length;
+  minimumDominoes = Math.min(minimumDominoes, dominoes);
+  maximumDominoes = Math.max(maximumDominoes, dominoes);
+  verticalDominoes += first.roomWidePorts.filter(ports => ports & 8).length;
   seededTopologies.add(topologySignature(first));
   if (seed < 256) firstBatchTopologies.add(topologySignature(first));
 }
@@ -46,10 +53,29 @@ for (let seed = 0; seed < 4096; seed++) {
 assert.equal(firstBatchTopologies.size, 256);
 assert.equal(seededTopologies.size, 1024);
 assert(levelsWithLedgeCatch > 0);
+assert(minimumDominoes >= 4);
+assert.equal(maximumDominoes, 8);
+assert(verticalDominoes > 0);
 
 const mismatchedSeam = structuredClone(generateLevel(0));
-mismatchedSeam.roomWidePorts[5] = 0;
+const matchedRoom = mismatchedSeam.roomWidePorts.findIndex(ports => ports !== 0);
+mismatchedSeam.roomWidePorts[matchedRoom] = 0;
 assert(validateLevel(mismatchedSeam).errors.some(error => error.includes('wide seam is mismatched')));
+
+const overlappingDominoes = structuredClone(generateLevel(0));
+const multiPortRoom = overlappingDominoes.roomPorts.findIndex(ports => ports & (ports - 1));
+const availablePorts = overlappingDominoes.roomPorts[multiPortRoom];
+const firstPort = availablePorts & -availablePorts;
+const secondPort = (availablePorts ^ firstPort) & -(availablePorts ^ firstPort);
+overlappingDominoes.roomWidePorts[multiPortRoom] = firstPort | secondPort;
+assert(validateLevel(overlappingDominoes).errors.some(error => error.includes('multiple dominoes')));
+
+const incompatibleVertical = structuredClone(generateLevel(0));
+const incompatibleUpper = incompatibleVertical.roomPorts.findIndex((ports, room) =>
+  room < 12 && ports & 8 && (room === incompatibleVertical.spawnRoom || ports & 3));
+incompatibleVertical.roomWidePorts[incompatibleUpper] = 8;
+incompatibleVertical.roomWidePorts[incompatibleUpper + 4] = 4;
+assert(validateLevel(incompatibleVertical).errors.some(error => error.includes('incompatible vertical wide seam')));
 
 const consecutiveBoundaries = structuredClone(generateLevel(0));
 consecutiveBoundaries.roomTraversalClasses[consecutiveBoundaries.criticalRoute[0]] = 'ledge_catch';

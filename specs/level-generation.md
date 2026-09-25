@@ -2,8 +2,9 @@
 
 Status: **macro-route generator, seeded gallery, all 15 room port masks,
 tile-level mutual-port and critical-route transition validation, protected
-endpoint clearances, runtime generation, and title-timed seed selection
-implemented; external multi-seed runtime parity pending**.
+endpoint clearances, seeded maximum-matching domino selection, runtime
+generation, and title-timed seed selection implemented; external multi-seed
+runtime parity pending**.
 
 ## Purpose
 
@@ -33,7 +34,7 @@ the ordinary 4×4 generator.
 | `CriticalRoute` | 16 bytes | Ordered room indices from spawn through exit |
 | `RoomPorts` | 16 bytes | Four low bits describe open room interfaces |
 | `RoomTemplates` | 16 bytes | Selected template ID for each grid cell |
-| `RoomWidePorts` | 16 bytes | Port bits whose horizontal seams use the wide profile |
+| `RoomWidePorts` | 16 bytes | Port bits whose horizontal or vertical seams use the wide profile |
 | `RoomTraversalClasses` | 16 bytes | Ordinary or boundary traversal class for each room |
 | `SpawnRoom` | 1 byte | First critical-route room index |
 | `ExitRoom` | 1 byte | Last critical-route room index |
@@ -124,27 +125,31 @@ orientations and the required catch are accepted in SameBoy.
 - Downward travel retains the ordinary and boundary drop limits, landing width,
   and visibility rules from `specs/level-design-rules.md`.
 
-Before vertical dominoes enter seeded selection, the selector and validator
-must support reciprocal north/south wide bits and combined-room reachability.
-Domino selection then uses a seeded maximum matching over the 16-room
-connection tree, preferring unmatched single-port leaves. This makes paired
-rooms the norm while ensuring one cell never participates in two dominoes.
+Seeded selection computes a maximum matching over compatible edges of the
+16-room connection tree. Cardinality is primary; among equal-size matchings,
+covering multi-port rooms is preferred so unmatched single-port leaves are more
+common. Numeric room order resolves exact ties deterministically. The result
+contains four to eight dominoes across the accepted 4,096-seed validation set,
+and no room participates in more than one domino.
 
-Seeded selection assigns exactly one horizontal wide seam per level. Both rooms
-store reciprocal wide-port bits, and assembly clears boundary rows 1–6 on both
-sides. When an eligible critical-route room outside the first and final two
-route positions is entered from the north, leaves horizontally, and has no
+Every horizontal connection is compatible. A vertical connection is compatible
+only when its upper room is not the spawn room and has no west or east port.
+Opening all eight interior columns otherwise removes the support surface needed
+by an upper side doorway or the protected spawn envelope. Incompatible vertical
+edges retain the standard three-column port rather than weakening those
+guarantees.
+
+Both rooms store reciprocal wide-port bits. Assembly clears boundary rows 1–6
+for horizontal pairs and columns 1–8 for vertical pairs. When an eligible
+critical-route room outside the first and final two route positions is entered
+from the north, leaves across its matched horizontal domino seam, and has no
 south port, it may receive the `ledge_catch` class. That class replaces its
 ordinary internal staircase with the accepted four-tile solid ledge plus one
 high interface platform. At most one such boundary room is selected initially.
-Validation rejects mismatched wide seams, unsupported vertical wide seams,
-ineligible or multiple boundary classes, boundary traversal inside the
-protected endpoint transitions, and consecutive boundary rooms on the critical
-route.
-
-That paragraph describes the current generator implementation. Its single
-horizontal seam and rejection of vertical wide bits remain in force until the
-maximum-matching selector replaces them.
+Validation rejects non-maximum or overlapping matchings, mismatched reciprocal
+bits, incompatible vertical pairs, ineligible or multiple boundary classes,
+boundary traversal inside the protected endpoint transitions, and consecutive
+boundary rooms on the critical route.
 
 ## Critical room templates
 
@@ -248,8 +253,8 @@ The generated directory contains:
   inspectable in Tiled.
 - `levels/<seed>.json`: seed, selected columns, route order, room ports,
   selected template IDs and names, assembled tiles, and validation results.
-- `summary.json`: batch failure list and distributions for route length, room
-  masks, spawn column, exit column, and unique macro topologies covered.
+- `summary.json`: batch failure list; route, room-mask, spawn, exit, traversal,
+  and domino-orientation counts; and unique macro topologies covered.
 
 The gallery is generated output and is not committed. A selected failing seed
 may become a committed regression fixture.
@@ -264,9 +269,10 @@ The implemented host phase checks every generated level for:
    and exactly 15 room-to-room connections in the initial branch tree.
 6. Exact template-to-port-mask matches and mutual hard-limit traversal between
    every port declared by each selected template.
-7. Reciprocal wide-seam profiles, eligible traversal classes, catchable
-   four-tile ledges, declared-class passage through every ordered critical-route
-   room, and no consecutive boundary rooms.
+7. Maximum compatible domino cardinality, reciprocal and non-overlapping
+   wide-seam profiles, eligible traversal classes, catchable four-tile ledges,
+   declared-class passage through every ordered critical-route room, and no
+   consecutive boundary rooms.
 8. Exact spawn support and 3×6 clearance, exact exit footprint, four-tile
    approach support and clearance, and ordinary endpoint transitions.
 

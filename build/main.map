@@ -1,6 +1,6 @@
 SUMMARY:
-	ROM0: 8049 bytes used / 8335 free
-	WRAM0: 1471 bytes used / 2625 free
+	ROM0: 8575 bytes used / 7809 free
+	WRAM0: 1551 bytes used / 2545 free
 
 ROM0 bank #0:
 	EMPTY: $0000-$00ff ($0100 bytes)
@@ -106,7 +106,7 @@ ROM0 bank #0:
 	         $0878 = TryLedgeCatch.tryLeft
 	         $08bc = TryLedgeCatch.caught
 	         $08d9 = TryLedgeCatch.notCaught
-	SECTION: $08db-$2070 ($1796 bytes) ["Level Generation"]
+	SECTION: $08db-$227e ($19a4 bytes) ["Level Generation"]
 	         $08db = GenerateLevel
 	         $08f7 = GenerateRouteColumns
 	         $08fc = GenerateRouteColumns.loop
@@ -154,84 +154,110 @@ ROM0 bank #0:
 	         $0bf8 = GenerationRandomModulo.next
 	         $0bfc = SelectRoomVariants
 	         $0c02 = SelectRoomVariants.clear
-	         $0c0e = SelectRoomVariants.candidateLoop
-	         $0c47 = SelectRoomVariants.horizontalExit
-	         $0c6c = SelectRoomVariants.nextCandidate
-	         $0c75 = SelectRoomVariants.chooseCandidate
-	         $0ca8 = SelectRoomVariants.singleDirection
-	         $0cac = SelectRoomVariants.wideEast
-	         $0cb5 = SelectRoomVariants.wideWest
-	         $0cbe = SelectRoomVariants.chooseAnyHorizontal
-	         $0cc5 = SelectRoomVariants.horizontalLoop
-	         $0cf2 = SelectRoomVariants.nextHorizontal
-	         $0cfb = SelectRoomVariants.chooseHorizontal
-	         $0d0f = SetWideConnection
-	         $0d24 = AssembleRoomTemplates
-	         $0d28 = AssembleRoomTemplates.roomLoop
-	         $0d45 = AssembleRoomTemplates.rowLoop
-	         $0d47 = AssembleRoomTemplates.cellLoop
-	         $0d54 = AssembleRoomTemplates.rowReady
-	         $0d60 = GetRoomDestination
-	         $0d6e = GetRoomTemplate
-	         $0d7d = ApplyRoomVariants
-	         $0d81 = ApplyRoomVariants.roomLoop
-	         $0dbc = ApplyLedgeCatchRoom
-	         $0dc8 = ApplyLedgeCatchRoom.clearRow
-	         $0dcb = ApplyLedgeCatchRoom.clearCell
-	         $0dd6 = ApplyLedgeCatchRoom.clearReady
-	         $0e02 = ApplyLedgeCatchRoom.ledgeOffsetReady
-	         $0e09 = ClearWideWest
-	         $0e15 = ClearWideEast
-	         $0e1f = ClearWideBoundary
-	         $0e22 = ClearWideBoundary.loop
-	         $0e2b = ApplyProtectedEndpoints
-	         $0e3a = ApplyProtectedEndpoints.spawnClearRow
-	         $0e3d = ApplyProtectedEndpoints.spawnClearCell
-	         $0e48 = ApplyProtectedEndpoints.spawnClearReady
-	         $0e75 = ApplyProtectedEndpoints.exitClearRow
-	         $0e78 = ApplyProtectedEndpoints.exitClearCell
-	         $0e83 = ApplyProtectedEndpoints.exitClearReady
-	         $0eb3 = ApplyProtectedEndpoints.exitReady
-	         $0eb6 = SetGeneratedPlayerPosition
-	         $0ec2 = SetGeneratedPlayerPosition.xLoop
-	         $0eca = SetGeneratedPlayerPosition.xReady
-	         $0edc = SetGeneratedPlayerPosition.yLoop
-	         $0ee7 = SetGeneratedPlayerPosition.yReady
-	         $0eeb = SetGeneratedExitPosition
-	         $0ef2 = SetGeneratedExitPosition.xLoop
-	         $0efd = SetGeneratedExitPosition.xReady
-	         $0f11 = ConvertSemanticMap
-	         $0f1b = ConvertSemanticMap.cellLoop
-	         $0f38 = ConvertSemanticMap.skipUp
-	         $0f49 = ConvertSemanticMap.skipRight
-	         $0f5d = ConvertSemanticMap.skipDown
-	         $0f6d = ConvertSemanticMap.solidReady
-	         $0f74 = ConvertSemanticMap.empty
-	         $0f78 = ConvertSemanticMap.oneWay
-	         $0f7a = ConvertSemanticMap.next
-	         $0f94 = ConvertSemanticMap.storeColumn
-	         $0f99 = ConvertSemanticMap.clearMarkers
-	         $0f9e = ConvertSemanticMap.clearOuter
-	         $0fa0 = ConvertSemanticMap.clearInner
-	         $0faa = SemanticSolidAtHL
-	         $0fb5 = SemanticSolidAtHL.solid
-	         $0fb7 = PlaceExitDoor
-	         $0fc6 = PlaceExitDoor.rowLoop
-	         $0fd2 = GetMapTilePointer
-	         $0fdc = GetMapTilePointer.rowLoop
-	         $0fe0 = GetMapTilePointer.rowsReady
-	         $0fe5 = BitMasks
-	         $0fed = RoomDestinationPointers
-	         $100d = RoomTemplatePointers
-	         $102b = TileData
-	         $182b = TitleNameTiles
-	         $1836 = TitlePromptTiles
-	         $1841 = RoomTemplateData
-	         $1cf1 = CollisionTypes
-	         $1cf1 = RoomTemplateDataEnd
-	         $1d71 = ChefFrames
-	EMPTY: $2071-$3fff ($1f8f bytes)
-	TOTAL EMPTY: $208f bytes
+	         $0c12 = SelectRoomVariants.candidateLoop
+	         $0c52 = SelectRoomVariants.eastExit
+	         $0c54 = SelectRoomVariants.checkWideExit
+	         $0c81 = SelectRoomVariants.nextCandidate
+	         $0c8a = SelectRoomVariants.chooseCandidate
+	         $0ca5 = SelectDominoMatching
+	         $0cac = SelectDominoMatching.clearParents
+	         $0cc0 = SelectDominoMatching.buildOrder
+	         $0cea = SelectDominoMatching.orderEast
+	         $0cf5 = SelectDominoMatching.orderNorth
+	         $0d01 = SelectDominoMatching.orderSouth
+	         $0d0d = SelectDominoMatching.orderNext
+	         $0d16 = SelectDominoMatching.scoreRooms
+	         $0d1c = SelectDominoMatching.scoreRoom
+	         $0d39 = SelectDominoMatching.sumChildren
+	         $0d58 = SelectDominoMatching.sumNext
+	         $0d61 = SelectDominoMatching.storeBase
+	         $0d7e = SelectDominoMatching.testChildren
+	         $0dda = SelectDominoMatching.testNext
+	         $0de3 = SelectDominoMatching.reconstruct
+	         $0de9 = SelectDominoMatching.clearMatched
+	         $0df0 = SelectDominoMatching.reconstructRoom
+	         $0e32 = SelectDominoMatching.reconstructNext
+	         $0e3b = AppendMatchingChild
+	         $0e63 = IsMatchingEdgeEligible
+	         $0e7e = IsMatchingEdgeEligible.upperReady
+	         $0e91 = IsMatchingEdgeEligible.eligible
+	         $0e93 = IsMatchingEdgeEligible.ineligible
+	         $0e95 = RoomInternalBonus
+	         $0ea4 = SetWideConnection
+	         $0ec0 = SetWideConnection.east
+	         $0ece = SetWideConnection.west
+	         $0edc = SetWideConnection.south
+	         $0eea = OrWidePort
+	         $0ef5 = AssembleRoomTemplates
+	         $0ef9 = AssembleRoomTemplates.roomLoop
+	         $0f16 = AssembleRoomTemplates.rowLoop
+	         $0f18 = AssembleRoomTemplates.cellLoop
+	         $0f25 = AssembleRoomTemplates.rowReady
+	         $0f31 = GetRoomDestination
+	         $0f3f = GetRoomTemplate
+	         $0f4e = ApplyRoomVariants
+	         $0f52 = ApplyRoomVariants.roomLoop
+	         $0fad = ApplyLedgeCatchRoom
+	         $0fb9 = ApplyLedgeCatchRoom.clearRow
+	         $0fbc = ApplyLedgeCatchRoom.clearCell
+	         $0fc7 = ApplyLedgeCatchRoom.clearReady
+	         $0ff3 = ApplyLedgeCatchRoom.ledgeOffsetReady
+	         $0ffa = ClearWideWest
+	         $1006 = ClearWideEast
+	         $1012 = ClearWideNorth
+	         $101b = ClearWideSouth
+	         $1025 = ClearWideHorizontalBoundary
+	         $1028 = ClearWideHorizontalBoundary.loop
+	         $102d = ClearWideVerticalBoundary
+	         $1030 = ClearWideVerticalBoundary.loop
+	         $1039 = ApplyProtectedEndpoints
+	         $1048 = ApplyProtectedEndpoints.spawnClearRow
+	         $104b = ApplyProtectedEndpoints.spawnClearCell
+	         $1056 = ApplyProtectedEndpoints.spawnClearReady
+	         $1083 = ApplyProtectedEndpoints.exitClearRow
+	         $1086 = ApplyProtectedEndpoints.exitClearCell
+	         $1091 = ApplyProtectedEndpoints.exitClearReady
+	         $10c1 = ApplyProtectedEndpoints.exitReady
+	         $10c4 = SetGeneratedPlayerPosition
+	         $10d0 = SetGeneratedPlayerPosition.xLoop
+	         $10d8 = SetGeneratedPlayerPosition.xReady
+	         $10ea = SetGeneratedPlayerPosition.yLoop
+	         $10f5 = SetGeneratedPlayerPosition.yReady
+	         $10f9 = SetGeneratedExitPosition
+	         $1100 = SetGeneratedExitPosition.xLoop
+	         $110b = SetGeneratedExitPosition.xReady
+	         $111f = ConvertSemanticMap
+	         $1129 = ConvertSemanticMap.cellLoop
+	         $1146 = ConvertSemanticMap.skipUp
+	         $1157 = ConvertSemanticMap.skipRight
+	         $116b = ConvertSemanticMap.skipDown
+	         $117b = ConvertSemanticMap.solidReady
+	         $1182 = ConvertSemanticMap.empty
+	         $1186 = ConvertSemanticMap.oneWay
+	         $1188 = ConvertSemanticMap.next
+	         $11a2 = ConvertSemanticMap.storeColumn
+	         $11a7 = ConvertSemanticMap.clearMarkers
+	         $11ac = ConvertSemanticMap.clearOuter
+	         $11ae = ConvertSemanticMap.clearInner
+	         $11b8 = SemanticSolidAtHL
+	         $11c3 = SemanticSolidAtHL.solid
+	         $11c5 = PlaceExitDoor
+	         $11d4 = PlaceExitDoor.rowLoop
+	         $11e0 = GetMapTilePointer
+	         $11ea = GetMapTilePointer.rowLoop
+	         $11ee = GetMapTilePointer.rowsReady
+	         $11f3 = BitMasks
+	         $11fb = RoomDestinationPointers
+	         $121b = RoomTemplatePointers
+	         $1239 = TileData
+	         $1a39 = TitleNameTiles
+	         $1a44 = TitlePromptTiles
+	         $1a4f = RoomTemplateData
+	         $1eff = CollisionTypes
+	         $1eff = RoomTemplateDataEnd
+	         $1f7f = ChefFrames
+	EMPTY: $227f-$3fff ($1d81 bytes)
+	TOTAL EMPTY: $1e81 bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c512 ($0513 bytes) ["Player State"]
@@ -252,7 +278,7 @@ WRAM0 bank #0:
 	         $c010 = FallingPastWorld
 	         $c011 = TitleSeedCounter
 	         $c013 = LevelMap
-	SECTION: $c513-$c5be ($00ac bytes) ["Level Generation State"]
+	SECTION: $c513-$c60e ($00fc bytes) ["Level Generation State"]
 	         $c513 = SelectedSeed
 	         $c515 = GenerationRandomState
 	         $c517 = GenerationShift
@@ -266,18 +292,23 @@ WRAM0 bank #0:
 	         $c534 = RoomPorts
 	         $c544 = RoomWidePorts
 	         $c554 = RoomTraversalClasses
-	         $c564 = ConnectedRoomCount
-	         $c565 = ConnectedRooms
-	         $c575 = ConnectedMask
-	         $c577 = FrontierCount
-	         $c578 = FrontierFrom
-	         $c598 = FrontierTo
-	         $c5b8 = GenerationRoom
-	         $c5b9 = GenerationCurrentRoom
-	         $c5ba = GenerationColumn
-	         $c5bb = GenerationRow
-	         $c5bc = GenerationIndex
-	         $c5bd = GenerationTarget
-	         $c5be = GenerationTargetRoom
-	EMPTY: $c5bf-$cfff ($0a41 bytes)
-	TOTAL EMPTY: $0a41 bytes
+	         $c564 = MatchingParent
+	         $c574 = MatchingOrder
+	         $c584 = MatchingFreeScore
+	         $c594 = MatchingParentScore
+	         $c5a4 = MatchingChild
+	         $c5b4 = ConnectedRoomCount
+	         $c5b5 = ConnectedRooms
+	         $c5c5 = ConnectedMask
+	         $c5c7 = FrontierCount
+	         $c5c8 = FrontierFrom
+	         $c5e8 = FrontierTo
+	         $c608 = GenerationRoom
+	         $c609 = GenerationCurrentRoom
+	         $c60a = GenerationColumn
+	         $c60b = GenerationRow
+	         $c60c = GenerationIndex
+	         $c60d = GenerationTarget
+	         $c60e = GenerationTargetRoom
+	EMPTY: $c60f-$cfff ($09f1 bytes)
+	TOTAL EMPTY: $09f1 bytes

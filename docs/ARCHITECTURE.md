@@ -23,7 +23,8 @@ The runtime is split between `src/main.asm` and the included
   generated spawn position for the player's initial state, and turns the LCD
   back on with signed background addressing before entering `MainLoop`.
 - **`GenerateLevel`** — reproduces the host xorshift16 draw order, builds the
-  directed route and optional-room tree, selects the wide seam and eligible
+  directed route and optional-room tree, computes a maximum matching of
+  compatible horizontal and vertical domino seams, selects an eligible
   ledge-catch room, copies semantic room templates into WRAM, applies variants
   and protected endpoints, converts semantic solids to connectivity tile IDs,
   and places the exit doorway. It consumes the xorshift state selected on the
@@ -124,9 +125,9 @@ addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in
 `LevelMap`; `$9800–$9BFF` contains its streamed 32-column view. The map includes
-one reciprocal six-row seam, one generated
-ledge-catch room, and the shared descent exit. Biome-transition runtime code
-does not exist yet. See
+a maximum compatible matching of reciprocal horizontal and vertical domino
+seams, at most one generated ledge-catch room, and the shared descent exit.
+Biome-transition runtime code does not exist yet. See
 `specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates

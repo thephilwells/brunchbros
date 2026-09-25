@@ -97,9 +97,11 @@ masks. Their source is `data/room-templates/dining-room.json`.
 
 The default ROM opens on a Press Start screen. Start timing, the divider
 register, and one xorshift step select the runtime seed before the complete
-level is generated. The deterministic seed-0 fixture remains available to the
-host tools for parity checks and inspection. The focused prototype remains
-available in `gfx/room_variant_playtest.tmx`. Run the VS Code task
+level is generated. The generator pairs as many compatible adjacent rooms as
+possible into horizontal and vertical dominoes. The deterministic seed-0
+fixture remains available to the host tools for parity checks and inspection.
+The focused prototype remains available in `gfx/room_variant_playtest.tmx`.
+Run the VS Code task
 `Run Room Variant Playtest in SameBoy` to test its horizontal and vertical
 domino rooms without replacing the normal generated-ROM build.
 

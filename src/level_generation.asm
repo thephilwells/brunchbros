@@ -18,6 +18,11 @@ CriticalRoute: ds 16
 RoomPorts: ds 16
 RoomWidePorts: ds 16
 RoomTraversalClasses: ds 16
+MatchingParent: ds 16
+MatchingOrder: ds 16
+MatchingFreeScore: ds 16
+MatchingParentScore: ds 16
+MatchingChild: ds 16
 ConnectedRoomCount: db
 ConnectedRooms: ds 16
 ConnectedMask: dw
@@ -520,6 +525,9 @@ SelectRoomVariants:
 	ld [hl+], a
 	dec b
 	jr nz, .clear
+	call SelectDominoMatching
+
+	xor a
 	ld [FrontierCount], a
 	ld a, 2
 	ld [GenerationIndex], a
@@ -548,16 +556,21 @@ SelectRoomVariants:
 	inc hl
 	inc hl
 	ld a, [hl]
+	ld [GenerationTargetRoom], a
 	ld b, a
 	ld a, [GenerationRoom]
 	inc a
 	cp a, b
-	jr z, .horizontalExit
+	jr z, .eastExit
 	ld a, [GenerationRoom]
 	dec a
 	cp a, b
 	jr nz, .nextCandidate
-.horizontalExit
+	ld b, PORT_WEST
+	jr .checkWideExit
+.eastExit
+	ld b, PORT_EAST
+.checkWideExit
 	ld a, [GenerationRoom]
 	ld e, a
 	ld d, 0
@@ -565,6 +578,11 @@ SelectRoomVariants:
 	add hl, de
 	bit 3, [hl]
 	jr nz, .nextCandidate
+	ld hl, RoomWidePorts
+	add hl, de
+	ld a, [hl]
+	and a, b
+	jr z, .nextCandidate
 	ld a, [GenerationRoom]
 	ld d, a
 	ld a, [FrontierCount]
@@ -586,7 +604,7 @@ SelectRoomVariants:
 .chooseCandidate
 	ld a, [FrontierCount]
 	and a
-	jr z, .chooseAnyHorizontal
+	ret z
 	ld c, a
 	call GenerationRandomModulo
 	ld e, a
@@ -594,98 +612,370 @@ SelectRoomVariants:
 	ld hl, FrontierTo
 	add hl, de
 	ld a, [hl]
-	ld [GenerationRoom], a
 	ld e, a
 	ld d, 0
 	ld hl, RoomTraversalClasses
 	add hl, de
 	ld [hl], TRAVERSAL_LEDGE_CATCH
+	ret
+
+SelectDominoMatching:
+	ld hl, MatchingParent
+	ld b, 16
+	ld a, $ff
+.clearParents
+	ld [hl+], a
+	dec b
+	jr nz, .clearParents
+	ld a, $fe
+	ld [MatchingParent], a
+	xor a
+	ld [MatchingOrder], a
+	ld [GenerationIndex], a
+	inc a
+	ld [FrontierCount], a
+
+.buildOrder
+	ld a, [GenerationIndex]
+	ld b, a
+	ld a, [FrontierCount]
+	cp a, b
+	jr z, .scoreRooms
+	ld a, b
+	ld e, a
+	ld d, 0
+	ld hl, MatchingOrder
+	add hl, de
+	ld a, [hl]
+	ld [GenerationRoom], a
+	ld e, a
+	ld d, 0
 	ld hl, RoomPorts
 	add hl, de
 	ld a, [hl]
 	ld b, a
-	and a, PORT_WEST | PORT_EAST
-	cp a, PORT_WEST | PORT_EAST
-	jr nz, .singleDirection
-	ld a, [GenerationRandomState + 1]
-	and a, 1
-	jr z, .wideWest
-	jr .wideEast
-.singleDirection
 	bit 0, b
-	jr nz, .wideWest
-.wideEast
+	jr z, .orderEast
 	ld a, [GenerationRoom]
-	ld b, a
-	inc a
-	ld c, a
-	jp SetWideConnection
-.wideWest
-	ld a, [GenerationRoom]
-	ld c, a
 	dec a
-	ld b, a
-	jp SetWideConnection
-
-.chooseAnyHorizontal
-	xor a
-	ld [FrontierCount], a
-	ld [GenerationRoom], a
-.horizontalLoop
+	call AppendMatchingChild
+.orderEast
+	bit 1, b
+	jr z, .orderNorth
 	ld a, [GenerationRoom]
+	inc a
+	call AppendMatchingChild
+.orderNorth
+	bit 2, b
+	jr z, .orderSouth
+	ld a, [GenerationRoom]
+	sub a, 4
+	call AppendMatchingChild
+.orderSouth
+	bit 3, b
+	jr z, .orderNext
+	ld a, [GenerationRoom]
+	add a, 4
+	call AppendMatchingChild
+.orderNext
+	ld a, [GenerationIndex]
+	inc a
+	ld [GenerationIndex], a
+	jr .buildOrder
+
+.scoreRooms
+	ld a, [FrontierCount]
+	ld [GenerationIndex], a
+.scoreRoom
+	ld a, [GenerationIndex]
+	and a
+	jp z, .reconstruct
+	dec a
+	ld [GenerationIndex], a
+	ld e, a
+	ld d, 0
+	ld hl, MatchingOrder
+	add hl, de
+	ld a, [hl]
+	ld [GenerationRoom], a
+	xor a
+	ld [GenerationTarget], a
+	ld [GenerationTargetRoom], a
+.sumChildren
+	ld a, [GenerationTargetRoom]
 	cp a, 16
-	jr z, .chooseHorizontal
+	jr z, .storeBase
+	ld e, a
+	ld d, 0
+	ld hl, MatchingParent
+	add hl, de
+	ld a, [GenerationRoom]
+	cp a, [hl]
+	jr nz, .sumNext
+	ld hl, MatchingFreeScore
+	add hl, de
+	ld a, [GenerationTarget]
+	add a, [hl]
+	ld [GenerationTarget], a
+.sumNext
+	ld a, [GenerationTargetRoom]
+	inc a
+	ld [GenerationTargetRoom], a
+	jr .sumChildren
+
+.storeBase
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MatchingParentScore
+	add hl, de
+	ld a, [GenerationTarget]
+	ld [hl], a
+	ld hl, MatchingFreeScore
+	add hl, de
+	ld [hl], a
+	ld hl, MatchingChild
+	add hl, de
+	ld [hl], $ff
+	xor a
+	ld [GenerationTargetRoom], a
+.testChildren
+	ld a, [GenerationTargetRoom]
+	cp a, 16
+	jr z, .scoreRoom
+	ld e, a
+	ld d, 0
+	ld hl, MatchingParent
+	add hl, de
+	ld a, [GenerationRoom]
+	cp a, [hl]
+	jr nz, .testNext
+	call IsMatchingEdgeEligible
+	jr nc, .testNext
+	ld a, [GenerationTargetRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MatchingFreeScore
+	add hl, de
+	ld a, [GenerationTarget]
+	sub a, [hl]
+	ld b, a
+	ld hl, MatchingParentScore
+	add hl, de
+	ld a, b
+	add a, [hl]
+	add a, 17
+	ld b, a
+	push bc
+	ld a, [GenerationRoom]
+	call RoomInternalBonus
+	pop bc
+	add a, b
+	ld b, a
+	push bc
+	ld a, [GenerationTargetRoom]
+	call RoomInternalBonus
+	pop bc
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MatchingFreeScore
+	add hl, de
+	ld a, [hl]
+	cp a, b
+	jr nc, .testNext
+	ld [hl], b
+	ld hl, MatchingChild
+	add hl, de
+	ld a, [GenerationTargetRoom]
+	ld [hl], a
+.testNext
+	ld a, [GenerationTargetRoom]
+	inc a
+	ld [GenerationTargetRoom], a
+	jr .testChildren
+
+.reconstruct
+	ld hl, MatchingParentScore
+	ld b, 16
+	xor a
+.clearMatched
+	ld [hl+], a
+	dec b
+	jr nz, .clearMatched
+	ld [GenerationIndex], a
+.reconstructRoom
+	ld a, [GenerationIndex]
+	ld b, a
+	ld a, [FrontierCount]
+	cp a, b
+	ret z
+	ld a, b
+	ld e, a
+	ld d, 0
+	ld hl, MatchingOrder
+	add hl, de
+	ld a, [hl]
+	ld [GenerationRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, MatchingParentScore
+	add hl, de
+	ld a, [hl]
+	and a
+	jr nz, .reconstructNext
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MatchingChild
+	add hl, de
+	ld a, [hl]
+	cp a, $ff
+	jr z, .reconstructNext
+	ld c, a
+	ld a, [GenerationRoom]
+	ld b, a
+	push bc
+	call SetWideConnection
+	pop bc
+	ld e, c
+	ld d, 0
+	ld hl, MatchingParentScore
+	add hl, de
+	ld [hl], 1
+.reconstructNext
+	ld a, [GenerationIndex]
+	inc a
+	ld [GenerationIndex], a
+	jr .reconstructRoom
+
+AppendMatchingChild:
+	ld [GenerationTargetRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, MatchingParent
+	add hl, de
+	ld a, [hl]
+	cp a, $ff
+	ret nz
+	ld a, [GenerationRoom]
+	ld [hl], a
+	ld a, [FrontierCount]
+	ld e, a
+	ld d, 0
+	ld hl, MatchingOrder
+	add hl, de
+	ld a, [GenerationTargetRoom]
+	ld [hl], a
+	ld a, [FrontierCount]
+	inc a
+	ld [FrontierCount], a
+	ret
+
+IsMatchingEdgeEligible:
+	ld a, [GenerationRoom]
+	ld b, a
+	ld a, [GenerationTargetRoom]
+	sub a, b
+	cp a, 1
+	jr z, .eligible
+	cp a, $ff
+	jr z, .eligible
+	ld a, [GenerationRoom]
+	ld b, a
+	ld a, [GenerationTargetRoom]
+	cp a, b
+	jr nc, .upperReady
+	ld b, a
+.upperReady
+	ld a, [CriticalRoute]
+	cp a, b
+	jr z, .ineligible
+	ld a, b
 	ld e, a
 	ld d, 0
 	ld hl, RoomPorts
 	add hl, de
-	bit 1, [hl]
-	jr z, .nextHorizontal
-	ld a, [FrontierCount]
+	ld a, [hl]
+	and a, PORT_WEST | PORT_EAST
+	jr nz, .ineligible
+.eligible
+	scf
+	ret
+.ineligible
+	and a
+	ret
+
+RoomInternalBonus:
 	ld e, a
 	ld d, 0
-	ld hl, FrontierFrom
+	ld hl, RoomPorts
 	add hl, de
-	ld a, [GenerationRoom]
-	ld [hl], a
-	inc a
-	ld hl, FrontierTo
-	add hl, de
-	ld [hl], a
-	ld a, [FrontierCount]
-	inc a
-	ld [FrontierCount], a
-.nextHorizontal
-	ld a, [GenerationRoom]
-	inc a
-	ld [GenerationRoom], a
-	jr .horizontalLoop
-.chooseHorizontal
-	ld a, [FrontierCount]
-	ld c, a
-	call GenerationRandomModulo
-	ld e, a
-	ld d, 0
-	ld hl, FrontierFrom
-	add hl, de
-	ld b, [hl]
-	ld hl, FrontierTo
-	add hl, de
-	ld c, [hl]
+	ld a, [hl]
+	ld b, a
+	dec a
+	and a, b
+	ret z
+	ld a, 1
+	ret
 
 SetWideConnection:
 	ld a, b
-	ld e, a
-	ld d, 0
-	ld hl, RoomWidePorts
-	add hl, de
-	set 1, [hl]
+	inc a
+	cp a, c
+	jr z, .east
+	ld a, b
+	dec a
+	cp a, c
+	jr z, .west
+	ld a, b
+	add a, 4
+	cp a, c
+	jr z, .south
+	ld a, b
+	ld b, PORT_NORTH
+	call OrWidePort
 	ld a, c
+	ld b, PORT_SOUTH
+	jp OrWidePort
+.east
+	ld a, b
+	push bc
+	ld b, PORT_EAST
+	call OrWidePort
+	pop bc
+	ld a, c
+	ld b, PORT_WEST
+	jp OrWidePort
+.west
+	ld a, b
+	push bc
+	ld b, PORT_WEST
+	call OrWidePort
+	pop bc
+	ld a, c
+	ld b, PORT_EAST
+	jp OrWidePort
+.south
+	ld a, b
+	push bc
+	ld b, PORT_SOUTH
+	call OrWidePort
+	pop bc
+	ld a, c
+	ld b, PORT_NORTH
+	jp OrWidePort
+
+OrWidePort:
 	ld e, a
 	ld d, 0
 	ld hl, RoomWidePorts
 	add hl, de
-	set 0, [hl]
+	ld a, [hl]
+	or a, b
+	ld [hl], a
 	ret
 
 AssembleRoomTemplates:
@@ -787,6 +1077,22 @@ ApplyRoomVariants:
 	bit 1, a
 	call nz, ClearWideEast
 	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	ld a, [hl]
+	bit 2, a
+	call nz, ClearWideNorth
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	ld a, [hl]
+	bit 3, a
+	call nz, ClearWideSouth
+	ld a, [GenerationRoom]
 	inc a
 	ld [GenerationRoom], a
 	jr .roomLoop
@@ -844,15 +1150,37 @@ ClearWideWest:
 	call GetRoomDestination
 	ld de, 40
 	add hl, de
-	jr ClearWideBoundary
+	jr ClearWideVerticalBoundary
 
 ClearWideEast:
 	ld a, [GenerationRoom]
 	call GetRoomDestination
 	ld de, 49
 	add hl, de
+	jr ClearWideVerticalBoundary
 
-ClearWideBoundary:
+ClearWideNorth:
+	ld a, [GenerationRoom]
+	call GetRoomDestination
+	inc hl
+	jr ClearWideHorizontalBoundary
+
+ClearWideSouth:
+	ld a, [GenerationRoom]
+	call GetRoomDestination
+	ld de, 281
+	add hl, de
+
+ClearWideHorizontalBoundary:
+	ld b, 8
+	xor a
+.loop
+	ld [hl+], a
+	dec b
+	jr nz, .loop
+	ret
+
+ClearWideVerticalBoundary:
 	ld b, 6
 	xor a
 .loop

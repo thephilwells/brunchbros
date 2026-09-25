@@ -155,28 +155,80 @@ function portFromRoomToRoom(from, to) {
   throw new Error(`Rooms ${from} and ${to} are not adjacent`);
 }
 
+function roomNeighbors(roomPorts, room) {
+  const ports = roomPorts[room];
+  return [
+    ...(ports & PORT_WEST ? [room - 1] : []),
+    ...(ports & PORT_EAST ? [room + 1] : []),
+    ...(ports & PORT_NORTH ? [room - GRID_WIDTH] : []),
+    ...(ports & PORT_SOUTH ? [room + GRID_WIDTH] : []),
+  ];
+}
+
+function portCount(ports) {
+  let count = 0;
+  for (; ports; ports &= ports - 1) count++;
+  return count;
+}
+
+function dominoEdgeEligible(roomPorts, spawnRoom, room, neighbor) {
+  if (Math.abs(room - neighbor) !== GRID_WIDTH) return true;
+  const upper = Math.min(room, neighbor);
+  return upper !== spawnRoom && !(roomPorts[upper] & (PORT_WEST | PORT_EAST));
+}
+
+function selectDominoMatching(roomPorts, spawnRoom) {
+  const parent = Array(GRID_WIDTH * GRID_HEIGHT).fill(-2);
+  const order = [0];
+  parent[0] = -1;
+  for (const room of order) {
+    for (const neighbor of roomNeighbors(roomPorts, room)) {
+      if (neighbor === parent[room] || parent[neighbor] !== -2) continue;
+      parent[neighbor] = room;
+      order.push(neighbor);
+    }
+  }
+
+  const freeScore = Array(16).fill(0);
+  const parentScore = Array(16).fill(0);
+  const chosenChild = Array(16).fill(-1);
+  for (const room of [...order].reverse()) {
+    const children = roomNeighbors(roomPorts, room).filter(neighbor => parent[neighbor] === room).sort((a, b) => a - b);
+    const base = children.reduce((total, child) => total + freeScore[child], 0);
+    parentScore[room] = base;
+    freeScore[room] = base;
+    for (const child of children) {
+      if (!dominoEdgeEligible(roomPorts, spawnRoom, room, child)) continue;
+      const internalCoverage = Number(portCount(roomPorts[room]) > 1) + Number(portCount(roomPorts[child]) > 1);
+      const score = base - freeScore[child] + parentScore[child] + 17 + internalCoverage;
+      if (score > freeScore[room]) {
+        freeScore[room] = score;
+        chosenChild[room] = child;
+      }
+    }
+  }
+
+  const roomWidePorts = Array(16).fill(0);
+  const matchedToParent = Array(16).fill(false);
+  for (const room of order) {
+    if (matchedToParent[room] || chosenChild[room] < 0) continue;
+    const child = chosenChild[room];
+    roomWidePorts[room] |= portFromRoomToRoom(room, child);
+    roomWidePorts[child] |= portFromRoomToRoom(child, room);
+    matchedToParent[child] = true;
+  }
+  return roomWidePorts;
+}
+
 function selectRoomVariants(roomPorts, criticalRoute, randomState) {
-  const roomWidePorts = Array(GRID_WIDTH * GRID_HEIGHT).fill(0);
+  const roomWidePorts = selectDominoMatching(roomPorts, criticalRoute[0]);
   const roomTraversalClasses = Array(GRID_WIDTH * GRID_HEIGHT).fill(TRAVERSAL_ORDINARY);
   const candidates = criticalRoute.flatMap((room, index) =>
     index >= 2 && index <= criticalRoute.length - 3 && criticalRoute[index - 1] === room - GRID_WIDTH &&
-      Math.abs(criticalRoute[index + 1] - room) === 1 && !(roomPorts[room] & PORT_SOUTH) ? [room] : []);
+      Math.abs(criticalRoute[index + 1] - room) === 1 && !(roomPorts[room] & PORT_SOUTH) &&
+      roomWidePorts[room] & portFromRoomToRoom(room, criticalRoute[index + 1]) ? [room] : []);
 
-  let wideEdge;
-  if (candidates.length) {
-    const room = candidates[randomState % candidates.length];
-    const directions = [PORT_WEST, PORT_EAST].filter(port => roomPorts[room] & port);
-    const direction = directions[(randomState >>> 8) % directions.length];
-    const neighbor = room + (direction === PORT_WEST ? -1 : 1);
-    roomTraversalClasses[room] = TRAVERSAL_LEDGE_CATCH;
-    wideEdge = direction === PORT_WEST ? [neighbor, room] : [room, neighbor];
-  } else {
-    const horizontalEdges = roomPorts.flatMap((ports, room) => ports & PORT_EAST ? [[room, room + 1]] : []);
-    wideEdge = horizontalEdges[randomState % horizontalEdges.length];
-  }
-
-  roomWidePorts[wideEdge[0]] |= PORT_EAST;
-  roomWidePorts[wideEdge[1]] |= PORT_WEST;
+  if (candidates.length) roomTraversalClasses[candidates[randomState % candidates.length]] = TRAVERSAL_LEDGE_CATCH;
   return { roomWidePorts, roomTraversalClasses };
 }
 
@@ -184,8 +236,8 @@ function describeSeams(ports, widePorts) {
   return {
     west: !(ports & PORT_WEST) ? 'closed' : widePorts & PORT_WEST ? 'wide' : 'standard',
     east: !(ports & PORT_EAST) ? 'closed' : widePorts & PORT_EAST ? 'wide' : 'standard',
-    north: ports & PORT_NORTH ? 'standard' : 'closed',
-    south: ports & PORT_SOUTH ? 'standard' : 'closed',
+    north: !(ports & PORT_NORTH) ? 'closed' : widePorts & PORT_NORTH ? 'wide' : 'standard',
+    south: !(ports & PORT_SOUTH) ? 'closed' : widePorts & PORT_SOUTH ? 'wide' : 'standard',
   };
 }
 
@@ -204,6 +256,8 @@ function materializeTemplate(template, traversalClass, widePorts, protectedRole 
   }
   if (widePorts & PORT_WEST) for (let y = 1; y <= 6; y++) rows[y][0] = '.';
   if (widePorts & PORT_EAST) for (let y = 1; y <= 6; y++) rows[y][9] = '.';
+  if (widePorts & PORT_NORTH) for (let x = 1; x <= 8; x++) rows[0][x] = '.';
+  if (widePorts & PORT_SOUTH) for (let x = 1; x <= 8; x++) rows[7][x] = '.';
   if (protectedRole === ROOM_ANCHOR_SPAWN) {
     for (let x = 1; x <= 3; x++) {
       for (let y = 1; y <= 6; y++) rows[y][x] = '.';
@@ -306,9 +360,12 @@ export function validateLevel(level) {
     if (ports & PORT_SOUTH && !(level.roomPorts[room + GRID_WIDTH] & PORT_NORTH)) errors.push(`room ${room} south port is unpaired`);
     if (ports & PORT_NORTH && !(level.roomPorts[room - GRID_WIDTH] & PORT_SOUTH)) errors.push(`room ${room} north port is unpaired`);
     if (widePorts & ~ports) errors.push(`room ${room} has a wide seam without a port`);
-    if (widePorts & (PORT_NORTH | PORT_SOUTH)) errors.push(`room ${room} uses an unsupported vertical wide seam`);
+    if (widePorts && widePorts & (widePorts - 1)) errors.push(`room ${room} belongs to multiple dominoes`);
     if (widePorts & PORT_EAST && !(level.roomWidePorts[room + 1] & PORT_WEST)) errors.push(`room ${room} east wide seam is mismatched`);
     if (widePorts & PORT_WEST && !(level.roomWidePorts[room - 1] & PORT_EAST)) errors.push(`room ${room} west wide seam is mismatched`);
+    if (widePorts & PORT_SOUTH && !(level.roomWidePorts[room + GRID_WIDTH] & PORT_NORTH)) errors.push(`room ${room} south wide seam is mismatched`);
+    if (widePorts & PORT_NORTH && !(level.roomWidePorts[room - GRID_WIDTH] & PORT_SOUTH)) errors.push(`room ${room} north wide seam is mismatched`);
+    if (widePorts & PORT_SOUTH && !dominoEdgeEligible(level.roomPorts, level.spawnRoom, room, room + GRID_WIDTH)) errors.push(`room ${room} has an incompatible vertical wide seam`);
     if (JSON.stringify(level.roomSeamProfiles[room]) !== JSON.stringify(describeSeams(ports, widePorts))) errors.push(`room ${room} seam profile metadata is inconsistent`);
   }
 
@@ -342,9 +399,10 @@ export function validateLevel(level) {
     if (![TRAVERSAL_ORDINARY, TRAVERSAL_LEDGE_CATCH].includes(traversalClass)) errors.push(`room ${room} has unknown traversal class ${traversalClass}`);
     if (traversalClass === TRAVERSAL_LEDGE_CATCH) {
       const routeIndex = route.indexOf(room);
+      const exitPort = portFromRoomToRoom(room, route[routeIndex + 1]);
       const eligible = routeIndex >= 2 && routeIndex <= route.length - 3 && route[routeIndex - 1] === room - GRID_WIDTH &&
         Math.abs(route[routeIndex + 1] - room) === 1 && !(level.roomPorts[room] & PORT_SOUTH) &&
-        level.roomWidePorts[room] & (PORT_WEST | PORT_EAST);
+        level.roomWidePorts[room] & exitPort;
       if (!eligible) errors.push(`room ${room} cannot host a ledge-catch boundary`);
     }
     if (template) {
@@ -367,8 +425,10 @@ export function validateLevel(level) {
     }
   }
 
-  const wideConnectionCount = level.roomWidePorts.reduce((total, ports) => total + Boolean(ports & PORT_EAST), 0);
-  if (wideConnectionCount !== 1) errors.push(`level has ${wideConnectionCount} wide seams instead of 1`);
+  const wideConnectionCount = level.roomWidePorts.reduce((total, ports) => total + Boolean(ports & (PORT_EAST | PORT_SOUTH)), 0);
+  const expectedWideConnectionCount = selectDominoMatching(level.roomPorts, level.spawnRoom)
+    .reduce((total, ports) => total + Boolean(ports & (PORT_EAST | PORT_SOUTH)), 0);
+  if (wideConnectionCount !== expectedWideConnectionCount) errors.push(`level has ${wideConnectionCount} dominoes instead of maximum ${expectedWideConnectionCount}`);
   const boundaryRouteIndices = route.flatMap((room, index) => level.roomTraversalClasses[room] === TRAVERSAL_ORDINARY ? [] : [index]);
   if (boundaryRouteIndices.length > 1) errors.push(`critical route has ${boundaryRouteIndices.length} boundary traversals instead of at most 1`);
   for (const index of boundaryRouteIndices) {

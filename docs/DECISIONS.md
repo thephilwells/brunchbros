@@ -4,6 +4,27 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-25 — Seeded room pairing uses compatible maximum matching
+
+**Decision:** Pair rooms by computing a maximum matching over compatible edges
+of the seeded 16-room connection tree. All horizontal edges are compatible. A
+vertical edge is compatible only when its upper room is not the spawn room and
+has no side port. Matching cardinality takes priority, then coverage of
+multi-port rooms, with numeric room order resolving exact ties.
+
+**Why:** Domino rooms should dominate without allowing a cell into two pairs.
+Fully opening a vertical seam beneath an upper side doorway removes the floor
+that makes that doorway traversable, while opening beneath the spawn conflicts
+with its protected support. Keeping those seams standard preserves the already
+validated room contracts.
+
+**Status:** Implemented in the host generator and RGBDS runtime. All 1,024
+topologies and 4,096 deterministic seeds pass host validation, producing four
+to eight dominoes per level and both orientations across the seed set. Manual
+multi-seed SameBoy review remains pending.
+
+---
+
 ## 2026-09-25 — Vertical dominoes use structural ledges, not furniture stairs
 
 **Decision:** Prototype a 10×16 vertical domino with an eight-tile open seam
@@ -18,7 +39,7 @@ part of ordinary room composition.
 
 **Status:** Accepted in SameBoy after establishing two-tile horizontal channels
 between opposing catch ledges and three empty rows above the final cubby
-landing. Seeded vertical-domino selection remains pending.
+landing. Its geometry now participates in compatible seeded maximum matching.
 
 ---
 
@@ -68,9 +89,9 @@ port masks adds meaningful spatial variation without multiplying every topology
 template. Reciprocal and sequencing validation prevents incompatible room edges
 and clusters of maximum-tolerance traversal.
 
-**Status:** Implemented and accepted in SameBoy as revised seed 0. The matched
-wide seam and generated ledge-catch room both remained playable after full
-level composition.
+**Status:** Superseded by the 2026-09-25 compatible maximum-matching selector.
+The original matched wide seam and generated ledge-catch room were accepted in
+SameBoy as revised seed 0.
 
 ---
 

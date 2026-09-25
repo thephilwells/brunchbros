@@ -112,9 +112,11 @@ with tile-level mutual-port validation. Seed 0 was assembled with generated
 spawn coordinates and the shared exit doorway, then accepted as playable in
 SameBoy. A focused fixture proves that a six-row seam makes paired cells read as
 one large room and that a one-way-free 32-pixel rise makes ledge catch useful.
-Seeded selection now assigns one reciprocal wide seam and, when eligible, one
-ledge-catch boundary room; validation rejects seam mismatches and consecutive
-critical-route boundary rooms. Revised seed 0 is accepted in SameBoy. Assembly
+Seeded selection now computes a maximum matching of compatible horizontal and
+vertical domino seams and, when eligible, one ledge-catch boundary room;
+validation rejects non-maximum or overlapping matchings, seam mismatches, and
+consecutive critical-route boundary rooms. Revised seed 0 is accepted in
+SameBoy. Assembly
 now enforces the protected spawn and exit geometry across every topology, and
 validation keeps boundary traversal out of the ordinary first and final route
 transitions. Every critical-route room now also proves a directed path matching
@@ -128,8 +130,9 @@ the same milestone but are not blockers for procedural generation. See
 
 The vertical 10×16 domino is accepted in SameBoy. Its focused ROM uses a fully
 open seam, solid wall ledges, two-tile jump-away channels, and three-row cubby
-clearance rather than free-floating one-way stairs. Seeded maximum-matching
-domino selection is next.
+clearance rather than free-floating one-way stairs. Compatible seeded
+maximum-matching domino selection is implemented in both host tooling and the
+runtime; manual random-seed SameBoy review is next.
 
 ## Completed
 
