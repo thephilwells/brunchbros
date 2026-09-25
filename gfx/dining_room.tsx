@@ -117,16 +117,16 @@
  <tile id="113"><properties><property name="name" value="counter_top_middle"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_counter"/></properties></tile>
  <tile id="114"><properties><property name="name" value="counter_top_right"/><property name="collision" value="one_way"/><property name="role" value="fixture"/><property name="component" value="dining_counter"/></properties></tile>
  <tile id="115"><properties><property name="name" value="counter_front"/><property name="collision" value="empty"/><property name="role" value="fixture"/><property name="component" value="dining_counter"/></properties></tile>
- <tile id="116"><properties><property name="name" value="reserved_116"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="117"><properties><property name="name" value="reserved_117"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="118"><properties><property name="name" value="reserved_118"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="119"><properties><property name="name" value="reserved_119"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="120"><properties><property name="name" value="reserved_120"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="121"><properties><property name="name" value="reserved_121"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="122"><properties><property name="name" value="reserved_122"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="123"><properties><property name="name" value="reserved_123"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="124"><properties><property name="name" value="reserved_124"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="125"><properties><property name="name" value="reserved_125"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="126"><properties><property name="name" value="reserved_126"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="127"><properties><property name="name" value="reserved_127"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="116"><properties><property name="name" value="title_letter_a"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="117"><properties><property name="name" value="title_letter_b"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="118"><properties><property name="name" value="title_letter_c"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="119"><properties><property name="name" value="title_letter_e"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="120"><properties><property name="name" value="title_letter_h"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="121"><properties><property name="name" value="title_letter_n"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="122"><properties><property name="name" value="title_letter_o"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="123"><properties><property name="name" value="title_letter_p"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="124"><properties><property name="name" value="title_letter_r"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="125"><properties><property name="name" value="title_letter_s"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="126"><properties><property name="name" value="title_letter_t"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
+ <tile id="127"><properties><property name="name" value="title_letter_u"/><property name="collision" value="empty"/><property name="role" value="title"/></properties></tile>
 </tileset>

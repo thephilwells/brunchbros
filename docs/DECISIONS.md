@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-24 — Start timing selects the runtime level seed
+
+**Decision:** The title screen increments a 16-bit frame counter while waiting
+for a fresh Start press. Startup mixes that counter with the divider register,
+normalizes the all-zero xorshift state to `$ACE1`, advances xorshift once, and
+preserves the result in `SelectedSeed` before generating the level.
+
+**Why:** Human timing provides enough variation for this single-player Game Boy
+game without persistent storage or a platform entropy source. Preserving the
+chosen seed makes future reproduction and diagnostics possible.
+
+**Status:** Implemented. The production ROM no longer carries the seed-0 parity
+oracle; deterministic seed 0 remains available to host generation tools.
+
+---
+
 ## 2026-09-23 — Runtime generation begins with an embedded parity oracle
 
 **Decision:** The first RGBDS generator runs seed 0 during boot and compares
@@ -16,8 +32,9 @@ ROM once runtime parity is established.
 Game Boy execution path catches PRNG, draw-order, template transformation, and
 tile-connectivity differences before changing how seeds are selected.
 
-**Status:** Implemented; awaiting SameBoy acceptance of the seed-0 runtime
-build. Multi-seed parity is next. See `specs/level-generation.md`.
+**Status:** Seed-0 runtime output was accepted in SameBoy. The embedded oracle
+was removed when title-screen seed selection shipped; external dumps for
+multiple golden seeds remain pending. See `specs/level-generation.md`.
 
 ---
 
@@ -369,7 +386,8 @@ generation.
 
 **Decision:** Assign dining-counter tiles to IDs 112–115 in the existing
 128-tile sheet. The counter is four tiles wide and two high, with a one-way
-top row and passable front row. IDs 116–127 remain unassigned.
+top row and passable front row. IDs 116–127 were later assigned to the shared
+title font.
 
 **Why:** The 32–63 fixture band is full, but the first sheet still has
 unassigned slots. Using four of them keeps the landmark, rear, and detail

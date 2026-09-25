@@ -25,6 +25,11 @@ for (const [index, [, id, properties]] of tiles.entries()) {
   if (role === 'reserved') assert(!map.includes(index));
 }
 
+for (let id = 116; id <= 127; id++) {
+  assert.equal(collision[id], 0);
+  assert.match(tiles[id][2], /name="role" value="title"/);
+}
+
 for (let x = 9; x <= 12; x++) {
   assert.equal(at(x, 24), 50);
   assert.equal(collision[at(x, 23)], 0);

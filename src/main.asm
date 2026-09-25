@@ -7,7 +7,19 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
-INCLUDE "build/seeded_level.inc"
+DEF TITLE_BLANK_TILE EQU 17
+DEF TITLE_A_TILE EQU 116
+DEF TITLE_B_TILE EQU 117
+DEF TITLE_C_TILE EQU 118
+DEF TITLE_E_TILE EQU 119
+DEF TITLE_H_TILE EQU 120
+DEF TITLE_N_TILE EQU 121
+DEF TITLE_O_TILE EQU 122
+DEF TITLE_P_TILE EQU 123
+DEF TITLE_R_TILE EQU 124
+DEF TITLE_S_TILE EQU 125
+DEF TITLE_T_TILE EQU 126
+DEF TITLE_U_TILE EQU 127
 
 ; Persistent game state — uninitialized at power-on, set explicitly in Start
 SECTION "Player State", WRAM0
@@ -25,6 +37,8 @@ CurrentDpad: db
 LedgeSide: db
 LedgeTop: db
 PlayerGrounded: db
+FallingPastWorld: db
+TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
@@ -39,10 +53,10 @@ Start:
 	ld sp, $fffe
 
 ; Must be in VBlank before disabling the LCD
-.waitVBlank:
+.waitBootVBlank:
 	ldh a, [$ff44]
 	cp a, 144
-	jr c, .waitVBlank
+	jr c, .waitBootVBlank
 
 ; LCD off so we can freely write VRAM/OAM below
 	ld hl, $ff40
@@ -62,30 +76,6 @@ Start:
 	jr nz, .copyTilesInner
 	dec b
 	jr nz, .copyTilesOuter
-
-	call GenerateLevel
-	call VerifyGeneratedLevel
-	jp nz, GenerationFailure
-
-	ld de, LevelMap
-	ld hl, $9800
-	ld b, LEVEL_HEIGHT_TILES
-.copyVisibleRows
-	ld c, 32
-.copyVisibleColumns
-	ld a, [de]
-	ld [hl+], a
-	inc de
-	dec c
-	jr nz, .copyVisibleColumns
-	ld a, e
-	add a, LEVEL_WIDTH_TILES - 32
-	ld e, a
-	jr nc, .visibleRowReady
-	inc d
-.visibleRowReady
-	dec b
-	jr nz, .copyVisibleRows
 
 	ld a, $e4
 	ldh [$ff47], a
@@ -109,7 +99,6 @@ Start:
 	dec c
 	jr nz, .clearOAM
 
-; Copy all 12 chef animation frames into VRAM, starting at tile index 1.
 	ld de, ChefFrames
 	ld hl, $8010
 	ld b, 12
@@ -124,7 +113,101 @@ Start:
 	dec b
 	jr nz, .copyChefOuter
 
-; Set the player's starting position and initial animation frame, then place all 4 sprites from it
+	call LoadTitleScreen
+	xor a
+	ld [TitleSeedCounter], a
+	ld [TitleSeedCounter + 1], a
+	call ReadActionButtons
+	ld [PrevButtons], a
+
+	ld a, %10000001
+	ldh [$ff40], a
+
+.titleLoop
+.waitTitleNotVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr nc, .waitTitleNotVBlank
+.waitTitleVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr c, .waitTitleVBlank
+
+	ld hl, TitleSeedCounter
+	inc [hl]
+	jr nz, .readTitleButtons
+	inc hl
+	inc [hl]
+
+.readTitleButtons
+	call ReadActionButtons
+	ld d, a
+	cpl
+	ld e, a
+	ld a, [PrevButtons]
+	and a, e
+	ld e, a
+	ld a, d
+	ld [PrevButtons], a
+	bit 3, e
+	jr z, .titleLoop
+
+	ldh a, [$ff04]
+	ld b, a
+	ld a, [TitleSeedCounter]
+	xor a, b
+	ld [GenerationRandomState], a
+	swap b
+	ld a, [TitleSeedCounter + 1]
+	xor a, b
+	ld [GenerationRandomState + 1], a
+	ld a, [GenerationRandomState]
+	ld b, a
+	ld a, [GenerationRandomState + 1]
+	or a, b
+	jr nz, .seedReady
+	ld a, $e1
+	ld [GenerationRandomState], a
+	ld a, $ac
+	ld [GenerationRandomState + 1], a
+.seedReady
+	call NextGenerationRandom
+	ld a, [GenerationRandomState]
+	ld [SelectedSeed], a
+	ld a, [GenerationRandomState + 1]
+	ld [SelectedSeed + 1], a
+
+	ld hl, $ff40
+	res 7, [hl]
+	call GenerateLevel
+
+	ld de, LevelMap
+	ld hl, $9800
+	ld b, LEVEL_HEIGHT_TILES
+.copyVisibleRows
+	ld c, 32
+.copyVisibleColumns
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyVisibleColumns
+	ld a, e
+	add a, LEVEL_WIDTH_TILES - 32
+	ld e, a
+	jr nc, .visibleRowReady
+	inc d
+.visibleRowReady
+	dec b
+	jr nz, .copyVisibleRows
+
+	xor a
+	ld [CameraX], a
+	ld [CameraX + 1], a
+	ld [StreamedColumns], a
+	ldh [$ff42], a
+	ldh [$ff43], a
+
 	ld a, [GeneratedPlayerY]
 	ld [PlayerY], a
 	ld a, [GeneratedPlayerX]
@@ -147,9 +230,48 @@ Start:
 	ld [PlayerGrounded], a
 	call UpdateSprites
 
-; LCD on: BG + sprites enabled, BG tile data at $9000
 	ld a, %10000011
 	ldh [$ff40], a
+	jp MainLoop
+
+LoadTitleScreen:
+	ld hl, $9800
+	ld bc, 32 * 32
+.clear
+	ld [hl], TITLE_BLANK_TILE
+	inc hl
+	dec bc
+	ld a, b
+	or a, c
+	jr nz, .clear
+
+	ld de, TitleNameTiles
+	ld hl, $9800 + 6 * 32 + 4
+	ld b, 11
+.copyName
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec b
+	jr nz, .copyName
+
+	ld de, TitlePromptTiles
+	ld hl, $9800 + 11 * 32 + 4
+	ld b, 11
+.copyPrompt
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec b
+	jr nz, .copyPrompt
+	ret
+
+ReadActionButtons:
+	ld a, %00010000
+	ldh [$ff00], a
+	ldh a, [$ff00]
+	ldh a, [$ff00]
+	ret
 
 ; --- Main loop: runs once per frame, forever ---
 MainLoop:
@@ -233,10 +355,7 @@ MainLoop:
 	ld b, a
 	ld [CurrentDpad], a
 
-	ld a, %00010000
-	ldh [$ff00], a
-	ldh a, [$ff00]
-	ldh a, [$ff00]
+	call ReadActionButtons
 	ld d, a
 
 	cpl
@@ -464,6 +583,7 @@ MainLoop:
 .applyGravity
 	ld a, 0
 	ld [PlayerGrounded], a
+	ld [FallingPastWorld], a
 	ld a, [PlayerVelY]
 	add a, 1
 	bit 7, a
@@ -484,12 +604,15 @@ MainLoop:
 	bit 7, a
 	jp nz, .checkRising
 
-; Falling: if this overflowed past the world's bottom edge, land there directly
-	jp c, .worldBottom
+	jr nc, .fallTargetReady
+	ld a, 1
+	ld [FallingPastWorld], a
+	ld b, 255
+.fallTargetReady
 
 	ld a, [PlayerY]
 	add a, 7
-	jp c, .applyFall
+	jr c, .finishFall
 	and a, $f8
 	ld c, a
 
@@ -538,7 +661,7 @@ MainLoop:
 	ld a, b
 	sub a, 8
 	cp c
-	jr c, .applyFall
+	jr c, .finishFall
 	ld a, c
 	push bc
 	call TryLedgeCatch
@@ -546,9 +669,15 @@ MainLoop:
 	jr c, .gravityDone
 	ld a, c
 	add a, 8
-	jr c, .applyFall
+	jr c, .finishFall
 	ld c, a
 	jr .scanLedges
+
+.finishFall
+	ld a, [FallingPastWorld]
+	and a, a
+	jr nz, .worldBottom
+	jr .applyFall
 
 .landedAtTop
 	ld a, c
@@ -1159,10 +1288,13 @@ INCLUDE "src/level_generation.asm"
 TileData:
 	INCBIN "build/dining_room.2bpp"
 
-HostSeedLevelMap:
-	INCBIN "build/seeded_level.tilemap"
-HostSeedLevelMapEnd:
-ASSERT HostSeedLevelMapEnd - HostSeedLevelMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+TitleNameTiles:
+	db TITLE_B_TILE, TITLE_R_TILE, TITLE_U_TILE, TITLE_N_TILE, TITLE_C_TILE, TITLE_H_TILE
+	db TITLE_BLANK_TILE, TITLE_B_TILE, TITLE_R_TILE, TITLE_O_TILE, TITLE_S_TILE
+
+TitlePromptTiles:
+	db TITLE_P_TILE, TITLE_R_TILE, TITLE_E_TILE, TITLE_S_TILE, TITLE_S_TILE
+	db TITLE_BLANK_TILE, TITLE_S_TILE, TITLE_T_TILE, TITLE_A_TILE, TITLE_R_TILE, TITLE_T_TILE
 
 RoomTemplateData:
 	INCBIN "build/room_templates.bin"

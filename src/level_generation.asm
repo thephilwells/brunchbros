@@ -5,6 +5,7 @@ DEF PORT_SOUTH EQU $08
 DEF TRAVERSAL_LEDGE_CATCH EQU 1
 
 SECTION "Level Generation State", WRAM0
+SelectedSeed: dw
 GenerationRandomState: dw
 GenerationShift: dw
 GeneratedPlayerX: dw
@@ -33,17 +34,6 @@ GenerationTargetRoom: db
 
 SECTION "Level Generation", ROM0
 GenerateLevel:
-IF GENERATED_LEVEL_SEED == 0
-	ld a, $e1
-	ld [GenerationRandomState], a
-	ld a, $ac
-	ld [GenerationRandomState + 1], a
-ELSE
-	ld a, LOW(GENERATED_LEVEL_SEED)
-	ld [GenerationRandomState], a
-	ld a, HIGH(GENERATED_LEVEL_SEED)
-	ld [GenerationRandomState + 1], a
-ENDC
 	call GenerateRouteColumns
 	call BuildCriticalRoute
 	call ConnectRemainingRooms
@@ -1164,32 +1154,6 @@ GetMapTilePointer:
 	ld d, 0
 	add hl, de
 	ret
-
-VerifyGeneratedLevel:
-	ld hl, LevelMap
-	ld de, HostSeedLevelMap
-	ld b, 5
-.outer
-	ld c, 0
-.inner
-	ld a, [de]
-	cp a, [hl]
-	jr nz, .mismatch
-	inc de
-	inc hl
-	dec c
-	jr nz, .inner
-	dec b
-	jr nz, .outer
-	xor a
-	ret
-.mismatch
-	ld a, 1
-	and a
-	ret
-
-GenerationFailure:
-	jr GenerationFailure
 
 BitMasks:
 	db 1, 2, 4, 8, 16, 32, 64, 128

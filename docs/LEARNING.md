@@ -330,6 +330,16 @@ milestone) if useful.
   value with bit 7 set count as solid during the pass; a final sweep clears the
   marker. This saves the 1,280 bytes a second semantic map would require.
 
+- **Human input timing is sufficient for a lightweight gameplay seed.** The
+  title screen combines a 16-bit frame counter with the divider register,
+  advances xorshift16 once, and preserves the chosen value separately from the
+  generator's evolving random state.
+
+- **An 8-bit position overflow must not bypass swept collision.** A terminal-
+  velocity fall can cross Y=255 in one update even when a solid floor begins at
+  Y=248. Treating the tentative target as 255 lets the existing tile-top sweep
+  land on that floor first; only a sweep with no support clamps to world bottom.
+
 ## Up next
 
 The first milestone will require understanding: ROM header layout, memory

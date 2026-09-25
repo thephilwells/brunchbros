@@ -1,7 +1,7 @@
 # Background tile manifest
 
-Status: **IDs 0–30, 32–63, 64–75, 80, and 112–115 implemented in the dining-room sheet**,
-2026-09-18. Remaining assignments and art are proposed. Contract and VRAM addresses:
+Status: **IDs 0–30, 32–63, 64–75, 80, and 112–127 implemented in the dining-room sheet**,
+2026-09-24. Remaining assignments and art are proposed. Contract and VRAM addresses:
 [background asset specification](background-assets.md).
 
 ## Sheet layout and counting
@@ -19,15 +19,15 @@ One slot costs 16 bytes regardless of how often it appears in a room.
 | 80–95 | 16 | Biome rear surfaces | 1 dining authored, 15 budgeted |
 | 96–111 | 16 | Biome decorative details | Budget only |
 | 112–115 | 4 | Dining-room fixture extension | 4 counter tiles authored |
-| 116–127 | 12 | Unassigned within the initial sheet | Reserved |
-| **0–127** | **128** | **2,048 bytes resident** | **80 authored, 35 budgeted, 13 reserved** |
+| 116–127 | 12 | Shared title font | 12 authored |
+| **0–127** | **128** | **2,048 bytes resident** | **92 authored, 35 budgeted, 1 reserved** |
 
 These are caps, not a request to fill every slot. The common-material
 pilot authors 17 tiles (0–16) and marks all other slots reserved in its
 TSX. The dining sheet adds eight shared rear/trim tiles, a six-tile shared
 descent exit, 18 passable dining fixture tiles, one one-way test tile, five dining-table tiles, three
 dining-chair tiles, five booth tiles, four counter tiles, a 12-tile
-landmark, and one wallpaper motif. Its
+landmark, one wallpaper motif, and 12 shared title glyphs. Its
 unassigned slots remain reserved in the TSX.
 All four biomes use the same structural meanings; matching pixels are
 optional. Biome rows need an itemized footprint review before generation.
@@ -172,9 +172,15 @@ identify. The floor continues through column 39 so the Chef can cross the
 X=256 seam and return without a forced jump.
 
 These groups exhaust the current *passable wall-decoration* vocabulary,
-not the tile budget. IDs 76–79, 81–111, and 116–127 remain reserved in
+not the tile budget. IDs 76–79 and 81–111 remain reserved in
 the current atlas. The 32–63 fixture band is full; the counter uses
 IDs 112–115 in the initial sheet without expanding VRAM use.
+
+## Shared title font: IDs 116–127
+
+Twelve 5×7 uppercase glyphs spell `BRUNCH BROS` and `PRESS START`. They are
+UI-only, passable tiles shared with the dining atlas so the title screen adds
+no second tile-data load.
 
 ## One-way collision pilot: ID 50
 

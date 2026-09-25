@@ -15,18 +15,19 @@ The runtime is split between `src/main.asm` and the included
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000` and all 12 chef
-  animation frames at `$8010`, generates dining-room seed 0 into `LevelMap`,
-  compares it byte-for-byte with the temporary host oracle, loads its first 32
-  columns into the background tile map, sets `BGP=$E4`/`OBP0=$E0`, zeroes the
-  camera and streaming state, clears OAM, uses the generated spawn position for
-  the player's initial state, and turns the LCD back on with signed background
-  addressing. Falls through into `MainLoop`.
+  animation frames at `$8010`, draws a BG-only title screen, and waits for a
+  fresh Start press while counting frames. Start timing and the divider register
+  seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
+  then disables the LCD, generates the dining room, loads its first 32 columns
+  into the background tile map, zeroes the camera and streaming state, uses the
+  generated spawn position for the player's initial state, and turns the LCD
+  back on with signed background addressing before entering `MainLoop`.
 - **`GenerateLevel`** — reproduces the host xorshift16 draw order, builds the
   directed route and optional-room tree, selects the wide seam and eligible
   ledge-catch room, copies semantic room templates into WRAM, applies variants
   and protected endpoints, converts semantic solids to connectivity tile IDs,
-  and places the exit doorway. Seed 0 is fixed at build time for the initial
-  parity step.
+  and places the exit doorway. It consumes the xorshift state selected on the
+  title screen.
 - **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
   At the start of VBlank it streams one newly exposed or restored background
   column when needed, then commits the camera registers and all four player
@@ -72,10 +73,9 @@ The runtime is split between `src/main.asm` and the included
   hitbox on each side. Horizontal edges use top/middle/bottom probes and
   vertical edges use left/center/right probes so an isolated 8×8 solid tile
   cannot fall between corner-only samples.
-- **Tile/map data** (`TileData`, `HostSeedLevelMap`, `RoomTemplateData`,
-  `CollisionTypes`, `ChefFrames`) — `INCBIN`s of the atlas `.2bpp`, temporary
-  parity `.tilemap`, semantic room-template table, collision `.bin`, and chef
-  frame `.2bpp` files.
+- **Tile/map data** (`TileData`, `RoomTemplateData`, `CollisionTypes`,
+  `ChefFrames`) — `INCBIN`s of the atlas `.2bpp`, semantic room-template table,
+  collision `.bin`, and chef frame `.2bpp` files.
   `tools/generate-structural-pilot.mjs` generates the base atlas and test
   map. `tools/generate-dining-room.mjs` extends that atlas with rear and
   dining tiles, then generates its TSX, fixture TMX, raw tile map, and
@@ -107,6 +107,8 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `LedgeSide` | `0` when free, `1` while hanging from a wall on the right, `2` for a wall on the left |
 | `LedgeTop` | Scratch world Y coordinate for the tile top currently considered by swept ledge detection |
 | `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
+| `FallingPastWorld` | Marks a tentative falling Y past 255 so swept support checks run before a world-bottom clamp |
+| `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
 
@@ -117,9 +119,10 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
-all 128 slots there, with IDs 0–30, 32–75, 80, and 112–115 authored. Runtime-
-generated seed 0 lives in `LevelMap`; `$9800–$9BFF` contains its streamed
-32-column view. The map includes one reciprocal six-row seam, one generated
+all 128 slots there, with IDs 0–30, 32–75, 80, and 112–127 authored. IDs
+116–127 form the shared title font. The selected runtime level lives in
+`LevelMap`; `$9800–$9BFF` contains its streamed 32-column view. The map includes
+one reciprocal six-row seam, one generated
 ledge-catch room, and the shared descent exit. Biome-transition runtime code
 does not exist yet. See
 `specs/background-assets.md` for the remaining VRAM allocation.
@@ -137,7 +140,7 @@ across X=256 because the visible difference is always less than 256 pixels.
 ## Not yet in place
 
 - No ROM banking (everything fits in `ROM0`/bank 0 so far).
-- Runtime generation is fixed to seed 0 and still carries its host parity map;
-  multi-seed parity and player-timed seed selection remain pending. Kitchen,
+- External runtime dumps for multiple golden seeds remain pending. Kitchen,
   patio, and deep-freezer art remain unstarted.
-- No enemies, hazards, HUD, audio, or title/menu flow.
+- No enemies, hazards, HUD, audio, or menu/game-over flow beyond the minimal
+  Press Start screen.
