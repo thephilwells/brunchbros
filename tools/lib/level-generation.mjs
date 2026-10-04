@@ -493,6 +493,8 @@ export function levelToTmx(level, tilesetSource) {
     const y = Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT * 8;
     return `  <object id="${room + 4}" name="${xmlEscape(name)}" type="room_template" x="${x}" y="${y}" width="${ROOM_WIDTH * 8}" height="${ROOM_HEIGHT * 8}"><properties><property name="port_mask" type="int" value="${level.roomPorts[room]}"/><property name="wide_ports" type="int" value="${level.roomWidePorts[room]}"/><property name="traversal_class" value="${level.roomTraversalClasses[room]}"/><property name="seams" value='${JSON.stringify(level.roomSeamProfiles[room])}'/></properties></object>`;
   });
+  const reservationObjects = (level.placementReservationRegions ?? []).map((region, index) =>
+    `  <object id="${20 + index}" name="${region.kind}-${region.room}" type="placement_reservation" x="${region.x * 8}" y="${region.y * 8}" width="${region.width * 8}" height="${region.height * 8}"><properties><property name="kind" value="${region.kind}"/><property name="room" type="int" value="${region.room}"/><property name="flag" type="int" value="${region.flag}"/></properties></object>`);
   const seed = level.seed ?? 'topology';
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -510,6 +512,7 @@ export function levelToTmx(level, tilesetSource) {
     `  <object id="3" name="descent_exit" type="exit" x="${level.exitDoor.x * 8}" y="${level.exitDoor.y * 8}" width="16" height="24"/>`,
     ...roomObjects,
     ' </objectgroup>',
+    ...(reservationObjects.length ? [' <objectgroup id="3" name="Placement Reservations" visible="0">', ...reservationObjects, ' </objectgroup>'] : []),
     '</map>',
     '',
   ].join('\n');
@@ -524,10 +527,27 @@ export function levelToSvg(level) {
       solidPath += `M${x} ${y}h1v1h-1z`;
     }
   }
+  const reservationPaths = { critical: '', port: '', wide: '', spawn: '', exit: '', ledge: '' };
+  for (let index = 0; index < (level.placementReservationMask?.length ?? 0); index++) {
+    const value = level.placementReservationMask[index];
+    const kind = value & 0x10 ? 'exit' : value & 0x08 ? 'spawn' : value & 0x20 ? 'ledge' : value & 0x04 ? 'wide' : value & 0x02 ? 'port' : value & 0x01 ? 'critical' : null;
+    if (!kind) continue;
+    const x = index % LEVEL_WIDTH;
+    const y = Math.floor(index / LEVEL_WIDTH);
+    reservationPaths[kind] += `M${x} ${y}h1v1h-1z`;
+  }
+  const reservationOverlay = [
+    ['critical', '#4f78c4'],
+    ['port', '#d49b33'],
+    ['wide', '#8b5bc2'],
+    ['spawn', '#31a354'],
+    ['exit', '#202020'],
+    ['ledge', '#d34e4e'],
+  ].map(([kind, color]) => reservationPaths[kind] ? `<path d="${reservationPaths[kind]}" fill="${color}" fill-opacity=".34"/>` : '').join('');
   const routePoints = level.criticalRoute.map(room => `${(room % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2},${Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2}`).join(' ');
   const spawn = level.spawnRoom;
   const exit = level.exitRoom;
-  return `<svg viewBox="0 0 ${LEVEL_WIDTH} ${LEVEL_HEIGHT}" role="img" aria-label="Seed ${level.seed} connectivity map"><rect width="40" height="32" fill="#cadb94"/><path d="${solidPath}" fill="#354f34"/><path d="M10 0V32M20 0V32M30 0V32M0 8H40M0 16H40M0 24H40" fill="none" stroke="#789064" stroke-width=".12"/><polyline points="${routePoints}" fill="none" stroke="#c13d3d" stroke-width=".6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${(spawn % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2}" cy="${Math.floor(spawn / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2}" r="1.2" fill="#fff" stroke="#17351d" stroke-width=".35"/><rect x="${(exit % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2 - 1}" y="${Math.floor(exit / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2 - 1}" width="2" height="2" fill="#111" stroke="#fff" stroke-width=".3"/></svg>`;
+  return `<svg viewBox="0 0 ${LEVEL_WIDTH} ${LEVEL_HEIGHT}" role="img" aria-label="Seed ${level.seed} connectivity map"><rect width="40" height="32" fill="#cadb94"/><path d="${solidPath}" fill="#354f34"/>${reservationOverlay}<path d="M10 0V32M20 0V32M30 0V32M0 8H40M0 16H40M0 24H40" fill="none" stroke="#789064" stroke-width=".12"/><polyline points="${routePoints}" fill="none" stroke="#c13d3d" stroke-width=".6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${(spawn % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2}" cy="${Math.floor(spawn / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2}" r="1.2" fill="#fff" stroke="#17351d" stroke-width=".35"/><rect x="${(exit % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2 - 1}" y="${Math.floor(exit / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2 - 1}" width="2" height="2" fill="#111" stroke="#fff" stroke-width=".3"/></svg>`;
 }
 
 export function topologySignature(level) {

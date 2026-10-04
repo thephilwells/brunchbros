@@ -95,6 +95,17 @@ their focused specifications and playtests.
 - Eggs, carrying/throwing, loot, and frying-pan combat affect object and
   encounter placement rather than the initial structural route.
 
+## Future exploration rewards
+
+- When collectible placement exists, use graph distance from the critical
+  route as one input to treasure quality. Rooms deeper in optional branches
+  should have a better chance of high-quality rewards.
+- Every biome should reward exploring beyond the guaranteed route, including
+  shallower side rooms; distance should improve expected quality rather than
+  make near-route exploration worthless.
+- Keep the reward curve, guaranteed-vs-random drops, and interaction with room
+  difficulty exploratory until loot and encounter placement are implemented.
+
 ## Generation direction after the traversal baseline
 
 - Use one deterministic, seeded generator with biome parameter sets rather

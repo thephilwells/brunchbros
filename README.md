@@ -51,6 +51,8 @@ node tools/generate-seeded-level.mjs --seed 0
 node tools/generate-room-variant-playtest.mjs
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 node tools/verify-dining-room.mjs
+node tools/verify-dining-room-furniture.mjs
+node tools/verify-dining-room-composition.mjs
 node tools/verify-room-templates.mjs
 node tools/verify-room-template-playtest.mjs
 node tools/verify-seeded-level.mjs
@@ -79,9 +81,12 @@ open build/level-gallery/index.html
 ```
 
 The gallery shows seeded levels assembled from authored room templates. Its TMX
-files expose the critical route, room ports, spawn, and exit in Tiled. Batch
-validation checks both hard-limit mutual room reachability and the declared
-ordinary or ledge-catch passage through every ordered critical-route room.
+files expose the critical route, room ports, spawn, exit, and a hidden placement
+reservation object layer that can be toggled in Tiled. The HTML thumbnails
+overlay critical rooms, ports, wide seams, ledge rooms, spawn, and exit in
+distinct colors. Batch validation checks both hard-limit mutual room
+reachability and the declared ordinary or ledge-catch passage through every
+ordered critical-route room.
 
 The semantic room templates can be regenerated and checked separately:
 

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "biome": "dining_room",
+  "backgroundTile": 17,
+  "components": [
+    {
+      "id": "dining_table",
+      "width": 4,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [0],
+      "tiles": [
+        [51, 52, 52, 53],
+        [54, 17, 17, 55]
+      ]
+    },
+    {
+      "id": "dining_chair",
+      "width": 2,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [1],
+      "tiles": [
+        [17, 56],
+        [57, 58]
+      ]
+    },
+    {
+      "id": "dining_booth",
+      "width": 4,
+      "height": 3,
+      "floorAnchored": true,
+      "oneWayRows": [2],
+      "tiles": [
+        [59, 60, 60, 61],
+        [62, 62, 62, 62],
+        [63, 63, 63, 63]
+      ]
+    },
+    {
+      "id": "dining_counter",
+      "width": 4,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [0],
+      "tiles": [
+        [112, 113, 113, 114],
+        [115, 115, 115, 115]
+      ]
+    }
+  ]
+}

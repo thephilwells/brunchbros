@@ -4,6 +4,25 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-09-25 — Furniture dressing cannot carry the required route
+
+**Decision:** Dining-room furniture is a deterministic pass after structural
+route validation. Tables, chairs, booths, and counters must sit on continuous
+full-solid floors outside protected traversal reservations. Removing all
+furniture must leave the required route valid.
+
+**Why:** Furniture provides biome identity and optional one-way surfaces, but
+its later density and placement will change as enemies, loot, and other room
+content arrive. Keeping structural reachability independent lets those systems
+be tuned without reopening the generator's core movement proof.
+
+**Status:** The four accepted furniture groups have a verified machine-readable
+manifest. Conservative host-side reservations and HTML/TMX gallery overlays are
+implemented; seeded furniture placement remains pending. See
+`specs/dining-room-composition.md`.
+
+---
+
 ## 2026-09-25 — Seeded room pairing uses compatible maximum matching
 
 **Decision:** Pair rooms by computing a maximum matching over compatible edges
@@ -20,8 +39,8 @@ validated room contracts.
 
 **Status:** Implemented in the host generator and RGBDS runtime. All 1,024
 topologies and 4,096 deterministic seeds pass host validation, producing four
-to eight dominoes per level and both orientations across the seed set. Manual
-multi-seed SameBoy review remains pending.
+to eight dominoes per level and both orientations across the seed set. Accepted
+after manual multi-seed SameBoy review.
 
 ---
 

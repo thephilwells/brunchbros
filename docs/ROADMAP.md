@@ -132,7 +132,12 @@ The vertical 10×16 domino is accepted in SameBoy. Its focused ROM uses a fully
 open seam, solid wall ledges, two-tile jump-away channels, and three-row cubby
 clearance rather than free-floating one-way stairs. Compatible seeded
 maximum-matching domino selection is implemented in both host tooling and the
-runtime; manual random-seed SameBoy review is next.
+runtime and accepted after manual random-seed SameBoy review. Dining-room
+composition is next: its machine-readable table, chair, booth, and counter
+manifest is in place. Conservative host-side reservations now protect complete
+critical-route rooms plus optional-room ports and seams, with inspectable
+HTML/TMX overlays. Seeded host furniture placement is the next implementation
+slice.
 
 ## Completed
 
