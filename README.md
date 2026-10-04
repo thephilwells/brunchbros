@@ -80,13 +80,13 @@ node tools/generate-level-gallery.mjs
 open build/level-gallery/index.html
 ```
 
-The gallery shows seeded levels assembled from authored room templates. Its TMX
-files expose the critical route, room ports, spawn, exit, and a hidden placement
-reservation object layer that can be toggled in Tiled. The HTML thumbnails
-overlay critical rooms, ports, wide seams, ledge rooms, spawn, and exit in
-distinct colors. Batch validation checks both hard-limit mutual room
-reachability and the declared ordinary or ledge-catch passage through every
-ordered critical-route room.
+The gallery shows seeded levels assembled from authored room templates and
+deterministically furnished optional rooms. Its TMX files expose the critical
+route, room ports, spawn, exit, a hidden placement-reservation layer, and a
+visible furniture-placement layer. The HTML thumbnails overlay reservations
+and color-coded furniture footprints. Batch validation checks hard-limit mutual
+room reachability, declared critical-route traversal, and every selected
+furniture footprint.
 
 The semantic room templates can be regenerated and checked separately:
 

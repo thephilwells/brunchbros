@@ -133,11 +133,12 @@ open seam, solid wall ledges, two-tile jump-away channels, and three-row cubby
 clearance rather than free-floating one-way stairs. Compatible seeded
 maximum-matching domino selection is implemented in both host tooling and the
 runtime and accepted after manual random-seed SameBoy review. Dining-room
-composition is next: its machine-readable table, chair, booth, and counter
-manifest is in place. Conservative host-side reservations now protect complete
-critical-route rooms plus optional-room ports and seams, with inspectable
-HTML/TMX overlays. Seeded host furniture placement is the next implementation
-slice.
+composition now has a machine-readable table, chair, booth, and counter
+manifest. Conservative host-side reservations protect complete critical-route
+rooms plus optional-room ports and seams. Deterministic host placement furnishes
+eligible optional rooms without consuming the structural PRNG, exports its
+choices to JSON/TMX and the HTML gallery, and passes all 65,536 seeds. Gallery
+review is the gate before porting this composition pass to the runtime.
 
 ## Completed
 

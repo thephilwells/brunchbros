@@ -1,7 +1,7 @@
 # Dining-room composition
 
-Status: **furniture manifest and conservative host-side placement reservations
-implemented; seeded furniture placement pending**.
+Status: **furniture manifest, placement reservations, and deterministic
+host-side furniture placement implemented; runtime placement pending**.
 
 ## Purpose
 
@@ -65,8 +65,8 @@ authored orientation is a separate manifest component.
 - Furniture stays inside one room cell unless an authored domino-scale layout
   explicitly owns both matched cells.
 
-The host preview must render reservation overlays separately from terrain and
-furniture so rejected placements can be reviewed in the gallery. Runtime
+The host preview renders reservation overlays separately from terrain and
+furniture so accepted placements can be reviewed in the gallery. Runtime
 placement follows only after the host output is accepted across a multi-seed
 gallery.
 
@@ -77,10 +77,11 @@ seam envelopes; spawn, exit, and ledge-catch roles retain their dedicated
 flags. Later tuning may reclaim unused critical-room floor only after the host
 can identify exact required transitions without weakening the route proof.
 
-The HTML gallery shows the reservation mask over each thumbnail. Generated TMX
-files contain a hidden `Placement Reservations` object layer whose rectangles
-can be toggled in Tiled. JSON exports retain both the per-cell bit mask and the
-source rectangles.
+The HTML gallery shows the reservation mask and color-coded furniture
+footprints over each thumbnail. Generated TMX files contain a hidden
+`Placement Reservations` object layer and a visible `Furniture Placements`
+object layer. JSON exports retain the per-cell bit mask, source rectangles,
+structural tile snapshot, candidate counts, and selected placements.
 
 | Bit | Reservation |
 |---:|---|
@@ -93,10 +94,18 @@ source rectangles.
 
 ## Initial placement scope
 
-The first host pass places at most one furniture group in an eligible room and
-does not place furniture in ledge-catch rooms. Selection is deterministic from
-the level seed. Density and component weights remain tuning data and are not
-part of the first correctness pass.
+The first host pass considers only optional, non-ledge-catch rooms. It finds
+every floor-anchored position whose complete footprint is rear tile, outside
+all reservations, and directly above a continuous full-solid floor. Every
+room with at least one candidate receives one furniture group. Component and
+position selection use a local seed/room mix and do not advance the structural
+generator's PRNG. The pass places at most one group per room.
+
+Validation compares the furnished map with its structural snapshot, rejects
+reserved or unsupported footprints, verifies manifest tile composition, and
+requires a placement in every eligible room. The exhaustive host check covers
+all 65,536 16-bit seeds. Density and component weights remain tuning data and
+are not part of this correctness pass.
 
 Wall fixtures, rear motifs, encounters, loot eggs, and movable objects are out
 of scope until floor-furniture reservations and gallery output are accepted.

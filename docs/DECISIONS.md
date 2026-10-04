@@ -4,6 +4,25 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-10-04 — Optional-room furniture uses an independent deterministic selection
+
+**Decision:** Enumerate floor-anchored table, chair, booth, and counter
+positions only in optional rooms, excluding ledge-catch rooms and protected
+cells. Place exactly one group in every room with candidates, selecting its
+component and position from a seed/room-local mix that does not advance the
+structural PRNG.
+
+**Why:** Furniture should make branches worth inspecting without changing the
+critical route or coupling later dressing changes to topology generation.
+Keeping the random streams independent preserves a seed's structural layout
+while furniture rules are tuned.
+
+**Status:** Implemented in host composition and exported to JSON, TMX, and the
+HTML gallery. All 65,536 16-bit seeds pass composition validation; runtime
+generation remains pending. See `specs/dining-room-composition.md`.
+
+---
+
 ## 2026-09-25 — Furniture dressing cannot carry the required route
 
 **Decision:** Dining-room furniture is a deterministic pass after structural
@@ -17,8 +36,8 @@ content arrive. Keeping structural reachability independent lets those systems
 be tuned without reopening the generator's core movement proof.
 
 **Status:** The four accepted furniture groups have a verified machine-readable
-manifest. Conservative host-side reservations and HTML/TMX gallery overlays are
-implemented; seeded furniture placement remains pending. See
+manifest. Conservative host-side reservations, seeded optional-room placement,
+and HTML/TMX gallery overlays are implemented. See
 `specs/dining-room-composition.md`.
 
 ---
