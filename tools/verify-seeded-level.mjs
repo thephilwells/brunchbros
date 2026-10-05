@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { generateLevel } from './lib/level-generation.mjs';
-import { composeDiningRoom } from './lib/dining-room-composition.mjs';
+import {
+  addDiningRoomFurniture,
+  addDiningRoomPlacementReservations,
+  composeDiningRoom,
+} from './lib/dining-room-composition.mjs';
 
 const generated = JSON.parse(readFileSync('build/seeded_level.json', 'utf8'));
 const expected = composeDiningRoom(generateLevel(generated.seed));
+const expectedRuntime = addDiningRoomFurniture(addDiningRoomPlacementReservations(generateLevel(generated.seed)));
 const tilemap = readFileSync('build/seeded_level.tilemap');
+const runtimeParityTilemap = readFileSync('build/runtime_level_parity.tilemap');
 const runtimeTemplates = readFileSync('build/room_templates.bin');
 const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
 const include = readFileSync('build/seeded_level.inc', 'utf8');
@@ -13,7 +19,9 @@ const tmx = readFileSync('gfx/seeded_level.tmx', 'utf8');
 
 assert.deepEqual(generated, expected);
 assert.deepEqual([...tilemap], expected.tiles);
+assert.deepEqual([...runtimeParityTilemap], expectedRuntime.tiles);
 assert.equal(tilemap.length, 40 * 32);
+assert.equal(runtimeParityTilemap.length, 40 * 32);
 assert.equal(runtimeTemplates.length, 15 * 10 * 8);
 const semanticValues = { '.': 0, '#': 1, '=': 2 };
 const expectedRuntimeTemplates = templateSet.templates.flatMap(template => template.rows.flatMap(row => [...row].map(cell => semanticValues[cell])));
@@ -42,7 +50,9 @@ for (let index = 1; index < expected.criticalRoute.length; index++) {
 assert.equal(expected.roomTraversalClasses.filter(value => value === 'ledge_catch').length, 1);
 assert.match(tmx, /name="wide_ports" type="int" value="[1-8]"/);
 assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
-assert.match(tmx, /name="Furniture Placements"/);
+assert.match(tmx, /name="Background Placements"/);
+if (expected.furniturePlacements.length) assert.match(tmx, /name="Furniture Placements"/);
+else assert.doesNotMatch(tmx, /name="Furniture Placements"/);
 
 const at = (x, y) => expected.tiles[y * 40 + x];
 const spawnFloorY = expected.spawnPosition.y / 8;

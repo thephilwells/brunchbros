@@ -52,6 +52,7 @@ node tools/generate-room-variant-playtest.mjs
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 node tools/verify-dining-room.mjs
 node tools/verify-dining-room-furniture.mjs
+node tools/verify-dining-room-background.mjs
 node tools/verify-dining-room-composition.mjs
 node tools/verify-room-templates.mjs
 node tools/verify-room-template-playtest.mjs
@@ -80,9 +81,9 @@ node tools/generate-level-gallery.mjs
 open build/level-gallery/index.html
 ```
 
-The gallery shows seeded levels assembled from authored room templates and
-deterministically furnished optional rooms. Its TMX files expose the critical
-route, room ports, spawn, exit, a hidden placement-reservation layer, and a
+The gallery shows seeded levels assembled from authored room templates,
+deterministic background fixtures, and optional-room furniture. Its TMX files expose the critical
+route, room ports, spawn, exit, a hidden placement-reservation layer, background and furniture layers, and a
 visible furniture-placement layer. The HTML thumbnails overlay reservations
 and color-coded furniture footprints. Batch validation checks hard-limit mutual
 room reachability, declared critical-route traversal, and every selected

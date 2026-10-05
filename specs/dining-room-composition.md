@@ -1,7 +1,7 @@
 # Dining-room composition
 
-Status: **furniture manifest, placement reservations, and deterministic
-host/runtime furniture placement implemented; production playtest pending**.
+Status: **host/runtime floor furniture accepted; deterministic host-side
+background fixture placement implemented; gallery review and runtime port pending**.
 
 ## Purpose
 
@@ -26,6 +26,30 @@ Furniture is optional traversal. Removing every furniture tile must leave the
 structural route valid. Furniture may create shortcuts, extra landing choices,
 or Down+A opportunities, but it cannot be the only connection between required
 surfaces.
+
+## Background fixture manifest
+
+`data/dining-room-background.json` defines the menu board, mirror, clock,
+sconce, and serving hatch as passable multi-tile groups. Every fixture's bottom
+edge sits two tiles above its visual chamber's floor. In a vertical domino this
+is the lower room cell's floor, not the removed internal boundary. Every
+referenced tile has `collision=empty`; these fixtures replace plain rear tiles
+and never alter traversal.
+
+Wide-seam pairs are treated as one visual chamber. The placement pass selects
+one background composition across both halves, while an unmatched room is its
+own chamber. A fixture stays inside one 10×8 room cell even when its visual
+chamber is a domino. A sconce composition places a symmetric pair at the
+one-third and two-thirds points of the usable chamber wall; if either exact
+mounting point is obstructed, sconces are not eligible for that chamber.
+Selection uses a chamber-local seed mix and does not advance the structural
+PRNG.
+
+Background fixtures may occupy cells reserved only because they belong to a
+critical-route room. Port approaches, wide seams, spawn and exit envelopes,
+and ledge-catch rooms remain protected for visual readability. Candidate
+footprints must otherwise contain only plain rear tiles and retain a one-tile
+horizontal margin from the room boundary.
 
 ## Furniture manifest
 
@@ -95,7 +119,7 @@ structural tile snapshot, candidate counts, and selected placements.
 
 ## Initial placement scope
 
-The first host pass considers only optional, non-ledge-catch rooms. It finds
+The floor-furniture pass considers only optional, non-ledge-catch rooms. It finds
 every floor-anchored position whose complete footprint is rear tile, outside
 all reservations, and directly above a continuous full-solid floor. Every
 room with at least one candidate receives one furniture group. Component and
@@ -112,8 +136,10 @@ The runtime derives its component tables from the same manifest. It evaluates
 the equivalent optional-room floor candidates without allocating a second
 1,280-byte reservation map, preserves the structural PRNG state, and writes the
 selected component tiles after structural conversion and exit placement.
-Fixed-seed SameBoy parity ROMs compare every tile against the host export before
-entering gameplay; seeds 0, 1, `$1234`, and `$FFFF` are accepted.
+Fixed-seed SameBoy parity ROMs compare every runtime-supported tile against a
+separate furniture-only host export before entering gameplay; seeds 0, 1,
+`$1234`, and `$FFFF` are accepted. The complete decorated host map will become
+the parity target after the background pass is ported to RGBDS.
 
-Wall fixtures, rear motifs, encounters, loot eggs, and movable objects remain
-separate composition passes beyond this floor-furniture implementation.
+Wallpaper motifs, encounters, loot eggs, and movable objects remain separate
+composition passes beyond this fixture implementation.

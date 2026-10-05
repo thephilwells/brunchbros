@@ -13,6 +13,8 @@ import {
 
 const FURNITURE_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-furniture.json', import.meta.url), 'utf8'));
 const FURNITURE_BY_ID = new Map(FURNITURE_MANIFEST.components.map(component => [component.id, component]));
+const BACKGROUND_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-background.json', import.meta.url), 'utf8'));
+const BACKGROUND_BY_ID = new Map(BACKGROUND_MANIFEST.components.map(component => [component.id, component]));
 
 function componentLayouts(component) {
   return component.orientations ?? [{ id: 'default', tiles: component.tiles }];
@@ -44,6 +46,7 @@ export const RESERVATION_WIDE_SEAM = 0x04;
 export const RESERVATION_SPAWN = 0x08;
 export const RESERVATION_EXIT = 0x10;
 export const RESERVATION_LEDGE_CATCH = 0x20;
+const BACKGROUND_BLOCKING_RESERVATIONS = RESERVATION_PORT | RESERVATION_WIDE_SEAM | RESERVATION_SPAWN | RESERVATION_EXIT | RESERVATION_LEDGE_CATCH;
 
 function mixSelection(seed, room, salt) {
   let state = ((seed || 0xace1) ^ ((room + 1) * 0x9e37) ^ salt) & 0xffff;
@@ -126,8 +129,103 @@ export function validateDiningRoomPlacementReservations(level) {
   return { valid: errors.length === 0, errors };
 }
 
-export function addDiningRoomFurniture(level) {
+function backgroundChambers(level) {
+  const chambers = [];
+  const visited = new Set();
+  for (let room = 0; room < 16; room++) {
+    if (visited.has(room)) continue;
+    const wide = level.roomWidePorts[room];
+    const neighbor = wide & PORT_WEST ? room - 1 : wide & PORT_EAST ? room + 1 : wide & PORT_NORTH ? room - 4 : wide & PORT_SOUTH ? room + 4 : null;
+    const rooms = neighbor === null ? [room] : [room, neighbor].sort((a, b) => a - b);
+    for (const member of rooms) visited.add(member);
+    const floorRow = Math.max(...rooms.map(member => Math.floor(member / 4)));
+    const mountingRooms = rooms.filter(member => Math.floor(member / 4) === floorRow);
+    chambers.push({ anchor: rooms[0], rooms, mountingRooms });
+  }
+  return chambers;
+}
+
+function backgroundCandidates(level, component, room, sourceTiles) {
+  const roomX = room % 4 * ROOM_WIDTH;
+  const roomY = Math.floor(room / 4) * ROOM_HEIGHT;
+  const candidates = [];
+  const localY = ROOM_HEIGHT - 1 - component.floorClearance - component.height;
+  for (let localX = 1; localX < ROOM_WIDTH - component.width; localX++) {
+    let valid = true;
+    for (let componentY = 0; componentY < component.height; componentY++) {
+      for (let componentX = 0; componentX < component.width; componentX++) {
+        const index = (roomY + localY + componentY) * LEVEL_WIDTH + roomX + localX + componentX;
+        if (sourceTiles[index] !== BACKGROUND_MANIFEST.backgroundTile || level.placementReservationMask[index] & BACKGROUND_BLOCKING_RESERVATIONS) valid = false;
+      }
+    }
+    if (valid) candidates.push({ room, x: roomX + localX, y: roomY + localY });
+  }
+  return candidates;
+}
+
+function backgroundOptions(component, chamber, candidates) {
+  if (component.instances !== 2) return candidates.map(candidate => [candidate]);
+  const left = Math.min(...chamber.mountingRooms.map(room => room % 4 * ROOM_WIDTH));
+  const right = Math.max(...chamber.mountingRooms.map(room => room % 4 * ROOM_WIDTH + ROOM_WIDTH));
+  const targets = [left + Math.floor((right - left) / 3), left + Math.floor((right - left) * 2 / 3)];
+  const pair = targets.map(x => candidates.find(candidate => candidate.x === x));
+  return pair.every(Boolean) ? [pair] : [];
+}
+
+export function addDiningRoomBackground(level) {
   const structuralTiles = [...level.tiles];
+  const tiles = [...level.tiles];
+  const roomBackgroundCandidateCounts = Array(16).fill(0);
+  const backgroundPlacements = [];
+
+  for (const chamber of backgroundChambers(level)) {
+    const optionsByComponent = [];
+    for (const component of BACKGROUND_MANIFEST.components) {
+      const candidates = chamber.mountingRooms.flatMap(room => {
+        const roomCandidates = backgroundCandidates(level, component, room, structuralTiles);
+        roomBackgroundCandidateCounts[room] += roomCandidates.length;
+        return roomCandidates;
+      });
+      const options = backgroundOptions(component, chamber, candidates);
+      if (options.length) optionsByComponent.push({ component, options });
+    }
+    if (!optionsByComponent.length) continue;
+    const group = optionsByComponent[mixSelection(level.seed, chamber.anchor, 0xb529) % optionsByComponent.length];
+    const positions = group.options[mixSelection(level.seed, chamber.anchor, 0x68e3) % group.options.length];
+    for (let instance = 0; instance < positions.length; instance++) {
+      const position = positions[instance];
+      const placement = {
+        chamber: chamber.anchor,
+        rooms: chamber.rooms,
+        room: position.room,
+        component: group.component.id,
+        instance,
+        instances: positions.length,
+        x: position.x,
+        y: position.y,
+        width: group.component.width,
+        height: group.component.height,
+      };
+      backgroundPlacements.push(placement);
+      for (let componentY = 0; componentY < group.component.height; componentY++) {
+        for (let componentX = 0; componentX < group.component.width; componentX++) {
+          tiles[(position.y + componentY) * LEVEL_WIDTH + position.x + componentX] = group.component.tiles[componentY][componentX];
+        }
+      }
+    }
+  }
+
+  return {
+    ...level,
+    tiles,
+    structuralTiles,
+    roomBackgroundCandidateCounts,
+    backgroundPlacements,
+  };
+}
+
+export function addDiningRoomFurniture(level) {
+  const structuralTiles = level.structuralTiles ?? [...level.tiles];
   const tiles = [...level.tiles];
   const criticalRooms = new Set(level.criticalRoute);
   const furniturePlacements = [];
@@ -152,7 +250,7 @@ export function addDiningRoomFurniture(level) {
         for (let componentY = 0; componentY < component.height; componentY++) {
           for (let componentX = 0; componentX < component.width; componentX++) {
             const index = (y + componentY) * LEVEL_WIDTH + x + componentX;
-            if (structuralTiles[index] !== FURNITURE_MANIFEST.backgroundTile || level.placementReservationMask[index]) valid = false;
+            if (tiles[index] !== FURNITURE_MANIFEST.backgroundTile || level.placementReservationMask[index]) valid = false;
           }
         }
         if (valid) candidates.push({ x, y });
@@ -183,28 +281,87 @@ export function addDiningRoomFurniture(level) {
     }
   }
 
-  const composed = {
+  return {
     ...level,
     tiles,
     structuralTiles,
     roomFurnitureCandidateCounts,
     furniturePlacements,
   };
-  composed.compositionValidation = validateDiningRoomComposition(composed);
-  return composed;
 }
 
 export function composeDiningRoom(level) {
-  return addDiningRoomFurniture(addDiningRoomPlacementReservations(level));
+  const composed = addDiningRoomFurniture(addDiningRoomBackground(addDiningRoomPlacementReservations(level)));
+  composed.compositionValidation = validateDiningRoomComposition(composed);
+  return composed;
 }
 
 export function validateDiningRoomComposition(level) {
   const errors = [...validateDiningRoomPlacementReservations(level).errors];
   if (!Array.isArray(level.structuralTiles) || level.structuralTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('structural tile snapshot must contain 1,280 cells');
+  if (!Array.isArray(level.roomBackgroundCandidateCounts) || level.roomBackgroundCandidateCounts.length !== 16) errors.push('room background candidate counts must contain 16 entries');
   if (!Array.isArray(level.roomFurnitureCandidateCounts) || level.roomFurnitureCandidateCounts.length !== 16) errors.push('room furniture candidate counts must contain 16 entries');
   if (errors.length) return { valid: false, errors };
 
   const occupied = new Set();
+  const backgroundPlacementsByChamber = new Map();
+  for (const placement of level.backgroundPlacements ?? []) {
+    const component = BACKGROUND_BY_ID.get(placement.component);
+    if (!component) {
+      errors.push(`room ${placement.room} uses unknown background fixture ${placement.component}`);
+      continue;
+    }
+    const chamber = backgroundChambers(level).find(candidate => candidate.anchor === placement.chamber);
+    if (!chamber || !chamber.mountingRooms.includes(placement.room)) errors.push(`${placement.component} has invalid chamber floor ${placement.chamber}`);
+    const chamberPlacements = backgroundPlacementsByChamber.get(placement.chamber) ?? [];
+    chamberPlacements.push(placement);
+    backgroundPlacementsByChamber.set(placement.chamber, chamberPlacements);
+    const roomX = placement.room % 4 * ROOM_WIDTH;
+    const roomY = Math.floor(placement.room / 4) * ROOM_HEIGHT;
+    const localY = placement.y - roomY;
+    const expectedLocalY = ROOM_HEIGHT - 1 - component.floorClearance - component.height;
+    if (placement.x <= roomX || placement.x + component.width >= roomX + ROOM_WIDTH || localY !== expectedLocalY) errors.push(`${placement.component} leaves its floor-relative mounting line in room ${placement.room}`);
+    if (placement.width !== component.width || placement.height !== component.height) errors.push(`${placement.component} metadata is inconsistent in room ${placement.room}`);
+    for (let y = 0; y < component.height; y++) {
+      for (let x = 0; x < component.width; x++) {
+        const mapX = placement.x + x;
+        const mapY = placement.y + y;
+        const index = mapY * LEVEL_WIDTH + mapX;
+        if (occupied.has(index)) errors.push(`${placement.component} overlaps another fixture at ${mapX},${mapY}`);
+        occupied.add(index);
+        if (level.placementReservationMask[index] & BACKGROUND_BLOCKING_RESERVATIONS) errors.push(`${placement.component} occupies protected background cell ${mapX},${mapY}`);
+        if (level.structuralTiles[index] !== BACKGROUND_MANIFEST.backgroundTile) errors.push(`${placement.component} replaces structural tile ${mapX},${mapY}`);
+        if (level.tiles[index] !== component.tiles[y][x]) errors.push(`${placement.component} has the wrong tile at ${mapX},${mapY}`);
+      }
+    }
+  }
+
+  for (let room = 0; room < 16; room++) {
+    const chamber = backgroundChambers(level).find(candidate => candidate.mountingRooms.includes(room));
+    const expectedCount = chamber ? BACKGROUND_MANIFEST.components.reduce((total, component) => total + backgroundCandidates(level, component, room, level.structuralTiles).length, 0) : 0;
+    if (level.roomBackgroundCandidateCounts[room] !== expectedCount) errors.push(`room ${room} has the wrong background candidate count`);
+  }
+  for (const chamber of backgroundChambers(level)) {
+    const eligibleComponents = BACKGROUND_MANIFEST.components.filter(component => {
+      const candidates = chamber.mountingRooms.flatMap(room => backgroundCandidates(level, component, room, level.structuralTiles));
+      return backgroundOptions(component, chamber, candidates).length;
+    });
+    const placements = backgroundPlacementsByChamber.get(chamber.anchor) ?? [];
+    if (eligibleComponents.length && !placements.length) errors.push(`eligible chamber ${chamber.anchor} has no background fixture`);
+    if (!eligibleComponents.length && placements.length) errors.push(`ineligible chamber ${chamber.anchor} has a background fixture`);
+    if (!placements.length) continue;
+    const component = BACKGROUND_BY_ID.get(placements[0].component);
+    if (placements.some(placement => placement.component !== component.id)) errors.push(`chamber ${chamber.anchor} mixes background fixtures`);
+    const expectedInstances = component.instances ?? 1;
+    if (placements.length !== expectedInstances) errors.push(`${component.id} has ${placements.length} instances instead of ${expectedInstances} in chamber ${chamber.anchor}`);
+    if (placements.some((placement, index) => placement.instance !== index || placement.instances !== expectedInstances)) errors.push(`${component.id} has inconsistent instance metadata in chamber ${chamber.anchor}`);
+    if (component.instances === 2) {
+      const candidates = chamber.mountingRooms.flatMap(room => backgroundCandidates(level, component, room, level.structuralTiles));
+      const expected = backgroundOptions(component, chamber, candidates)[0] ?? [];
+      if (placements.some((placement, index) => placement.x !== expected[index]?.x || placement.y !== expected[index]?.y)) errors.push(`${component.id} is not evenly spaced in chamber ${chamber.anchor}`);
+    }
+  }
+
   const placementsByRoom = new Map();
   for (const placement of level.furniturePlacements ?? []) {
     const component = FURNITURE_BY_ID.get(placement.component);

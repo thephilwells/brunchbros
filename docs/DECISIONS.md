@@ -4,6 +4,28 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-10-05 — Background fixtures are selected per visual chamber
+
+Menu boards, mirrors, clocks, sconces, and serving hatches are placed as
+passable wall fixtures. A single room is one visual chamber; a matched wide-seam
+domino is one chamber spanning both room cells. Each eligible chamber receives
+one composition, placed wholly inside its floor-bearing room cell or cells.
+Every fixture bottom is two tiles above the chamber floor; vertical dominoes use
+the lower cell's floor rather than their removed internal boundary. A sconce
+composition is a symmetric pair at the one-third and two-thirds wall positions,
+and is ineligible when either exact mounting point is obstructed.
+
+Critical-route reservation alone does not block cosmetic wall art, but ports,
+wide seams, spawn and exit envelopes, and ledge-catch rooms do. Selection uses
+an independent chamber-local seed mix, so it cannot change topology or advance
+the structural PRNG. Floor furniture yields when a wall fixture already owns a
+candidate cell.
+
+**Status:** Implemented and exhaustively validated in the host generator, JSON,
+TMX, and HTML gallery. Gallery review and the RGBDS runtime port remain pending.
+
+---
+
 ## 2026-10-04 — Orient dining chairs toward the nearest wall
 
 Floor-placed dining chairs choose between authored left- and right-facing tile

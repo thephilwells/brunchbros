@@ -2043,5 +2043,5 @@ INCLUDE "build/dining_room_furniture.inc"
 
 IF DEF(FURNITURE_PARITY_TEST)
 FurnitureParityMap:
-	INCBIN "build/seeded_level.tilemap"
+	INCBIN "build/runtime_level_parity.tilemap"
 ENDC
