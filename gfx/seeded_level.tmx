@@ -9,32 +9,32 @@
 7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,7,
-7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
-7,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+7,77,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
+7,78,79,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
 9,16,16,14,18,18,18,8,16,17,17,16,16,14,18,18,18,8,16,16,16,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,15,
 9,13,13,11,18,18,18,5,13,13,13,13,13,11,18,18,18,5,13,17,17,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,15,
 7,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,9,15,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,4,12,12,17,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,7,
-7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
-7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,7,
+7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,52,53,53,54,18,18,18,18,9,15,77,18,18,18,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,9,15,55,18,18,56,51,51,51,18,9,15,78,79,18,18,51,51,51,18,7,
 9,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,17,17,16,16,16,16,16,16,16,16,17,17,16,16,14,18,18,18,8,16,15,
 9,13,13,11,18,18,18,5,13,13,13,13,13,13,13,13,13,13,13,17,17,13,13,13,13,13,13,13,13,13,13,13,13,11,18,18,18,5,13,15,
 7,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,5,11,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
-7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
-7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,57,18,18,18,18,7,
+7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,58,59,51,51,51,18,7,
 9,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,15,
 9,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,13,13,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,15,
 7,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,51,51,51,18,9,15,26,27,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,7,
-7,18,18,18,18,18,18,18,18,9,15,28,29,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
-7,18,18,18,18,51,51,51,18,9,15,30,31,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+7,77,18,18,18,18,18,18,18,9,15,28,29,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,57,18,18,18,18,7,
+7,78,79,18,18,51,51,51,18,9,15,30,31,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,58,59,51,51,51,18,7,
 5,12,12,12,12,12,12,12,12,13,13,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,11
   </data>
  </layer>
@@ -58,5 +58,58 @@
   <object id="17" name="e_ordinary_0" type="room_template" x="80" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="2"/><property name="wide_ports" type="int" value="2"/><property name="traversal_class" value="ordinary"/><property name="seams" value='{"west":"closed","east":"wide","north":"closed","south":"closed"}'/></properties></object>
   <object id="18" name="wen_ordinary_0" type="room_template" x="160" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="7"/><property name="wide_ports" type="int" value="1"/><property name="traversal_class" value="ordinary"/><property name="seams" value='{"west":"wide","east":"standard","north":"standard","south":"closed"}'/></properties></object>
   <object id="19" name="w_ordinary_0" type="room_template" x="240" y="192" width="80" height="64"><properties><property name="port_mask" type="int" value="1"/><property name="wide_ports" type="int" value="0"/><property name="traversal_class" value="ordinary"/><property name="seams" value='{"west":"standard","east":"closed","north":"closed","south":"closed"}'/></properties></object>
+ </objectgroup>
+ <objectgroup id="3" name="Placement Reservations" visible="0">
+  <object id="20" name="critical_route-3" type="placement_reservation" x="240" y="0" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="3"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="21" name="critical_route-2" type="placement_reservation" x="160" y="0" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="2"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="22" name="critical_route-1" type="placement_reservation" x="80" y="0" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="1"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="23" name="critical_route-5" type="placement_reservation" x="80" y="64" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="5"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="24" name="critical_route-4" type="placement_reservation" x="0" y="64" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="4"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="25" name="critical_route-8" type="placement_reservation" x="0" y="128" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="8"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="26" name="critical_route-9" type="placement_reservation" x="80" y="128" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="9"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="27" name="critical_route-10" type="placement_reservation" x="160" y="128" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="10"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="28" name="critical_route-14" type="placement_reservation" x="160" y="192" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="14"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="29" name="critical_route-13" type="placement_reservation" x="80" y="192" width="80" height="64"><properties><property name="kind" value="critical_route"/><property name="room" type="int" value="13"/><property name="flag" type="int" value="1"/></properties></object>
+  <object id="30" name="port-0" type="placement_reservation" x="24" y="32" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="0"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="31" name="wide_seam-1" type="placement_reservation" x="136" y="0" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="1"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="32" name="port-1" type="placement_reservation" x="104" y="32" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="1"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="33" name="wide_seam-2" type="placement_reservation" x="160" y="0" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="2"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="34" name="port-2" type="placement_reservation" x="216" y="24" width="24" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="2"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="35" name="port-2" type="placement_reservation" x="184" y="32" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="2"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="36" name="port-3" type="placement_reservation" x="240" y="24" width="24" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="3"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="37" name="wide_seam-4" type="placement_reservation" x="56" y="64" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="4"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="38" name="port-4" type="placement_reservation" x="24" y="64" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="4"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="39" name="port-4" type="placement_reservation" x="24" y="96" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="4"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="40" name="wide_seam-5" type="placement_reservation" x="80" y="64" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="5"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="41" name="port-5" type="placement_reservation" x="104" y="64" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="5"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="42" name="ledge_catch-5" type="placement_reservation" x="80" y="64" width="80" height="64"><properties><property name="kind" value="ledge_catch"/><property name="room" type="int" value="5"/><property name="flag" type="int" value="32"/></properties></object>
+  <object id="43" name="port-6" type="placement_reservation" x="184" y="64" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="6"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="44" name="port-7" type="placement_reservation" x="264" y="96" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="7"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="45" name="wide_seam-8" type="placement_reservation" x="56" y="128" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="8"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="46" name="port-8" type="placement_reservation" x="24" y="128" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="8"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="47" name="port-8" type="placement_reservation" x="24" y="160" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="8"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="48" name="wide_seam-9" type="placement_reservation" x="80" y="128" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="9"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="49" name="port-9" type="placement_reservation" x="136" y="152" width="24" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="9"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="50" name="port-10" type="placement_reservation" x="160" y="152" width="24" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="10"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="51" name="wide_seam-10" type="placement_reservation" x="216" y="128" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="10"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="52" name="port-10" type="placement_reservation" x="184" y="160" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="10"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="53" name="wide_seam-11" type="placement_reservation" x="240" y="128" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="11"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="54" name="port-11" type="placement_reservation" x="264" y="128" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="11"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="55" name="port-12" type="placement_reservation" x="24" y="192" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="12"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="56" name="wide_seam-13" type="placement_reservation" x="136" y="192" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="13"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="57" name="wide_seam-14" type="placement_reservation" x="160" y="192" width="24" height="64"><properties><property name="kind" value="wide_seam"/><property name="room" type="int" value="14"/><property name="flag" type="int" value="4"/></properties></object>
+  <object id="58" name="port-14" type="placement_reservation" x="216" y="216" width="24" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="14"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="59" name="port-14" type="placement_reservation" x="184" y="192" width="40" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="14"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="60" name="port-15" type="placement_reservation" x="240" y="216" width="24" height="32"><properties><property name="kind" value="port"/><property name="room" type="int" value="15"/><property name="flag" type="int" value="2"/></properties></object>
+  <object id="61" name="spawn-3" type="placement_reservation" x="240" y="0" width="40" height="64"><properties><property name="kind" value="spawn"/><property name="room" type="int" value="3"/><property name="flag" type="int" value="8"/></properties></object>
+  <object id="62" name="exit-13" type="placement_reservation" x="80" y="192" width="48" height="64"><properties><property name="kind" value="exit"/><property name="room" type="int" value="13"/><property name="flag" type="int" value="16"/></properties></object>
+ </objectgroup>
+ <objectgroup id="4" name="Furniture Placements">
+  <object id="63" name="dining_chair-0" type="furniture_placement" x="8" y="40" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_left"/><property name="room" type="int" value="0"/><property name="floor_y" type="int" value="7"/></properties></object>
+  <object id="64" name="dining_table-6" type="furniture_placement" x="168" y="104" width="32" height="16"><properties><property name="component" value="dining_table"/><property name="orientation" value="default"/><property name="room" type="int" value="6"/><property name="floor_y" type="int" value="15"/></properties></object>
+  <object id="65" name="dining_chair-7" type="furniture_placement" x="248" y="104" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_left"/><property name="room" type="int" value="7"/><property name="floor_y" type="int" value="15"/></properties></object>
+  <object id="66" name="dining_chair-11" type="furniture_placement" x="264" y="168" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_right"/><property name="room" type="int" value="11"/><property name="floor_y" type="int" value="23"/></properties></object>
+  <object id="67" name="dining_chair-12" type="furniture_placement" x="8" y="232" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_left"/><property name="room" type="int" value="12"/><property name="floor_y" type="int" value="31"/></properties></object>
+  <object id="68" name="dining_chair-15" type="furniture_placement" x="264" y="232" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_right"/><property name="room" type="int" value="15"/><property name="floor_y" type="int" value="31"/></properties></object>
  </objectgroup>
 </map>

@@ -4,6 +4,18 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-10-04 — Orient dining chairs toward the nearest wall
+
+Floor-placed dining chairs choose between authored left- and right-facing tile
+layouts so the chair back faces the nearest full-solid wall along its seat row.
+Ties face left. The mirrored layout uses separate tile IDs because the DMG
+background map cannot flip individual tiles.
+
+**Status:** Implemented in host composition, TMX/JSON export, and RGBDS runtime;
+both orientations are covered by exhaustive host validation.
+
+---
+
 ## 2026-10-04 — Optional-room furniture uses an independent deterministic selection
 
 **Decision:** Enumerate floor-anchored table, chair, booth, and counter
@@ -17,9 +29,10 @@ critical route or coupling later dressing changes to topology generation.
 Keeping the random streams independent preserves a seed's structural layout
 while furniture rules are tuned.
 
-**Status:** Implemented in host composition and exported to JSON, TMX, and the
-HTML gallery. All 65,536 16-bit seeds pass composition validation; runtime
-generation remains pending. See `specs/dining-room-composition.md`.
+**Status:** Implemented in host composition and the RGBDS runtime. All 65,536
+16-bit seeds pass host composition validation; fixed-seed SameBoy ROMs match
+the complete host tilemap for seeds 0, 1, `$1234`, and `$FFFF`. See
+`specs/dining-room-composition.md`.
 
 ---
 
@@ -37,7 +50,7 @@ be tuned without reopening the generator's core movement proof.
 
 **Status:** The four accepted furniture groups have a verified machine-readable
 manifest. Conservative host-side reservations, seeded optional-room placement,
-and HTML/TMX gallery overlays are implemented. See
+HTML/TMX gallery overlays, and matching runtime placement are implemented. See
 `specs/dining-room-composition.md`.
 
 ---

@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { generateLevel, levelToTmx } from './lib/level-generation.mjs';
+import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
 let seed = 0;
 if (process.argv.length > 2) {
@@ -8,8 +9,8 @@ if (process.argv.length > 2) {
 }
 if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff) throw new Error('Seed must be an integer from 0 through 65535');
 
-const level = generateLevel(seed);
-if (!level.validation.valid) throw new Error(level.validation.errors.join('\n'));
+const level = composeDiningRoom(generateLevel(seed));
+if (!level.validation.valid || !level.compositionValidation.valid) throw new Error([...level.validation.errors, ...level.compositionValidation.errors].join('\n'));
 const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
 if (templateSet.templates.some((template, index) => template.portMask !== index + 1)) throw new Error('Runtime room templates must remain ordered by port mask');
 const semanticValues = { '.': 0, '#': 1, '=': 2 };

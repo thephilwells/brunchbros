@@ -496,7 +496,7 @@ export function levelToTmx(level, tilesetSource) {
   const reservationObjects = (level.placementReservationRegions ?? []).map((region, index) =>
     `  <object id="${20 + index}" name="${region.kind}-${region.room}" type="placement_reservation" x="${region.x * 8}" y="${region.y * 8}" width="${region.width * 8}" height="${region.height * 8}"><properties><property name="kind" value="${region.kind}"/><property name="room" type="int" value="${region.room}"/><property name="flag" type="int" value="${region.flag}"/></properties></object>`);
   const furnitureObjects = (level.furniturePlacements ?? []).map((placement, index) =>
-    `  <object id="${20 + reservationObjects.length + index}" name="${placement.component}-${placement.room}" type="furniture_placement" x="${placement.x * 8}" y="${placement.y * 8}" width="${placement.width * 8}" height="${placement.height * 8}"><properties><property name="component" value="${placement.component}"/><property name="room" type="int" value="${placement.room}"/><property name="floor_y" type="int" value="${placement.floorY}"/></properties></object>`);
+    `  <object id="${20 + reservationObjects.length + index}" name="${placement.component}-${placement.room}" type="furniture_placement" x="${placement.x * 8}" y="${placement.y * 8}" width="${placement.width * 8}" height="${placement.height * 8}"><properties><property name="component" value="${placement.component}"/><property name="orientation" value="${placement.orientation}"/><property name="room" type="int" value="${placement.room}"/><property name="floor_y" type="int" value="${placement.floorY}"/></properties></object>`);
   const seed = level.seed ?? 'topology';
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

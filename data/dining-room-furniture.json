@@ -20,9 +20,21 @@
       "height": 2,
       "floorAnchored": true,
       "oneWayRows": [1],
-      "tiles": [
-        [17, 56],
-        [57, 58]
+      "orientations": [
+        {
+          "id": "back_right",
+          "tiles": [
+            [17, 56],
+            [57, 58]
+          ]
+        },
+        {
+          "id": "back_left",
+          "tiles": [
+            [76, 17],
+            [77, 78]
+          ]
+        }
       ]
     },
     {

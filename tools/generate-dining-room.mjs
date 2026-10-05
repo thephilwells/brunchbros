@@ -4,6 +4,7 @@ import { deflateSync, inflateSync } from 'node:zlib';
 const width = 128;
 const height = 64;
 const shades = [255, 170, 85, 0];
+const furnitureManifest = JSON.parse(readFileSync('data/dining-room-furniture.json', 'utf8'));
 const pilot = readFileSync('gfx/structural_pilot.png');
 const compressed = [];
 for (let offset = 8; offset < pilot.length;) {
@@ -27,6 +28,18 @@ function paint(id, x, y, shade) {
 
 function fill(id, shade) {
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) paint(id, x, y, shade);
+}
+
+function mirrorTile(source, destination) {
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    const sourceX = (source % 16) * 8 + 7 - x;
+    const sourceY = Math.floor(source / 16) * 8 + y;
+    const destinationX = (destination % 16) * 8 + x;
+    const destinationY = Math.floor(destination / 16) * 8 + y;
+    const sourceOffset = (sourceY * width + sourceX) * 4;
+    const destinationOffset = (destinationY * width + destinationX) * 4;
+    pixels.copy(pixels, destinationOffset, sourceOffset, sourceOffset + 4);
+  }
 }
 
 fill(17, 1);
@@ -180,6 +193,9 @@ for (const [id, center] of [[57, 2], [58, 5]]) {
   }
   for (let x = center - 1; x <= center + 2; x++) paint(id, x, 7, 3);
 }
+mirrorTile(56, 76);
+mirrorTile(58, 77);
+mirrorTile(57, 78);
 
 for (let id = 59; id <= 62; id++) fill(id, 2);
 for (let id = 59; id <= 61; id++) {
@@ -358,6 +374,11 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     properties.push('<property name="component" value="serving_hatch"/>');
     properties.push(`<property name="part_x" type="int" value="${(id - 64) % 4}"/>`);
     properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 64) / 4)}"/>`);
+  } else if (id >= 76 && id <= 78) {
+    name = ['chair_back_left', 'chair_mirrored_seat_left', 'chair_mirrored_seat_right'][id - 76];
+    role = 'fixture';
+    collision = id === 76 ? 'empty' : 'one_way';
+    properties.push('<property name="component" value="dining_chair"/>');
   } else if (id === 80) {
     name = 'dining_wallpaper_motif';
     role = 'rear';
@@ -388,6 +409,20 @@ writeFileSync('gfx/dining_room.tsx', [
   '',
 ].join('\n'));
 writeFileSync('build/dining_room_collision.bin', collisionTypes);
+const furnitureLayouts = furnitureManifest.components.map(component => component.orientations ?? [{ id: 'default', tiles: component.tiles }]);
+writeFileSync('build/dining_room_furniture.inc', [
+  `DiningFurnitureWidths: db ${furnitureManifest.components.map(component => component.width).join(', ')}`,
+  `DiningFurnitureHeights: db ${furnitureManifest.components.map(component => component.height).join(', ')}`,
+  'DiningFurnitureTilePointers:',
+  ...furnitureManifest.components.map((component, index) => `\tdw DiningFurnitureTiles${index}`),
+  'DiningFurnitureAlternateTilePointers:',
+  ...furnitureLayouts.map((layouts, index) => `\tdw ${layouts[1] ? `DiningFurnitureTiles${index}Alternate` : 0}`),
+  ...furnitureLayouts.flatMap((layouts, index) => layouts.flatMap((layout, layoutIndex) => [
+    `DiningFurnitureTiles${index}${layoutIndex ? 'Alternate' : ''}:`,
+    `\tdb ${layout.tiles.flat().join(', ')}`,
+  ])),
+  '',
+].join('\n'));
 
 const mapWidth = 40;
 const mapHeight = 32;

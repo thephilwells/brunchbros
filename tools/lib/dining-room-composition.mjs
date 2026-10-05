@@ -14,6 +14,30 @@ import {
 const FURNITURE_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-furniture.json', import.meta.url), 'utf8'));
 const FURNITURE_BY_ID = new Map(FURNITURE_MANIFEST.components.map(component => [component.id, component]));
 
+function componentLayouts(component) {
+  return component.orientations ?? [{ id: 'default', tiles: component.tiles }];
+}
+
+function chooseFurnitureLayout(component, position, structuralTiles) {
+  const layouts = componentLayouts(component);
+  if (component.id !== 'dining_chair') return layouts[0];
+  const row = position.y + component.height - 1;
+  let leftDistance = 0;
+  for (let x = position.x - 1; x >= 0; x--) {
+    const tile = structuralTiles[row * LEVEL_WIDTH + x];
+    if (tile >= 1 && tile <= 16) break;
+    leftDistance++;
+  }
+  let rightDistance = 0;
+  for (let x = position.x + component.width; x < LEVEL_WIDTH; x++) {
+    const tile = structuralTiles[row * LEVEL_WIDTH + x];
+    if (tile >= 1 && tile <= 16) break;
+    rightDistance++;
+  }
+  const orientation = leftDistance <= rightDistance ? 'back_left' : 'back_right';
+  return layouts.find(layout => layout.id === orientation);
+}
+
 export const RESERVATION_CRITICAL_ROUTE = 0x01;
 export const RESERVATION_PORT = 0x02;
 export const RESERVATION_WIDE_SEAM = 0x04;
@@ -140,9 +164,11 @@ export function addDiningRoomFurniture(level) {
     if (!candidatesByComponent.length) continue;
     const group = candidatesByComponent[mixSelection(level.seed, room, 0x41c6) % candidatesByComponent.length];
     const position = group.candidates[mixSelection(level.seed, room, 0x7f4a) % group.candidates.length];
+    const layout = chooseFurnitureLayout(group.component, position, structuralTiles);
     const placement = {
       room,
       component: group.component.id,
+      orientation: layout.id,
       x: position.x,
       y: position.y,
       width: group.component.width,
@@ -152,7 +178,7 @@ export function addDiningRoomFurniture(level) {
     furniturePlacements.push(placement);
     for (let componentY = 0; componentY < group.component.height; componentY++) {
       for (let componentX = 0; componentX < group.component.width; componentX++) {
-        tiles[(position.y + componentY) * LEVEL_WIDTH + position.x + componentX] = group.component.tiles[componentY][componentX];
+        tiles[(position.y + componentY) * LEVEL_WIDTH + position.x + componentX] = layout.tiles[componentY][componentX];
       }
     }
   }
@@ -186,6 +212,13 @@ export function validateDiningRoomComposition(level) {
       errors.push(`room ${placement.room} uses unknown furniture ${placement.component}`);
       continue;
     }
+    const layout = componentLayouts(component).find(candidate => candidate.id === placement.orientation);
+    if (!layout) {
+      errors.push(`${placement.component} has unknown orientation ${placement.orientation}`);
+      continue;
+    }
+    const expectedLayout = chooseFurnitureLayout(component, placement, level.structuralTiles);
+    if (layout.id !== expectedLayout.id) errors.push(`${placement.component} faces away from its nearest wall in room ${placement.room}`);
     if (level.criticalRoute.includes(placement.room)) errors.push(`critical-route room ${placement.room} contains furniture`);
     if (level.roomTraversalClasses[placement.room] === TRAVERSAL_LEDGE_CATCH) errors.push(`ledge-catch room ${placement.room} contains furniture`);
     if (placementsByRoom.has(placement.room)) errors.push(`room ${placement.room} contains multiple furniture groups`);
@@ -208,7 +241,7 @@ export function validateDiningRoomComposition(level) {
         occupied.add(index);
         if (level.placementReservationMask[index]) errors.push(`${placement.component} occupies reserved cell ${mapX},${mapY}`);
         if (level.structuralTiles[index] !== FURNITURE_MANIFEST.backgroundTile) errors.push(`${placement.component} replaces structural tile ${mapX},${mapY}`);
-        if (level.tiles[index] !== component.tiles[y][x]) errors.push(`${placement.component} has the wrong tile at ${mapX},${mapY}`);
+        if (level.tiles[index] !== layout.tiles[y][x]) errors.push(`${placement.component} has the wrong tile at ${mapX},${mapY}`);
       }
     }
   }

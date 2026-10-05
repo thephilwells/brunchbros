@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { generateLevel } from './lib/level-generation.mjs';
+import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
 const generated = JSON.parse(readFileSync('build/seeded_level.json', 'utf8'));
-const expected = generateLevel(generated.seed);
+const expected = composeDiningRoom(generateLevel(generated.seed));
 const tilemap = readFileSync('build/seeded_level.tilemap');
 const runtimeTemplates = readFileSync('build/room_templates.bin');
 const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
@@ -41,6 +42,7 @@ for (let index = 1; index < expected.criticalRoute.length; index++) {
 assert.equal(expected.roomTraversalClasses.filter(value => value === 'ledge_catch').length, 1);
 assert.match(tmx, /name="wide_ports" type="int" value="[1-8]"/);
 assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
+assert.match(tmx, /name="Furniture Placements"/);
 
 const at = (x, y) => expected.tiles[y * 40 + x];
 const spawnFloorY = expected.spawnPosition.y / 8;

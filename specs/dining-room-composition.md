@@ -1,7 +1,7 @@
 # Dining-room composition
 
 Status: **furniture manifest, placement reservations, and deterministic
-host-side furniture placement implemented; runtime placement pending**.
+host/runtime furniture placement implemented; production playtest pending**.
 
 ## Purpose
 
@@ -43,8 +43,10 @@ rows, and floor anchoring without duplicating tile properties.
 
 Every declared landing row contains only `one_way` tiles. Other rows contain
 only passable tiles. The plain rear tile may fill intentional holes inside a
-component. Furniture is never mirrored or clipped during placement; a future
-authored orientation is a separate manifest component.
+component. Furniture is never clipped during placement. Chairs have authored
+left- and right-facing layouts; their backs face the nearest full-solid wall
+along the seat row, with ties facing left. This uses distinct mirrored tile art
+because the DMG background map has no per-tile horizontal-flip attribute.
 
 ## Placement reservations
 
@@ -66,9 +68,8 @@ authored orientation is a separate manifest component.
   explicitly owns both matched cells.
 
 The host preview renders reservation overlays separately from terrain and
-furniture so accepted placements can be reviewed in the gallery. Runtime
-placement follows only after the host output is accepted across a multi-seed
-gallery.
+furniture so accepted placements can be reviewed in the gallery. The accepted
+selection rules are now mirrored by the runtime generator.
 
 The first implementation reserves every cell in a critical-route room. This is
 an intentional conservative superset of its exact landing and swept-space
@@ -107,5 +108,12 @@ requires a placement in every eligible room. The exhaustive host check covers
 all 65,536 16-bit seeds. Density and component weights remain tuning data and
 are not part of this correctness pass.
 
-Wall fixtures, rear motifs, encounters, loot eggs, and movable objects are out
-of scope until floor-furniture reservations and gallery output are accepted.
+The runtime derives its component tables from the same manifest. It evaluates
+the equivalent optional-room floor candidates without allocating a second
+1,280-byte reservation map, preserves the structural PRNG state, and writes the
+selected component tiles after structural conversion and exit placement.
+Fixed-seed SameBoy parity ROMs compare every tile against the host export before
+entering gameplay; seeds 0, 1, `$1234`, and `$FFFF` are accepted.
+
+Wall fixtures, rear motifs, encounters, loot eggs, and movable objects remain
+separate composition passes beyond this floor-furniture implementation.

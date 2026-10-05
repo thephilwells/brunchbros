@@ -3,6 +3,9 @@ DEF PORT_EAST EQU $02
 DEF PORT_NORTH EQU $04
 DEF PORT_SOUTH EQU $08
 DEF TRAVERSAL_LEDGE_CATCH EQU 1
+IF DEF(FURNITURE_PARITY_TEST)
+INCLUDE "build/seeded_level.inc"
+ENDC
 
 SECTION "Level Generation State", WRAM0
 SelectedSeed: dw
@@ -36,9 +39,43 @@ GenerationRow: db
 GenerationIndex: db
 GenerationTarget: db
 GenerationTargetRoom: db
+FurnitureCandidateCounts: ds 4
+FurnitureEligibleCount: db
+FurnitureCandidateCount: db
+FurnitureComponent: db
+FurnitureLocalX: db
+FurnitureTopY: db
+FurnitureWidth: db
+FurnitureHeight: db
+FurnitureModulo: db
+FurnitureSavedRandomState: dw
+FurnitureWorldX: db
+FurnitureWorldY: db
+FurnitureLeftDistance: db
+FurnitureRightDistance: db
 
 SECTION "Level Generation", ROM0
 GenerateLevel:
+IF DEF(FURNITURE_PARITY_TEST)
+	ld a, LOW(GENERATED_LEVEL_SEED)
+	ld [SelectedSeed], a
+	ld b, a
+	ld a, HIGH(GENERATED_LEVEL_SEED)
+	ld [SelectedSeed + 1], a
+	or a, b
+	jr nz, .paritySeedReady
+	ld a, $e1
+	ld [GenerationRandomState], a
+	ld a, $ac
+	ld [GenerationRandomState + 1], a
+	jr .parityStateReady
+.paritySeedReady
+	ld a, [SelectedSeed]
+	ld [GenerationRandomState], a
+	ld a, [SelectedSeed + 1]
+	ld [GenerationRandomState + 1], a
+.parityStateReady
+ENDC
 	call GenerateRouteColumns
 	call BuildCriticalRoute
 	call ConnectRemainingRooms
@@ -48,6 +85,10 @@ GenerateLevel:
 	call ApplyProtectedEndpoints
 	call ConvertSemanticMap
 	call PlaceExitDoor
+	call PlaceDiningRoomFurniture
+IF DEF(FURNITURE_PARITY_TEST)
+	call VerifyFurnitureParity
+ENDC
 	ret
 
 GenerateRouteColumns:
@@ -1131,10 +1172,11 @@ ApplyLedgeCatchRoom:
 	ld d, 0
 	ld hl, RoomWidePorts
 	add hl, de
-	bit 0, [hl]
+	ld b, [hl]
 	ld a, [GenerationRoom]
 	call GetRoomDestination
 	ld de, 121
+	bit 0, b
 	jr z, .ledgeOffsetReady
 	ld de, 126
 .ledgeOffsetReady
@@ -1467,6 +1509,500 @@ PlaceExitDoor:
 	jr nz, .rowLoop
 	ret
 
+PlaceDiningRoomFurniture:
+	xor a
+	ld [GenerationRoom], a
+.roomLoop
+	ld a, [GenerationRoom]
+	cp a, 16
+	ret z
+	call IsFurnitureRoomEligible
+	jp nc, .nextRoom
+	xor a
+	ld [FurnitureEligibleCount], a
+	ld [FurnitureComponent], a
+.countComponents
+	call LoadFurnitureDimensions
+	call CountFurnitureCandidates
+	push af
+	ld b, a
+	ld a, [FurnitureComponent]
+	ld e, a
+	ld d, 0
+	ld hl, FurnitureCandidateCounts
+	add hl, de
+	ld [hl], b
+	pop af
+	and a
+	jr z, .nextComponent
+	ld hl, FurnitureEligibleCount
+	inc [hl]
+.nextComponent
+	ld a, [FurnitureComponent]
+	inc a
+	ld [FurnitureComponent], a
+	cp a, 4
+	jr c, .countComponents
+	ld a, [FurnitureEligibleCount]
+	and a
+	jp z, .nextRoom
+	call FurnitureGroupRandomModulo
+	ld [GenerationTarget], a
+	xor a
+	ld [FurnitureComponent], a
+.findComponent
+	ld e, a
+	ld d, 0
+	ld hl, FurnitureCandidateCounts
+	add hl, de
+	ld a, [hl]
+	and a
+	jr z, .skipComponent
+	ld a, [GenerationTarget]
+	and a
+	jr z, .componentReady
+	dec a
+	ld [GenerationTarget], a
+.skipComponent
+	ld a, [FurnitureComponent]
+	inc a
+	ld [FurnitureComponent], a
+	jr .findComponent
+.componentReady
+	ld a, [FurnitureComponent]
+	ld e, a
+	ld d, 0
+	ld hl, FurnitureCandidateCounts
+	add hl, de
+	ld a, [hl]
+	call FurniturePositionRandomModulo
+	ld [GenerationTarget], a
+	call LoadFurnitureDimensions
+	xor a
+	ld [FurnitureLocalX], a
+.findPosition
+	call IsFurnitureCandidate
+	jr nc, .advancePosition
+	ld a, [GenerationTarget]
+	and a
+	jr z, .place
+	dec a
+	ld [GenerationTarget], a
+.advancePosition
+	ld hl, FurnitureLocalX
+	inc [hl]
+	jr .findPosition
+.place
+	call PlaceFurnitureComponent
+.nextRoom
+	ld hl, GenerationRoom
+	inc [hl]
+	jp .roomLoop
+
+IsFurnitureRoomEligible:
+	ld b, a
+	ld hl, CriticalRoute
+	ld a, [CriticalRouteLength]
+	ld c, a
+.criticalLoop
+	ld a, [hl+]
+	cp a, b
+	jr z, .ineligible
+	dec c
+	jr nz, .criticalLoop
+	ld e, b
+	ld d, 0
+	ld hl, RoomTraversalClasses
+	add hl, de
+	ld a, [hl]
+	and a
+	jr nz, .ineligible
+	scf
+	ret
+.ineligible
+	and a
+	ret
+
+LoadFurnitureDimensions:
+	ld a, [FurnitureComponent]
+	ld e, a
+	ld d, 0
+	ld hl, DiningFurnitureWidths
+	add hl, de
+	ld a, [hl]
+	ld [FurnitureWidth], a
+	ld hl, DiningFurnitureHeights
+	add hl, de
+	ld a, [hl]
+	ld [FurnitureHeight], a
+	ld b, a
+	ld a, 7
+	sub a, b
+	ld [FurnitureTopY], a
+	ret
+
+CountFurnitureCandidates:
+	xor a
+	ld [FurnitureCandidateCount], a
+	ld [FurnitureLocalX], a
+.loop
+	call IsFurnitureCandidate
+	jr nc, .next
+	ld hl, FurnitureCandidateCount
+	inc [hl]
+.next
+	ld a, [FurnitureWidth]
+	ld b, a
+	ld a, 10
+	sub a, b
+	ld b, a
+	ld a, [FurnitureLocalX]
+	cp a, b
+	jr z, .done
+	inc a
+	ld [FurnitureLocalX], a
+	jr .loop
+.done
+	ld a, [FurnitureCandidateCount]
+	ret
+
+IsFurnitureCandidate:
+	call IsFurnitureFootprintReserved
+	jr c, .invalid
+	call GetFurnitureTopPointer
+	ld a, 40
+	ld e, a
+	ld a, [FurnitureWidth]
+	ld c, a
+	ld a, e
+	sub a, c
+	ld e, a
+	ld d, 0
+	ld a, [FurnitureHeight]
+	ld b, a
+.emptyRow
+	ld a, [FurnitureWidth]
+	ld c, a
+.emptyCell
+	ld a, [hl+]
+	cp a, 17
+	jr nz, .invalid
+	dec c
+	jr nz, .emptyCell
+	add hl, de
+	dec b
+	jr nz, .emptyRow
+	ld a, [GenerationRoom]
+	call GetRoomDestination
+	ld de, 280
+	add hl, de
+	ld a, [FurnitureLocalX]
+	ld e, a
+	ld d, 0
+	add hl, de
+	ld a, [FurnitureWidth]
+	ld b, a
+.supportCell
+	ld a, [hl+]
+	cp a, 1
+	jr c, .invalid
+	cp a, 17
+	jr nc, .invalid
+	dec b
+	jr nz, .supportCell
+	scf
+	ret
+.invalid
+	and a
+	ret
+
+IsFurnitureFootprintReserved:
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomPorts
+	add hl, de
+	ld b, [hl]
+	bit 0, b
+	jr z, .east
+	ld a, [FurnitureLocalX]
+	cp a, 3
+	jr c, .reserved
+.east
+	bit 1, b
+	jr z, .south
+	ld a, [FurnitureLocalX]
+	ld c, a
+	ld a, [FurnitureWidth]
+	add a, c
+	dec a
+	cp a, 7
+	jr nc, .reserved
+.south
+	bit 3, b
+	jr z, .clear
+	ld hl, RoomWidePorts
+	add hl, de
+	bit 3, [hl]
+	jr nz, .reserved
+	ld a, [FurnitureLocalX]
+	ld c, a
+	ld a, [FurnitureWidth]
+	add a, c
+	dec a
+	cp a, 3
+	jr c, .clear
+	ld a, [FurnitureLocalX]
+	cp a, 8
+	jr nc, .clear
+.reserved
+	scf
+	ret
+.clear
+	and a
+	ret
+
+GetFurnitureTopPointer:
+	ld a, [GenerationRoom]
+	call GetRoomDestination
+	ld a, [FurnitureTopY]
+	ld b, a
+	ld de, 40
+.rowLoop
+	ld a, b
+	and a
+	jr z, .rowsReady
+	add hl, de
+	dec b
+	jr .rowLoop
+.rowsReady
+	ld a, [FurnitureLocalX]
+	ld e, a
+	ld d, 0
+	add hl, de
+	ret
+
+PlaceFurnitureComponent:
+	call GetFurnitureTopPointer
+	push hl
+	ld a, [FurnitureComponent]
+	cp a, 1
+	jr nz, .baseTiles
+	call IsChairBackLeft
+	jr nc, .baseTiles
+	ld hl, DiningFurnitureAlternateTilePointers
+	jr .tilePointer
+.baseTiles
+	ld hl, DiningFurnitureTilePointers
+.tilePointer
+	ld a, [FurnitureComponent]
+	add a, a
+	ld e, a
+	ld d, 0
+	add hl, de
+	ld e, [hl]
+	inc hl
+	ld d, [hl]
+	pop hl
+	ld a, 40
+	ld c, a
+	ld a, [FurnitureWidth]
+	ld b, a
+	ld a, c
+	sub a, b
+	ld c, a
+	ld a, [FurnitureHeight]
+	ld b, a
+.rowLoop
+	push bc
+	ld a, [FurnitureWidth]
+	ld c, a
+.cellLoop
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .cellLoop
+	pop bc
+	ld a, l
+	add a, c
+	ld l, a
+	jr nc, .rowReady
+	inc h
+.rowReady
+	dec b
+	jr nz, .rowLoop
+	ret
+
+IsChairBackLeft:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	ld a, b
+	add a, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [FurnitureLocalX]
+	add a, b
+	ld [FurnitureWorldX], a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld b, a
+	ld a, [FurnitureTopY]
+	add a, b
+	ld b, a
+	ld a, [FurnitureHeight]
+	dec a
+	add a, b
+	ld [FurnitureWorldY], a
+	ld a, [FurnitureWorldX]
+	ld b, a
+	ld a, [FurnitureWorldY]
+	ld c, a
+	call GetMapTilePointer
+	xor a
+	ld [FurnitureLeftDistance], a
+	ld a, [FurnitureWorldX]
+	ld c, a
+.scanLeft
+	ld a, c
+	and a
+	jr z, .scanRightReady
+	dec hl
+	dec c
+	ld a, [hl]
+	cp a, 1
+	jr c, .leftEmpty
+	cp a, 17
+	jr c, .scanRightReady
+.leftEmpty
+	ld a, [FurnitureLeftDistance]
+	inc a
+	ld [FurnitureLeftDistance], a
+	jr .scanLeft
+.scanRightReady
+	xor a
+	ld [FurnitureRightDistance], a
+	ld a, [FurnitureWorldX]
+	ld b, a
+	ld a, [FurnitureWidth]
+	add a, b
+	ld b, a
+	cp a, 40
+	jr nc, .compare
+	ld a, [FurnitureWorldY]
+	ld c, a
+	call GetMapTilePointer
+	ld a, b
+	ld c, a
+.scanRight
+	ld a, [hl+]
+	cp a, 1
+	jr c, .rightEmpty
+	cp a, 17
+	jr c, .compare
+.rightEmpty
+	ld a, [FurnitureRightDistance]
+	inc a
+	ld [FurnitureRightDistance], a
+	inc c
+	ld a, c
+	cp a, 40
+	jr c, .scanRight
+.compare
+	ld a, [FurnitureRightDistance]
+	ld b, a
+	ld a, [FurnitureLeftDistance]
+	cp a, b
+	jr c, .backLeft
+	jr z, .backLeft
+	and a
+	ret
+.backLeft
+	scf
+	ret
+
+FurnitureGroupRandomModulo:
+	ld de, $41c6
+	jr FurnitureSelectionModulo
+
+FurniturePositionRandomModulo:
+	ld de, $7f4a
+
+FurnitureSelectionModulo:
+	ld [FurnitureModulo], a
+	ld a, [GenerationRandomState]
+	ld [FurnitureSavedRandomState], a
+	ld a, [GenerationRandomState + 1]
+	ld [FurnitureSavedRandomState + 1], a
+	ld a, [SelectedSeed]
+	ld b, a
+	ld a, [SelectedSeed + 1]
+	ld c, a
+	ld a, b
+	or a, c
+	jr nz, .seedReady
+	ld b, $e1
+	ld c, $ac
+.seedReady
+	push de
+	ld a, [GenerationRoom]
+	add a, a
+	ld e, a
+	ld d, 0
+	ld hl, FurnitureRoomMix
+	add hl, de
+	pop de
+	ld a, [hl+]
+	xor a, b
+	xor a, e
+	ld [GenerationRandomState], a
+	ld a, [hl]
+	xor a, c
+	xor a, d
+	ld [GenerationRandomState + 1], a
+	call NextGenerationRandom
+	ld a, [FurnitureModulo]
+	ld c, a
+	call GenerationRandomModulo
+	push af
+	ld a, [FurnitureSavedRandomState]
+	ld [GenerationRandomState], a
+	ld a, [FurnitureSavedRandomState + 1]
+	ld [GenerationRandomState + 1], a
+	pop af
+	ret
+
+IF DEF(FURNITURE_PARITY_TEST)
+VerifyFurnitureParity:
+	ld hl, LevelMap
+	ld de, FurnitureParityMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ret
+.failed
+	jr .failed
+ENDC
+
 GetMapTilePointer:
 	ld hl, LevelMap
 	ld de, 40
@@ -1498,3 +2034,14 @@ RoomTemplatePointers:
 	dw RoomTemplateData + 480, RoomTemplateData + 560, RoomTemplateData + 640
 	dw RoomTemplateData + 720, RoomTemplateData + 800, RoomTemplateData + 880
 	dw RoomTemplateData + 960, RoomTemplateData + 1040, RoomTemplateData + 1120
+
+FurnitureRoomMix:
+	dw $9e37, $3c6e, $daa5, $78dc, $1713, $b54a, $5381, $f1b8
+	dw $8fef, $2e26, $cc5d, $6a94, $08cb, $a702, $4539, $e370
+
+INCLUDE "build/dining_room_furniture.inc"
+
+IF DEF(FURNITURE_PARITY_TEST)
+FurnitureParityMap:
+	INCBIN "build/seeded_level.tilemap"
+ENDC

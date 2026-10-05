@@ -138,7 +138,10 @@ manifest. Conservative host-side reservations protect complete critical-route
 rooms plus optional-room ports and seams. Deterministic host placement furnishes
 eligible optional rooms without consuming the structural PRNG, exports its
 choices to JSON/TMX and the HTML gallery, and passes all 65,536 seeds. Gallery
-review is the gate before porting this composition pass to the runtime.
+review is accepted. The RGBDS runtime now produces byte-identical furnished
+maps for four fixed parity seeds spanning zero, ordinary, mixed-bit, and maximum
+16-bit values. Random-seed SameBoy playtesting is the remaining acceptance gate
+before expanding dining-room dressing beyond floor furniture.
 
 ## Completed
 
