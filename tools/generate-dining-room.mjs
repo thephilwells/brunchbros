@@ -5,6 +5,7 @@ const width = 128;
 const height = 64;
 const shades = [255, 170, 85, 0];
 const furnitureManifest = JSON.parse(readFileSync('data/dining-room-furniture.json', 'utf8'));
+const backgroundManifest = JSON.parse(readFileSync('data/dining-room-background.json', 'utf8'));
 const pilot = readFileSync('gfx/structural_pilot.png');
 const compressed = [];
 for (let offset = 8; offset < pilot.length;) {
@@ -421,6 +422,18 @@ writeFileSync('build/dining_room_furniture.inc', [
     `DiningFurnitureTiles${index}${layoutIndex ? 'Alternate' : ''}:`,
     `\tdb ${layout.tiles.flat().join(', ')}`,
   ])),
+  '',
+].join('\n'));
+writeFileSync('build/dining_room_background.inc', [
+  `DiningBackgroundWidths: db ${backgroundManifest.components.map(component => component.width).join(', ')}`,
+  `DiningBackgroundHeights: db ${backgroundManifest.components.map(component => component.height).join(', ')}`,
+  `DiningBackgroundTopRows: db ${backgroundManifest.components.map(component => 7 - component.floorClearance - component.height).join(', ')}`,
+  'DiningBackgroundTilePointers:',
+  ...backgroundManifest.components.map((component, index) => `\tdw DiningBackgroundTiles${index}`),
+  ...backgroundManifest.components.flatMap((component, index) => [
+    `DiningBackgroundTiles${index}:`,
+    `\tdb ${component.tiles.flat().join(', ')}`,
+  ]),
   '',
 ].join('\n'));
 

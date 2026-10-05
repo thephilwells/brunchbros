@@ -106,6 +106,8 @@ register, and one xorshift step select the runtime seed before the complete
 level is generated. The generator pairs as many compatible adjacent rooms as
 possible into horizontal and vertical dominoes. The deterministic seed-0
 fixture remains available to the host tools for parity checks and inspection.
+Runtime generation includes floor furniture and floor-aligned wall fixtures,
+with evenly spaced sconce pairs in eligible chambers.
 The focused prototype remains available in `gfx/room_variant_playtest.tmx`.
 Run the VS Code task
 `Run Room Variant Playtest in SameBoy` to test its horizontal and vertical

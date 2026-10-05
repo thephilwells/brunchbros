@@ -21,8 +21,9 @@ an independent chamber-local seed mix, so it cannot change topology or advance
 the structural PRNG. Floor furniture yields when a wall fixture already owns a
 candidate cell.
 
-**Status:** Implemented and exhaustively validated in the host generator, JSON,
-TMX, and HTML gallery. Gallery review and the RGBDS runtime port remain pending.
+**Status:** Host gallery accepted. Implemented in RGBDS with complete-map parity
+passing in SameBoy for seeds 0, 1, 77, `$1234`, and `$FFFF`. Random-seed manual
+playtesting remains the acceptance gate.
 
 ---
 

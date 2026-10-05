@@ -1,10 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { generateLevel, levelToTmx } from './lib/level-generation.mjs';
-import {
-  addDiningRoomFurniture,
-  addDiningRoomPlacementReservations,
-  composeDiningRoom,
-} from './lib/dining-room-composition.mjs';
+import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
 let seed = 0;
 if (process.argv.length > 2) {
@@ -15,7 +11,6 @@ if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff) throw new Error('Seed 
 
 const generatedLevel = generateLevel(seed);
 const level = composeDiningRoom(generatedLevel);
-const runtimeLevel = addDiningRoomFurniture(addDiningRoomPlacementReservations(generatedLevel));
 if (!level.validation.valid || !level.compositionValidation.valid) throw new Error([...level.validation.errors, ...level.compositionValidation.errors].join('\n'));
 const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
 if (templateSet.templates.some((template, index) => template.portMask !== index + 1)) throw new Error('Runtime room templates must remain ordered by port mask');
@@ -23,7 +18,7 @@ const semanticValues = { '.': 0, '#': 1, '=': 2 };
 const runtimeTemplates = templateSet.templates.flatMap(template => template.rows.flatMap(row => [...row].map(cell => semanticValues[cell])));
 
 writeFileSync('build/seeded_level.tilemap', Buffer.from(level.tiles));
-writeFileSync('build/runtime_level_parity.tilemap', Buffer.from(runtimeLevel.tiles));
+writeFileSync('build/runtime_level_parity.tilemap', Buffer.from(level.tiles));
 writeFileSync('build/room_templates.bin', Buffer.from(runtimeTemplates));
 writeFileSync('build/seeded_level.json', `${JSON.stringify(level, null, 2)}\n`);
 writeFileSync('build/seeded_level.inc', [

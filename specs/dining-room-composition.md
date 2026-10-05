@@ -1,7 +1,7 @@
 # Dining-room composition
 
-Status: **host/runtime floor furniture accepted; deterministic host-side
-background fixture placement implemented; gallery review and runtime port pending**.
+Status: **host/runtime floor furniture accepted; background gallery accepted;
+runtime background placement passes fixed-seed parity; manual playtest pending**.
 
 ## Purpose
 
@@ -136,10 +136,12 @@ The runtime derives its component tables from the same manifest. It evaluates
 the equivalent optional-room floor candidates without allocating a second
 1,280-byte reservation map, preserves the structural PRNG state, and writes the
 selected component tiles after structural conversion and exit placement.
-Fixed-seed SameBoy parity ROMs compare every runtime-supported tile against a
-separate furniture-only host export before entering gameplay; seeds 0, 1,
-`$1234`, and `$FFFF` are accepted. The complete decorated host map will become
-the parity target after the background pass is ported to RGBDS.
+Background placement now runs before furniture in the runtime, using manifest
+tables, the same chamber order, mounting lines, paired sconce positions, and
+selection salts as the host. Fixed-seed SameBoy parity ROMs compare all 1,280
+tiles against the complete decorated host export before entering gameplay;
+seeds 0, 1, 77 (paired sconces), `$1234`, and `$FFFF` pass. The normal ROM keeps
+its timing-derived seed and does not embed the parity oracle.
 
 Wallpaper motifs, encounters, loot eggs, and movable objects remain separate
 composition passes beyond this fixture implementation.

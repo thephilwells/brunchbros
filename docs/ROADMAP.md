@@ -144,9 +144,10 @@ maps for four fixed parity seeds spanning zero, ordinary, mixed-bit, and maximum
 before expanding dining-room dressing beyond floor furniture. Host-side wall
 fixture placement now treats each wide-seam domino as one visual chamber and
 places one floor-relative menu board, mirror, clock, serving hatch, or evenly
-spaced sconce pair per eligible chamber. All 65,536 seeds pass; gallery review
-is the gate before its RGBDS runtime port. Sparse wallpaper motifs remain a
-later density pass.
+spaced sconce pair per eligible chamber. All 65,536 host seeds pass and gallery
+review is accepted. The RGBDS port passes complete decorated-map parity in
+SameBoy for seeds 0, 1, 77, `$1234`, and `$FFFF`; random-seed manual review is
+next. Sparse wallpaper motifs remain a later density pass.
 
 ## Completed
 

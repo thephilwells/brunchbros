@@ -39,6 +39,20 @@ GenerationRow: db
 GenerationIndex: db
 GenerationTarget: db
 GenerationTargetRoom: db
+BackgroundCandidateCounts: ds 5
+BackgroundEligibleCount: db
+BackgroundCandidateCount: db
+BackgroundComponent: db
+BackgroundAnchorRoom: db
+BackgroundPlacementRoom: db
+BackgroundLocalX: db
+BackgroundTopY: db
+BackgroundWidth: db
+BackgroundHeight: db
+BackgroundModulo: db
+BackgroundSavedRandomState: dw
+BackgroundRoomPorts: db
+BackgroundRoomWidePorts: db
 FurnitureCandidateCounts: ds 4
 FurnitureEligibleCount: db
 FurnitureCandidateCount: db
@@ -85,6 +99,7 @@ ENDC
 	call ApplyProtectedEndpoints
 	call ConvertSemanticMap
 	call PlaceExitDoor
+	call PlaceDiningRoomBackground
 	call PlaceDiningRoomFurniture
 IF DEF(FURNITURE_PARITY_TEST)
 	call VerifyFurnitureParity
@@ -1509,6 +1524,526 @@ PlaceExitDoor:
 	jr nz, .rowLoop
 	ret
 
+PlaceDiningRoomBackground:
+	xor a
+	ld [GenerationRoom], a
+.roomLoop
+	ld a, [GenerationRoom]
+	cp a, 16
+	ret z
+	call IsBackgroundChamberAnchor
+	jp nc, .nextRoom
+	ld a, [GenerationRoom]
+	ld [BackgroundAnchorRoom], a
+	xor a
+	ld [BackgroundEligibleCount], a
+	ld [BackgroundComponent], a
+.countComponents
+	call LoadBackgroundDimensions
+	call CountBackgroundCandidates
+	push af
+	ld b, a
+	ld a, [BackgroundComponent]
+	ld e, a
+	ld d, 0
+	ld hl, BackgroundCandidateCounts
+	add hl, de
+	ld [hl], b
+	pop af
+	and a
+	jr z, .nextComponent
+	ld hl, BackgroundEligibleCount
+	inc [hl]
+.nextComponent
+	ld a, [BackgroundComponent]
+	inc a
+	ld [BackgroundComponent], a
+	cp a, 5
+	jr c, .countComponents
+	ld a, [BackgroundEligibleCount]
+	and a
+	jp z, .nextRoom
+	call BackgroundGroupRandomModulo
+	ld [GenerationTarget], a
+	xor a
+	ld [BackgroundComponent], a
+.findComponent
+	ld e, a
+	ld d, 0
+	ld hl, BackgroundCandidateCounts
+	add hl, de
+	ld a, [hl]
+	and a
+	jr z, .skipComponent
+	ld a, [GenerationTarget]
+	and a
+	jr z, .componentReady
+	dec a
+	ld [GenerationTarget], a
+.skipComponent
+	ld a, [BackgroundComponent]
+	inc a
+	ld [BackgroundComponent], a
+	jr .findComponent
+.componentReady
+	ld a, [BackgroundComponent]
+	ld e, a
+	ld d, 0
+	ld hl, BackgroundCandidateCounts
+	add hl, de
+	ld a, [hl]
+	call BackgroundPositionRandomModulo
+	ld [GenerationTarget], a
+	call LoadBackgroundDimensions
+	ld a, [BackgroundComponent]
+	cp a, 3
+	jr z, .placeSconces
+	call FindBackgroundPosition
+	call PlaceBackgroundComponent
+	jr .nextRoom
+.placeSconces
+	call SetFirstSconcePosition
+	call PlaceBackgroundComponent
+	call SetSecondSconcePosition
+	call PlaceBackgroundComponent
+.nextRoom
+	ld hl, GenerationRoom
+	inc [hl]
+	jp .roomLoop
+
+IsBackgroundChamberAnchor:
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	ld a, [hl]
+	and a, PORT_WEST | PORT_NORTH
+	ret nz
+	scf
+	ret
+
+LoadBackgroundDimensions:
+	ld a, [BackgroundComponent]
+	ld e, a
+	ld d, 0
+	ld hl, DiningBackgroundWidths
+	add hl, de
+	ld a, [hl]
+	ld [BackgroundWidth], a
+	ld hl, DiningBackgroundHeights
+	add hl, de
+	ld a, [hl]
+	ld [BackgroundHeight], a
+	ld hl, DiningBackgroundTopRows
+	add hl, de
+	ld a, [hl]
+	ld [BackgroundTopY], a
+	ret
+
+CountBackgroundCandidates:
+	ld a, [BackgroundComponent]
+	cp a, 3
+	jr nz, .ordinary
+	call IsSconcePairAvailable
+	ld a, 0
+	ret nc
+	inc a
+	ret
+.ordinary
+	xor a
+	ld [BackgroundCandidateCount], a
+	call SetFirstBackgroundMountingRoom
+.roomLoop
+	ld a, 1
+	ld [BackgroundLocalX], a
+.positionLoop
+	call IsBackgroundCandidate
+	jr nc, .nextPosition
+	ld hl, BackgroundCandidateCount
+	inc [hl]
+.nextPosition
+	ld a, [BackgroundLocalX]
+	inc a
+	ld [BackgroundLocalX], a
+	ld b, a
+	ld a, 10
+	ld c, a
+	ld a, [BackgroundWidth]
+	ld e, a
+	ld a, c
+	sub a, e
+	cp a, b
+	jr nz, .positionLoop
+	call AdvanceBackgroundMountingRoom
+	jr c, .roomLoop
+	ld a, [BackgroundCandidateCount]
+	ret
+
+SetFirstBackgroundMountingRoom:
+	ld a, [BackgroundAnchorRoom]
+	ld [BackgroundPlacementRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	bit 3, [hl]
+	ret z
+	ld a, [BackgroundPlacementRoom]
+	add a, 4
+	ld [BackgroundPlacementRoom], a
+	ret
+
+AdvanceBackgroundMountingRoom:
+	ld a, [BackgroundAnchorRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	bit 1, [hl]
+	jr z, .done
+	ld a, [BackgroundPlacementRoom]
+	ld b, a
+	ld a, [BackgroundAnchorRoom]
+	cp a, b
+	jr nz, .done
+	inc a
+	ld [BackgroundPlacementRoom], a
+	scf
+	ret
+.done
+	and a
+	ret
+
+IsSconcePairAvailable:
+	call SetFirstSconcePosition
+	call IsBackgroundCandidate
+	ret nc
+	call SetSecondSconcePosition
+	jp IsBackgroundCandidate
+
+SetFirstSconcePosition:
+	ld a, [BackgroundAnchorRoom]
+	ld [BackgroundPlacementRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	bit 1, [hl]
+	jr nz, .horizontal
+	bit 3, [hl]
+	jr z, .single
+	ld a, [BackgroundPlacementRoom]
+	add a, 4
+	ld [BackgroundPlacementRoom], a
+.single
+	ld a, 3
+	ld [BackgroundLocalX], a
+	ret
+.horizontal
+	ld a, 6
+	ld [BackgroundLocalX], a
+	ret
+
+SetSecondSconcePosition:
+	ld a, [BackgroundAnchorRoom]
+	ld [BackgroundPlacementRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	bit 1, [hl]
+	jr z, .singleOrVertical
+	ld a, [BackgroundPlacementRoom]
+	inc a
+	ld [BackgroundPlacementRoom], a
+	ld a, 3
+	ld [BackgroundLocalX], a
+	ret
+.singleOrVertical
+	bit 3, [hl]
+	jr z, .single
+	ld a, [BackgroundPlacementRoom]
+	add a, 4
+	ld [BackgroundPlacementRoom], a
+.single
+	ld a, 6
+	ld [BackgroundLocalX], a
+	ret
+
+FindBackgroundPosition:
+	call SetFirstBackgroundMountingRoom
+.roomLoop
+	ld a, 1
+	ld [BackgroundLocalX], a
+.positionLoop
+	call IsBackgroundCandidate
+	jr nc, .nextPosition
+	ld a, [GenerationTarget]
+	and a
+	ret z
+	dec a
+	ld [GenerationTarget], a
+.nextPosition
+	ld a, [BackgroundLocalX]
+	inc a
+	ld [BackgroundLocalX], a
+	ld b, a
+	ld a, 10
+	ld c, a
+	ld a, [BackgroundWidth]
+	ld e, a
+	ld a, c
+	sub a, e
+	cp a, b
+	jr nz, .positionLoop
+	call AdvanceBackgroundMountingRoom
+	jr c, .roomLoop
+	ret
+
+IsBackgroundCandidate:
+	call IsBackgroundFootprintReserved
+	jr c, .invalid
+	call GetBackgroundTopPointer
+	ld a, 40
+	ld e, a
+	ld a, [BackgroundWidth]
+	ld c, a
+	ld a, e
+	sub a, c
+	ld e, a
+	ld d, 0
+	ld a, [BackgroundHeight]
+	ld b, a
+.rowLoop
+	ld a, [BackgroundWidth]
+	ld c, a
+.cellLoop
+	ld a, [hl+]
+	cp a, 17
+	jr nz, .invalid
+	dec c
+	jr nz, .cellLoop
+	add hl, de
+	dec b
+	jr nz, .rowLoop
+	scf
+	ret
+.invalid
+	and a
+	ret
+
+IsBackgroundFootprintReserved:
+	; All current mounting bands intersect both standard port approach bands.
+	ld a, [BackgroundPlacementRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomTraversalClasses
+	add hl, de
+	ld a, [hl]
+	and a
+	jp nz, .reserved
+	ld a, [BackgroundPlacementRoom]
+	ld b, a
+	ld a, [CriticalRoute]
+	cp a, b
+	jr nz, .exit
+	ld a, [BackgroundLocalX]
+	cp a, 5
+	jr c, .reserved
+.exit
+	ld a, [CriticalRouteLength]
+	dec a
+	ld e, a
+	ld d, 0
+	ld hl, CriticalRoute
+	add hl, de
+	ld a, [hl]
+	cp a, b
+	jr nz, .ports
+	ld a, [BackgroundLocalX]
+	cp a, 6
+	jr c, .reserved
+.ports
+	ld e, b
+	ld d, 0
+	ld hl, RoomPorts
+	add hl, de
+	ld a, [hl]
+	ld [BackgroundRoomPorts], a
+	ld hl, RoomWidePorts
+	add hl, de
+	ld a, [hl]
+	ld [BackgroundRoomWidePorts], a
+	ld a, [BackgroundRoomPorts]
+	bit 0, a
+	jr z, .east
+	ld a, [BackgroundLocalX]
+	cp a, 3
+	jr c, .reserved
+.east
+	ld a, [BackgroundRoomPorts]
+	bit 1, a
+	jr z, .north
+	ld a, [BackgroundLocalX]
+	ld b, a
+	ld a, [BackgroundWidth]
+	add a, b
+	cp a, 8
+	jr nc, .reserved
+.north
+	ld a, [BackgroundRoomPorts]
+	bit 2, a
+	jr z, .south
+	ld a, [BackgroundRoomWidePorts]
+	bit 2, a
+	jr nz, .reserved
+	call BackgroundOverlapsCentralPort
+	jr c, .reserved
+.south
+	ld a, [BackgroundRoomPorts]
+	bit 3, a
+	jr z, .clear
+	ld a, [BackgroundRoomWidePorts]
+	bit 3, a
+	jr nz, .reserved
+	call BackgroundOverlapsCentralPort
+	jr c, .reserved
+.clear
+	and a
+	ret
+.reserved
+	scf
+	ret
+
+BackgroundOverlapsCentralPort:
+	ld a, [BackgroundLocalX]
+	cp a, 8
+	jr nc, .clear
+	ld b, a
+	ld a, [BackgroundWidth]
+	add a, b
+	cp a, 4
+	jr c, .clear
+	scf
+	ret
+.clear
+	and a
+	ret
+
+GetBackgroundTopPointer:
+	ld a, [BackgroundPlacementRoom]
+	call GetRoomDestination
+	ld a, [BackgroundTopY]
+	ld b, a
+	ld de, 40
+.rowLoop
+	ld a, b
+	and a
+	jr z, .rowsReady
+	add hl, de
+	dec b
+	jr .rowLoop
+.rowsReady
+	ld a, [BackgroundLocalX]
+	ld e, a
+	ld d, 0
+	add hl, de
+	ret
+
+PlaceBackgroundComponent:
+	call GetBackgroundTopPointer
+	push hl
+	ld hl, DiningBackgroundTilePointers
+	ld a, [BackgroundComponent]
+	add a, a
+	ld e, a
+	ld d, 0
+	add hl, de
+	ld e, [hl]
+	inc hl
+	ld d, [hl]
+	pop hl
+	ld a, 40
+	ld c, a
+	ld a, [BackgroundWidth]
+	ld b, a
+	ld a, c
+	sub a, b
+	ld c, a
+	ld a, [BackgroundHeight]
+	ld b, a
+.rowLoop
+	push bc
+	ld a, [BackgroundWidth]
+	ld c, a
+.cellLoop
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .cellLoop
+	pop bc
+	ld a, l
+	add a, c
+	ld l, a
+	jr nc, .rowReady
+	inc h
+.rowReady
+	dec b
+	jr nz, .rowLoop
+	ret
+
+BackgroundGroupRandomModulo:
+	ld de, $b529
+	jr BackgroundSelectionModulo
+
+BackgroundPositionRandomModulo:
+	ld de, $68e3
+
+BackgroundSelectionModulo:
+	ld [BackgroundModulo], a
+	ld a, [GenerationRandomState]
+	ld [BackgroundSavedRandomState], a
+	ld a, [GenerationRandomState + 1]
+	ld [BackgroundSavedRandomState + 1], a
+	ld a, [SelectedSeed]
+	ld b, a
+	ld a, [SelectedSeed + 1]
+	ld c, a
+	ld a, b
+	or a, c
+	jr nz, .seedReady
+	ld b, $e1
+	ld c, $ac
+.seedReady
+	push de
+	ld a, [BackgroundAnchorRoom]
+	add a, a
+	ld e, a
+	ld d, 0
+	ld hl, FurnitureRoomMix
+	add hl, de
+	pop de
+	ld a, [hl+]
+	xor a, b
+	xor a, e
+	ld [GenerationRandomState], a
+	ld a, [hl]
+	xor a, c
+	xor a, d
+	ld [GenerationRandomState + 1], a
+	call NextGenerationRandom
+	ld a, [BackgroundModulo]
+	ld c, a
+	call GenerationRandomModulo
+	push af
+	ld a, [BackgroundSavedRandomState]
+	ld [GenerationRandomState], a
+	ld a, [BackgroundSavedRandomState + 1]
+	ld [GenerationRandomState + 1], a
+	pop af
+	ret
+
 PlaceDiningRoomFurniture:
 	xor a
 	ld [GenerationRoom], a
@@ -2039,6 +2574,7 @@ FurnitureRoomMix:
 	dw $9e37, $3c6e, $daa5, $78dc, $1713, $b54a, $5381, $f1b8
 	dw $8fef, $2e26, $cc5d, $6a94, $08cb, $a702, $4539, $e370
 
+INCLUDE "build/dining_room_background.inc"
 INCLUDE "build/dining_room_furniture.inc"
 
 IF DEF(FURNITURE_PARITY_TEST)

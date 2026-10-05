@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const manifest = JSON.parse(readFileSync('data/dining-room-background.json', 'utf8'));
+const runtimeTables = readFileSync('build/dining_room_background.inc', 'utf8');
 const tileset = readFileSync('gfx/dining_room.tsx', 'utf8');
 const tileProperties = new Map([...tileset.matchAll(/<tile id="(\d+)"><properties>(.*?)<\/properties><\/tile>/g)].map(match => {
   const properties = Object.fromEntries([...match[2].matchAll(/<property name="([^"]+)"(?: type="[^"]+")? value="([^"]*)"\/>/g)].map(property => [property[1], property[2]]));
@@ -34,6 +35,15 @@ for (const component of manifest.components) {
       assert.equal(properties.component, component.id, `${component.id} tile ${tile} belongs to ${properties.component}`);
     }
   }
+}
+
+for (const [label, values] of [
+  ['Widths', manifest.components.map(component => component.width)],
+  ['Heights', manifest.components.map(component => component.height)],
+  ['TopRows', manifest.components.map(component => 7 - component.floorClearance - component.height)],
+]) assert(runtimeTables.includes(`DiningBackground${label}: db ${values.join(', ')}`));
+for (const [index, component] of manifest.components.entries()) {
+  assert(runtimeTables.includes(`DiningBackgroundTiles${index}:\n\tdb ${component.tiles.flat().join(', ')}`));
 }
 
 console.log('Dining-room background fixture manifest verified against the TSX.');
