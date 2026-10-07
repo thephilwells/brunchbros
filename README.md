@@ -53,6 +53,7 @@ rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 node tools/verify-dining-room.mjs
 node tools/verify-dining-room-furniture.mjs
 node tools/verify-dining-room-background.mjs
+node tools/verify-dining-room-wallpaper.mjs
 node tools/verify-dining-room-composition.mjs
 node tools/verify-room-templates.mjs
 node tools/verify-room-template-playtest.mjs
@@ -82,12 +83,12 @@ open build/level-gallery/index.html
 ```
 
 The gallery shows seeded levels assembled from authored room templates,
-deterministic background fixtures, and optional-room furniture. Its TMX files expose the critical
-route, room ports, spawn, exit, a hidden placement-reservation layer, background and furniture layers, and a
-visible furniture-placement layer. The HTML thumbnails overlay reservations
-and color-coded furniture footprints. Batch validation checks hard-limit mutual
-room reachability, declared critical-route traversal, and every selected
-furniture footprint.
+deterministic background fixtures, optional-room furniture, and sparse wallpaper
+motifs. Its TMX files expose the critical route, room ports, spawn, exit, a
+hidden placement-reservation layer, and visible background, furniture, and
+wallpaper placement layers. The HTML thumbnails overlay reservations and
+color-coded placements. Batch validation checks hard-limit mutual room
+reachability, declared critical-route traversal, and every selected placement.
 
 The semantic room templates can be regenerated and checked separately:
 

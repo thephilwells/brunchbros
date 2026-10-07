@@ -72,6 +72,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Verify Dining Room Wallpaper",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/verify-dining-room-wallpaper.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Verify Dining Room Composition",
       "type": "shell",
       "command": "node",
@@ -167,7 +174,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true

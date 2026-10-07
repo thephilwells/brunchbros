@@ -15,6 +15,7 @@ const FURNITURE_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-ro
 const FURNITURE_BY_ID = new Map(FURNITURE_MANIFEST.components.map(component => [component.id, component]));
 const BACKGROUND_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-background.json', import.meta.url), 'utf8'));
 const BACKGROUND_BY_ID = new Map(BACKGROUND_MANIFEST.components.map(component => [component.id, component]));
+const WALLPAPER_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-wallpaper.json', import.meta.url), 'utf8'));
 
 function componentLayouts(component) {
   return component.orientations ?? [{ id: 'default', tiles: component.tiles }];
@@ -290,8 +291,77 @@ export function addDiningRoomFurniture(level) {
   };
 }
 
+function wallpaperPlacementBlockers(level) {
+  const blocked = new Set();
+  for (const placement of [...(level.backgroundPlacements ?? []), ...(level.furniturePlacements ?? [])]) {
+    for (let y = placement.y; y < placement.y + placement.height; y++) {
+      for (let x = placement.x; x < placement.x + placement.width; x++) blocked.add(y * LEVEL_WIDTH + x);
+    }
+  }
+  return blocked;
+}
+
+function wallpaperCandidates(level, chamber, sourceTiles, blocked) {
+  const left = Math.min(...chamber.rooms.map(room => room % 4 * ROOM_WIDTH));
+  const right = Math.max(...chamber.rooms.map(room => room % 4 * ROOM_WIDTH + ROOM_WIDTH));
+  const top = Math.min(...chamber.rooms.map(room => Math.floor(room / 4) * ROOM_HEIGHT));
+  const bottom = Math.max(...chamber.rooms.map(room => Math.floor(room / 4) * ROOM_HEIGHT + ROOM_HEIGHT));
+  const candidates = [];
+  for (let y = top + WALLPAPER_MANIFEST.yOffset; y < bottom - 1; y += WALLPAPER_MANIFEST.yStride) {
+    for (let x = left + WALLPAPER_MANIFEST.xOffset; x < right - 1; x += WALLPAPER_MANIFEST.xStride) {
+      const index = y * LEVEL_WIDTH + x;
+      if (sourceTiles[index] !== WALLPAPER_MANIFEST.backgroundTile || blocked.has(index) || level.placementReservationMask[index] & BACKGROUND_BLOCKING_RESERVATIONS) continue;
+      candidates.push({ room: Math.floor(y / ROOM_HEIGHT) * 4 + Math.floor(x / ROOM_WIDTH), x, y });
+    }
+  }
+  return candidates;
+}
+
+function wallpaperSelections(level, chamber, candidates) {
+  const count = Math.min(candidates.length, chamber.rooms.length * WALLPAPER_MANIFEST.maxPerRoomCell);
+  if (!count) return [];
+  const start = mixSelection(level.seed, chamber.anchor, WALLPAPER_MANIFEST.selectionSalt) % candidates.length;
+  return Array.from({ length: count }, (_, index) => candidates[(start + Math.floor(index * candidates.length / count)) % candidates.length]);
+}
+
+export function addDiningRoomWallpaper(level) {
+  const wallpaperSourceTiles = [...level.tiles];
+  const tiles = [...level.tiles];
+  const roomWallpaperCandidateCounts = Array(16).fill(0);
+  const wallpaperPlacements = [];
+  const blocked = wallpaperPlacementBlockers(level);
+
+  for (const chamber of backgroundChambers(level)) {
+    const candidates = wallpaperCandidates(level, chamber, wallpaperSourceTiles, blocked);
+    for (const candidate of candidates) roomWallpaperCandidateCounts[candidate.room]++;
+    for (const position of wallpaperSelections(level, chamber, candidates)) {
+      wallpaperPlacements.push({
+        chamber: chamber.anchor,
+        rooms: chamber.rooms,
+        room: position.room,
+        x: position.x,
+        y: position.y,
+        tile: WALLPAPER_MANIFEST.motifTile,
+      });
+      tiles[position.y * LEVEL_WIDTH + position.x] = WALLPAPER_MANIFEST.motifTile;
+    }
+  }
+
+  return {
+    ...level,
+    tiles,
+    wallpaperSourceTiles,
+    roomWallpaperCandidateCounts,
+    wallpaperPlacements,
+  };
+}
+
+export function composeDiningRoomFixtures(level) {
+  return addDiningRoomFurniture(addDiningRoomBackground(addDiningRoomPlacementReservations(level)));
+}
+
 export function composeDiningRoom(level) {
-  const composed = addDiningRoomFurniture(addDiningRoomBackground(addDiningRoomPlacementReservations(level)));
+  const composed = addDiningRoomWallpaper(composeDiningRoomFixtures(level));
   composed.compositionValidation = validateDiningRoomComposition(composed);
   return composed;
 }
@@ -301,6 +371,8 @@ export function validateDiningRoomComposition(level) {
   if (!Array.isArray(level.structuralTiles) || level.structuralTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('structural tile snapshot must contain 1,280 cells');
   if (!Array.isArray(level.roomBackgroundCandidateCounts) || level.roomBackgroundCandidateCounts.length !== 16) errors.push('room background candidate counts must contain 16 entries');
   if (!Array.isArray(level.roomFurnitureCandidateCounts) || level.roomFurnitureCandidateCounts.length !== 16) errors.push('room furniture candidate counts must contain 16 entries');
+  if (!Array.isArray(level.wallpaperSourceTiles) || level.wallpaperSourceTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('wallpaper source tile snapshot must contain 1,280 cells');
+  if (!Array.isArray(level.roomWallpaperCandidateCounts) || level.roomWallpaperCandidateCounts.length !== 16) errors.push('room wallpaper candidate counts must contain 16 entries');
   if (errors.length) return { valid: false, errors };
 
   const occupied = new Set();
@@ -407,8 +479,40 @@ export function validateDiningRoomComposition(level) {
     if (level.roomFurnitureCandidateCounts[room] > 0 && !placementsByRoom.has(room)) errors.push(`eligible room ${room} has no furniture`);
     if (level.roomFurnitureCandidateCounts[room] === 0 && placementsByRoom.has(room)) errors.push(`ineligible room ${room} has furniture`);
   }
+
+  const wallpaperPlacementsByChamber = new Map();
+  const wallpaperOccupied = new Set();
+  for (const placement of level.wallpaperPlacements ?? []) {
+    const chamber = backgroundChambers(level).find(candidate => candidate.anchor === placement.chamber);
+    if (!chamber || !chamber.rooms.includes(placement.room)) errors.push(`wallpaper motif has invalid chamber ${placement.chamber}`);
+    const placements = wallpaperPlacementsByChamber.get(placement.chamber) ?? [];
+    placements.push(placement);
+    wallpaperPlacementsByChamber.set(placement.chamber, placements);
+    const index = placement.y * LEVEL_WIDTH + placement.x;
+    if (placement.tile !== WALLPAPER_MANIFEST.motifTile) errors.push(`wallpaper motif has invalid tile ${placement.tile}`);
+    if (occupied.has(index)) errors.push(`wallpaper motif overlaps another placement at ${placement.x},${placement.y}`);
+    occupied.add(index);
+    wallpaperOccupied.add(index);
+    if (level.placementReservationMask[index] & BACKGROUND_BLOCKING_RESERVATIONS) errors.push(`wallpaper motif occupies protected cell ${placement.x},${placement.y}`);
+    if (level.wallpaperSourceTiles[index] !== WALLPAPER_MANIFEST.backgroundTile) errors.push(`wallpaper motif replaces decorated tile ${placement.x},${placement.y}`);
+    if (level.tiles[index] !== WALLPAPER_MANIFEST.motifTile) errors.push(`wallpaper motif has the wrong tile at ${placement.x},${placement.y}`);
+  }
+
+  const expectedWallpaperCandidateCounts = Array(16).fill(0);
+  const wallpaperBlocked = wallpaperPlacementBlockers(level);
+  for (const chamber of backgroundChambers(level)) {
+    const candidates = wallpaperCandidates(level, chamber, level.wallpaperSourceTiles, wallpaperBlocked);
+    for (const candidate of candidates) expectedWallpaperCandidateCounts[candidate.room]++;
+    const expected = wallpaperSelections(level, chamber, candidates);
+    const placements = wallpaperPlacementsByChamber.get(chamber.anchor) ?? [];
+    if (placements.length !== expected.length) errors.push(`chamber ${chamber.anchor} has ${placements.length} wallpaper motifs instead of ${expected.length}`);
+    if (placements.some((placement, index) => placement.x !== expected[index]?.x || placement.y !== expected[index]?.y || placement.room !== expected[index]?.room)) errors.push(`chamber ${chamber.anchor} has incorrect wallpaper motif positions`);
+  }
+  if (level.roomWallpaperCandidateCounts.some((count, room) => count !== expectedWallpaperCandidateCounts[room])) errors.push('room wallpaper candidate counts are inconsistent');
+
   for (let index = 0; index < level.tiles.length; index++) {
-    if (!occupied.has(index) && level.tiles[index] !== level.structuralTiles[index]) errors.push(`furniture changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);
+    if (!occupied.has(index) && level.tiles[index] !== level.structuralTiles[index]) errors.push(`composition changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);
+    if (!wallpaperOccupied.has(index) && level.tiles[index] !== level.wallpaperSourceTiles[index]) errors.push(`wallpaper changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);
   }
 
   return { valid: errors.length === 0, errors };

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "biome": "dining_room",
+  "backgroundTile": 17,
+  "motifTile": 80,
+  "xOffset": 2,
+  "xStride": 4,
+  "yOffset": 1,
+  "yStride": 3,
+  "maxPerRoomCell": 1,
+  "selectionSalt": 7499
+}

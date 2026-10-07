@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { generateLevel } from './lib/level-generation.mjs';
-import { composeDiningRoom } from './lib/dining-room-composition.mjs';
+import { composeDiningRoom, composeDiningRoomFixtures } from './lib/dining-room-composition.mjs';
 
 const generated = JSON.parse(readFileSync('build/seeded_level.json', 'utf8'));
 const expected = composeDiningRoom(generateLevel(generated.seed));
+const expectedRuntime = composeDiningRoomFixtures(generateLevel(generated.seed));
 const tilemap = readFileSync('build/seeded_level.tilemap');
 const runtimeParityTilemap = readFileSync('build/runtime_level_parity.tilemap');
 const runtimeTemplates = readFileSync('build/room_templates.bin');
@@ -14,7 +15,7 @@ const tmx = readFileSync('gfx/seeded_level.tmx', 'utf8');
 
 assert.deepEqual(generated, expected);
 assert.deepEqual([...tilemap], expected.tiles);
-assert.deepEqual([...runtimeParityTilemap], expected.tiles);
+assert.deepEqual([...runtimeParityTilemap], expectedRuntime.tiles);
 assert.equal(tilemap.length, 40 * 32);
 assert.equal(runtimeParityTilemap.length, 40 * 32);
 assert.equal(runtimeTemplates.length, 15 * 10 * 8);

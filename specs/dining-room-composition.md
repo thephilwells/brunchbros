@@ -1,7 +1,8 @@
 # Dining-room composition
 
-Status: **host/runtime floor furniture accepted; background gallery accepted;
-runtime background placement passes fixed-seed parity; manual playtest pending**.
+Status: **host/runtime floor furniture and background placement accepted after
+gallery, fixed-seed parity, and SameBoy review (2026-10-05); host-side wallpaper
+motif pass implemented and awaiting gallery review**.
 
 ## Purpose
 
@@ -17,9 +18,10 @@ connectivity or the selected domino matching.
 2. Validate the undecorated critical route and every optional branch.
 3. Mark placement reservations for ports, required landings, travel space,
    ledge-catch channels, wide seams, spawn, and exit.
-4. Place passable rear-wall details.
+4. Place passable rear-wall fixtures.
 5. Place floor-anchored furniture outside reservations.
-6. Revalidate the finished tile map. Encounter and loot placement remain later
+6. Place sparse wallpaper motifs in remaining plain rear cells.
+7. Revalidate the finished tile map. Encounter and loot placement remain later
    passes and inherit the same reservations.
 
 Furniture is optional traversal. Removing every furniture tile must leave the
@@ -50,6 +52,22 @@ critical-route room. Port approaches, wide seams, spawn and exit envelopes,
 and ledge-catch rooms remain protected for visual readability. Candidate
 footprints must otherwise contain only plain rear tiles and retain a one-tile
 horizontal margin from the room boundary.
+
+## Wallpaper motifs
+
+`data/dining-room-wallpaper.json` defines a final pass using the existing
+passable tile 80. Candidate cells lie on a chamber-relative lattice beginning
+two tiles from the left and one tile below the top, with four-tile horizontal
+and three-tile vertical spacing. An ordinary chamber receives at most one motif;
+a domino receives at most two. A chamber-local seed mix rotates the selected
+positions through the valid candidates without advancing the structural PRNG.
+
+Motifs replace only plain rear tile 17 after wall fixtures and furniture are
+placed. Complete authored footprints are protected, including intentional rear-
+tile holes inside chair and table groups. Port, seam, spawn, exit, and ledge-
+catch reservations remain clear; critical-route reservation alone does not
+block passable wallpaper. The host export records the pre-wallpaper map,
+candidate counts, and selected cells for deterministic validation.
 
 ## Furniture manifest
 
@@ -143,5 +161,7 @@ tiles against the complete decorated host export before entering gameplay;
 seeds 0, 1, 77 (paired sconces), `$1234`, and `$FFFF` pass. The normal ROM keeps
 its timing-derived seed and does not embed the parity oracle.
 
-Wallpaper motifs, encounters, loot eggs, and movable objects remain separate
-composition passes beyond this fixture implementation.
+The accepted runtime parity target currently stops after fixtures and furniture.
+The host-only wallpaper pass remains outside that oracle until its gallery is
+accepted and the rules are ported to RGBDS. Encounters, loot eggs, and movable
+objects remain later composition passes.

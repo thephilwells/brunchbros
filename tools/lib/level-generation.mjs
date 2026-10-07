@@ -499,6 +499,8 @@ export function levelToTmx(level, tilesetSource) {
     `  <object id="${20 + reservationObjects.length + index}" name="${placement.component}-${placement.chamber}-${placement.instance}" type="background_placement" x="${placement.x * 8}" y="${placement.y * 8}" width="${placement.width * 8}" height="${placement.height * 8}"><properties><property name="component" value="${placement.component}"/><property name="chamber" type="int" value="${placement.chamber}"/><property name="room" type="int" value="${placement.room}"/><property name="rooms" value="${placement.rooms.join(',')}"/><property name="instance" type="int" value="${placement.instance}"/><property name="instances" type="int" value="${placement.instances}"/></properties></object>`);
   const furnitureObjects = (level.furniturePlacements ?? []).map((placement, index) =>
     `  <object id="${20 + reservationObjects.length + backgroundObjects.length + index}" name="${placement.component}-${placement.room}" type="furniture_placement" x="${placement.x * 8}" y="${placement.y * 8}" width="${placement.width * 8}" height="${placement.height * 8}"><properties><property name="component" value="${placement.component}"/><property name="orientation" value="${placement.orientation}"/><property name="room" type="int" value="${placement.room}"/><property name="floor_y" type="int" value="${placement.floorY}"/></properties></object>`);
+  const wallpaperObjects = (level.wallpaperPlacements ?? []).map((placement, index) =>
+    `  <object id="${20 + reservationObjects.length + backgroundObjects.length + furnitureObjects.length + index}" name="wallpaper-${placement.chamber}-${index}" type="wallpaper_placement" x="${placement.x * 8}" y="${placement.y * 8}" width="8" height="8"><properties><property name="chamber" type="int" value="${placement.chamber}"/><property name="room" type="int" value="${placement.room}"/><property name="rooms" value="${placement.rooms.join(',')}"/><property name="tile" type="int" value="${placement.tile}"/></properties></object>`);
   const seed = level.seed ?? 'topology';
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -519,6 +521,7 @@ export function levelToTmx(level, tilesetSource) {
     ...(reservationObjects.length ? [' <objectgroup id="3" name="Placement Reservations" visible="0">', ...reservationObjects, ' </objectgroup>'] : []),
     ...(backgroundObjects.length ? [' <objectgroup id="4" name="Background Placements">', ...backgroundObjects, ' </objectgroup>'] : []),
     ...(furnitureObjects.length ? [' <objectgroup id="5" name="Furniture Placements">', ...furnitureObjects, ' </objectgroup>'] : []),
+    ...(wallpaperObjects.length ? [' <objectgroup id="6" name="Wallpaper Placements">', ...wallpaperObjects, ' </objectgroup>'] : []),
     '</map>',
     '',
   ].join('\n');
@@ -565,10 +568,11 @@ export function levelToSvg(level) {
   };
   const backgroundOverlay = (level.backgroundPlacements ?? []).map(placement => `<rect x="${placement.x + .14}" y="${placement.y + .14}" width="${placement.width - .28}" height="${placement.height - .28}" fill="${backgroundColors[placement.component] ?? '#fff'}" fill-opacity=".7" stroke="#172018" stroke-width=".12"/>`).join('');
   const furnitureOverlay = (level.furniturePlacements ?? []).map(placement => `<rect x="${placement.x + .08}" y="${placement.y + .08}" width="${placement.width - .16}" height="${placement.height - .16}" fill="${furnitureColors[placement.component] ?? '#fff'}" fill-opacity=".82" stroke="#172018" stroke-width=".16"/>`).join('');
+  const wallpaperOverlay = (level.wallpaperPlacements ?? []).map(placement => `<circle cx="${placement.x + .5}" cy="${placement.y + .5}" r=".25" fill="#f4f0a6" stroke="#172018" stroke-width=".1"/>`).join('');
   const routePoints = level.criticalRoute.map(room => `${(room % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2},${Math.floor(room / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2}`).join(' ');
   const spawn = level.spawnRoom;
   const exit = level.exitRoom;
-  return `<svg viewBox="0 0 ${LEVEL_WIDTH} ${LEVEL_HEIGHT}" role="img" aria-label="Seed ${level.seed} connectivity map"><rect width="40" height="32" fill="#cadb94"/><path d="${solidPath}" fill="#354f34"/>${reservationOverlay}${backgroundOverlay}${furnitureOverlay}<path d="M10 0V32M20 0V32M30 0V32M0 8H40M0 16H40M0 24H40" fill="none" stroke="#789064" stroke-width=".12"/><polyline points="${routePoints}" fill="none" stroke="#c13d3d" stroke-width=".6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${(spawn % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2}" cy="${Math.floor(spawn / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2}" r="1.2" fill="#fff" stroke="#17351d" stroke-width=".35"/><rect x="${(exit % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2 - 1}" y="${Math.floor(exit / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2 - 1}" width="2" height="2" fill="#111" stroke="#fff" stroke-width=".3"/></svg>`;
+  return `<svg viewBox="0 0 ${LEVEL_WIDTH} ${LEVEL_HEIGHT}" role="img" aria-label="Seed ${level.seed} connectivity map"><rect width="40" height="32" fill="#cadb94"/><path d="${solidPath}" fill="#354f34"/>${reservationOverlay}${backgroundOverlay}${furnitureOverlay}${wallpaperOverlay}<path d="M10 0V32M20 0V32M30 0V32M0 8H40M0 16H40M0 24H40" fill="none" stroke="#789064" stroke-width=".12"/><polyline points="${routePoints}" fill="none" stroke="#c13d3d" stroke-width=".6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${(spawn % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2}" cy="${Math.floor(spawn / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2}" r="1.2" fill="#fff" stroke="#17351d" stroke-width=".35"/><rect x="${(exit % GRID_WIDTH) * ROOM_WIDTH + ROOM_WIDTH / 2 - 1}" y="${Math.floor(exit / GRID_WIDTH) * ROOM_HEIGHT + ROOM_HEIGHT / 2 - 1}" width="2" height="2" fill="#111" stroke="#fff" stroke-width=".3"/></svg>`;
 }
 
 export function topologySignature(level) {

@@ -5,7 +5,7 @@
  <layer id="1" name="Seeded Terrain" width="40" height="32">
   <data encoding="csv">
 8,12,12,12,12,12,12,12,12,16,16,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,16,16,12,12,12,12,12,12,12,12,14,
-7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,18,18,18,18,81,18,18,9,15,18,18,18,18,18,81,18,18,18,18,18,18,18,18,18,18,18,81,9,15,18,18,18,18,18,81,18,18,7,
 7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,45,46,18,18,18,18,18,18,9,15,45,46,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,47,48,18,18,51,51,51,18,9,15,47,48,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,5,11,18,18,18,18,51,51,51,18,7,
@@ -13,7 +13,7 @@
 7,78,79,18,18,51,51,51,18,9,15,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
 9,16,16,14,18,18,18,8,16,17,17,16,16,14,18,18,18,8,16,16,16,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,15,
 9,13,13,11,18,18,18,5,13,13,13,13,13,11,18,18,18,5,13,17,17,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,15,
-7,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,9,15,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,81,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,9,15,18,81,18,51,51,51,18,18,9,15,18,81,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,41,42,18,18,18,18,18,18,18,18,18,18,18,18,18,4,12,12,17,15,41,42,18,18,18,18,18,18,9,15,41,42,18,18,18,18,18,18,7,
 7,43,44,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,9,15,43,44,18,18,51,51,51,18,9,15,43,44,18,18,51,51,51,18,7,
@@ -21,18 +21,18 @@
 7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,9,15,116,116,116,116,51,51,51,18,9,15,78,79,18,18,51,51,51,18,7,
 9,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,17,17,16,16,16,16,16,16,16,16,17,17,16,16,14,18,18,18,8,16,15,
 9,13,13,11,18,18,18,5,13,13,13,13,13,13,13,13,13,13,13,17,17,13,13,13,13,13,13,13,13,13,13,13,13,11,18,18,18,5,13,15,
-7,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,7,
+7,18,81,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,81,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,81,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,41,42,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,7,
-7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,43,44,18,18,5,11,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
+7,18,81,18,18,51,51,51,18,18,18,18,18,18,18,43,44,18,18,5,11,18,18,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,7,
 7,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,57,18,18,18,18,7,
 7,18,18,18,18,51,51,51,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,58,59,51,51,51,18,7,
 9,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,14,18,18,18,8,16,16,16,16,16,16,16,16,16,16,16,15,
 9,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,13,13,13,13,11,18,18,18,5,13,17,17,13,13,13,13,13,13,13,13,15,
-7,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,7,
+7,18,81,18,51,51,51,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,51,51,51,18,81,9,15,18,18,18,18,18,81,18,18,7,
 7,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,7,
 7,45,46,18,18,18,18,18,18,9,15,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,9,15,18,18,45,46,18,18,18,18,7,
-7,47,48,18,18,51,51,51,18,9,15,26,27,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,5,11,18,18,47,48,51,51,51,18,7,
+7,47,48,18,18,51,51,51,18,9,15,26,27,18,18,51,51,51,18,18,18,18,18,18,81,51,51,51,18,5,11,18,18,47,48,51,51,51,18,7,
 7,77,18,18,18,18,18,18,18,9,15,28,29,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,57,18,18,18,18,7,
 7,78,79,18,18,51,51,51,18,9,15,30,31,18,18,51,51,51,18,18,18,18,18,18,18,51,51,51,18,18,18,18,18,58,59,51,51,51,18,7,
 5,12,12,12,12,12,12,12,12,13,13,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,11
@@ -121,5 +121,22 @@
   <object id="74" name="dining_chair-11" type="furniture_placement" x="264" y="168" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_right"/><property name="room" type="int" value="11"/><property name="floor_y" type="int" value="23"/></properties></object>
   <object id="75" name="dining_chair-12" type="furniture_placement" x="8" y="232" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_left"/><property name="room" type="int" value="12"/><property name="floor_y" type="int" value="31"/></properties></object>
   <object id="76" name="dining_chair-15" type="furniture_placement" x="264" y="232" width="16" height="16"><properties><property name="component" value="dining_chair"/><property name="orientation" value="back_right"/><property name="room" type="int" value="15"/><property name="floor_y" type="int" value="31"/></properties></object>
+ </objectgroup>
+ <objectgroup id="6" name="Wallpaper Placements">
+  <object id="77" name="wallpaper-0-0" type="wallpaper_placement" x="48" y="8" width="8" height="8"><properties><property name="chamber" type="int" value="0"/><property name="room" type="int" value="0"/><property name="rooms" value="0"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="78" name="wallpaper-1-1" type="wallpaper_placement" x="224" y="8" width="8" height="8"><properties><property name="chamber" type="int" value="1"/><property name="room" type="int" value="2"/><property name="rooms" value="1,2"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="79" name="wallpaper-1-2" type="wallpaper_placement" x="128" y="8" width="8" height="8"><properties><property name="chamber" type="int" value="1"/><property name="room" type="int" value="1"/><property name="rooms" value="1,2"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="80" name="wallpaper-3-3" type="wallpaper_placement" x="288" y="8" width="8" height="8"><properties><property name="chamber" type="int" value="3"/><property name="room" type="int" value="3"/><property name="rooms" value="3"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="81" name="wallpaper-4-4" type="wallpaper_placement" x="16" y="72" width="8" height="8"><properties><property name="chamber" type="int" value="4"/><property name="room" type="int" value="4"/><property name="rooms" value="4,5"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="82" name="wallpaper-6-5" type="wallpaper_placement" x="176" y="72" width="8" height="8"><properties><property name="chamber" type="int" value="6"/><property name="room" type="int" value="6"/><property name="rooms" value="6"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="83" name="wallpaper-7-6" type="wallpaper_placement" x="256" y="72" width="8" height="8"><properties><property name="chamber" type="int" value="7"/><property name="room" type="int" value="7"/><property name="rooms" value="7"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="84" name="wallpaper-8-7" type="wallpaper_placement" x="16" y="160" width="8" height="8"><properties><property name="chamber" type="int" value="8"/><property name="room" type="int" value="8"/><property name="rooms" value="8,9"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="85" name="wallpaper-8-8" type="wallpaper_placement" x="16" y="136" width="8" height="8"><properties><property name="chamber" type="int" value="8"/><property name="room" type="int" value="8"/><property name="rooms" value="8,9"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="86" name="wallpaper-10-9" type="wallpaper_placement" x="176" y="136" width="8" height="8"><properties><property name="chamber" type="int" value="10"/><property name="room" type="int" value="10"/><property name="rooms" value="10,11"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="87" name="wallpaper-10-10" type="wallpaper_placement" x="304" y="136" width="8" height="8"><properties><property name="chamber" type="int" value="10"/><property name="room" type="int" value="11"/><property name="rooms" value="10,11"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="88" name="wallpaper-12-11" type="wallpaper_placement" x="16" y="200" width="8" height="8"><properties><property name="chamber" type="int" value="12"/><property name="room" type="int" value="12"/><property name="rooms" value="12"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="89" name="wallpaper-13-12" type="wallpaper_placement" x="224" y="200" width="8" height="8"><properties><property name="chamber" type="int" value="13"/><property name="room" type="int" value="14"/><property name="rooms" value="13,14"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="90" name="wallpaper-13-13" type="wallpaper_placement" x="192" y="224" width="8" height="8"><properties><property name="chamber" type="int" value="13"/><property name="room" type="int" value="14"/><property name="rooms" value="13,14"/><property name="tile" type="int" value="80"/></properties></object>
+  <object id="91" name="wallpaper-15-14" type="wallpaper_placement" x="288" y="200" width="8" height="8"><properties><property name="chamber" type="int" value="15"/><property name="room" type="int" value="15"/><property name="rooms" value="15"/><property name="tile" type="int" value="80"/></properties></object>
  </objectgroup>
 </map>

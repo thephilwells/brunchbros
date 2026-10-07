@@ -43,12 +43,12 @@ function renderGallery(levels, summary) {
     const horizontalDominoes = level.roomWidePorts.filter(ports => ports & 2).length;
     const verticalDominoes = level.roomWidePorts.filter(ports => ports & 8).length;
     const reservedCells = level.placementReservationMask.filter(Boolean).length;
-    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · ${horizontalDominoes}H/${verticalDominoes}V dominoes · ${boundaryRooms} boundary · ${reservedCells} reserved · ${level.backgroundPlacements.length} background · ${level.furniturePlacements.length} furniture</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
+    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · ${horizontalDominoes}H/${verticalDominoes}V dominoes · ${boundaryRooms} boundary · ${reservedCells} reserved · ${level.backgroundPlacements.length} background · ${level.furniturePlacements.length} furniture · ${level.wallpaperPlacements.length} motifs</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
   }).join('\n');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Brunch Bros level gallery</title><style>
 :root{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#172018;background:#e8edd8}body{margin:20px}h1{margin-bottom:4px}.summary{margin:0}.legend{margin:4px 0 20px;color:#536052}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}.card{background:#fff;border:2px solid #536b49;border-radius:8px;padding:10px;box-shadow:0 2px 5px #0002}.card.invalid{border-color:#b52626}.card header,.card footer{display:flex;justify-content:space-between;gap:10px}.card header span,.card p{color:#536052;font-size:12px}.card svg{display:block;width:100%;margin:8px 0;image-rendering:pixelated}.card footer{justify-content:flex-start}.card a{color:#234c86}</style></head><body>
-<h1>Brunch Bros level gallery</h1><p class="summary">${summary.count} seeds from ${summary.firstSeed}; ${summary.validCount} valid; ${summary.uniqueTopologyCount} unique macro topologies; ${summary.backgroundPlacementCount} background fixtures; ${summary.furniturePlacementCount} furniture placements.</p><p class="legend">Red line: guaranteed route. Reservation overlay: blue critical room, amber port, purple wide seam, red ledge room, green spawn, black exit. Background: purple menu, cyan mirror, pink clock, gold sconce, brown hatch. Furniture: orange table, yellow chair, green booth, blue counter. ○ is spawn; ■ is exit.</p><main class="gallery">${cards}</main></body></html>
+<h1>Brunch Bros level gallery</h1><p class="summary">${summary.count} seeds from ${summary.firstSeed}; ${summary.validCount} valid; ${summary.uniqueTopologyCount} unique macro topologies; ${summary.backgroundPlacementCount} background fixtures; ${summary.furniturePlacementCount} furniture placements; ${summary.wallpaperPlacementCount} wallpaper motifs.</p><p class="legend">Red line: guaranteed route. Reservation overlay: blue critical room, amber port, purple wide seam, red ledge room, green spawn, black exit. Background: purple menu, cyan mirror, pink clock, gold sconce, brown hatch. Furniture: orange table, yellow chair, green booth, blue counter. Pale dots are wallpaper motifs. ○ is spawn; ■ is exit.</p><main class="gallery">${cards}</main></body></html>
 `;
 }
 
@@ -71,7 +71,7 @@ for (let offset = 0; offset < options.count; offset++) {
 const failures = levels.filter(level => !level.validation.valid || !level.compositionValidation.valid).map(level => ({ seed: level.seed, errors: [...level.validation.errors, ...level.compositionValidation.errors] }));
 const portEntries = levels.flatMap(level => level.roomPorts);
 const summary = {
-  version: 6,
+  version: 7,
   biome: options.biome,
   firstSeed: options.seed,
   count: options.count,
@@ -92,6 +92,8 @@ const summary = {
   furniturePlacementCount: levels.reduce((total, level) => total + level.furniturePlacements.length, 0),
   furniturePlacementsPerLevel: histogram(levels, level => level.furniturePlacements.length),
   furnitureComponents: histogram(levels.flatMap(level => level.furniturePlacements), placement => placement.component),
+  wallpaperPlacementCount: levels.reduce((total, level) => total + level.wallpaperPlacements.length, 0),
+  wallpaperPlacementsPerLevel: histogram(levels, level => level.wallpaperPlacements.length),
 };
 
 writeFileSync(resolve(outputDirectory, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);

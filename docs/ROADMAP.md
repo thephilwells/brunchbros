@@ -123,8 +123,8 @@ transitions. Every critical-route room now also proves a directed path matching
 its declared ordinary or ledge-catch class. The assembly generator's seed-0
 output is accepted in SameBoy. A minimal Press Start screen now derives a
 runtime seed from input timing and the divider register, and the production ROM
-no longer embeds the seed-0 oracle. External dumps for several golden seeds are
-the next parity check. Directional look poses and camera look-ahead can ship in
+no longer embeds the seed-0 oracle. Complete-map fixed-seed parity is now
+verified as recorded below. Directional look poses and camera look-ahead can ship in
 the same milestone but are not blockers for procedural generation. See
 `notes/2026-09-21-player-abilities-and-generation-prerequisites.md`.
 
@@ -140,14 +140,54 @@ eligible optional rooms without consuming the structural PRNG, exports its
 choices to JSON/TMX and the HTML gallery, and passes all 65,536 seeds. Gallery
 review is accepted. The RGBDS runtime now produces byte-identical furnished
 maps for four fixed parity seeds spanning zero, ordinary, mixed-bit, and maximum
-16-bit values. Random-seed SameBoy playtesting is the remaining acceptance gate
-before expanding dining-room dressing beyond floor furniture. Host-side wall
+16-bit values. Floor furniture has passed SameBoy review. Host-side wall
 fixture placement now treats each wide-seam domino as one visual chamber and
 places one floor-relative menu board, mirror, clock, serving hatch, or evenly
 spaced sconce pair per eligible chamber. All 65,536 host seeds pass and gallery
 review is accepted. The RGBDS port passes complete decorated-map parity in
-SameBoy for seeds 0, 1, 77, `$1234`, and `$FFFF`; random-seed manual review is
-next. Sparse wallpaper motifs remain a later density pass.
+SameBoy for seeds 0, 1, 77, `$1234`, and `$FFFF`; Phil accepted the in-game result
+on 2026-10-05.
+
+## Next development round — proposed order (2026-10-05)
+
+The runtime background port is committed. Resume from this accepted dining-room
+baseline; the following steps are planned, not implemented or approved as one
+combined change. Keep the gallery → review → runtime → parity → playtest cadence.
+
+1. **Finish subtle rear-wall dressing.** Start with a small host-side wallpaper
+   motif pass using the existing atlas. Use a consistent chamber-relative grid
+   and restrained density; preserve wall fixtures, furniture, structural tiles,
+   and protected clearances. Make this the final cosmetic pass for now. Review
+   a 256-seed gallery and representative Tiled maps, validate all 65,536 seeds,
+   then port accepted rules to RGBDS and repeat decorated-map parity. Avoid
+   adding new assets or changing room geometry in this step.
+   The host pass is implemented with tile 80 on a fixed chamber lattice: one
+   motif per ordinary chamber and two per domino where legal. All 65,536 seeds
+   pass; the 256-seed gallery is awaiting review before any RGBDS work.
+2. **Make the exit functional.** Define Down-at-door activation and a minimal
+   descent/reload state before implementation. Initially prove generation of a
+   fresh dining-room map and complete player/camera/streaming reset. Keep the
+   planned Patio → Dining Room → Kitchen → Freezer chain explicit; reusing the
+   dining room is a test of transitions, not a change to biome progression.
+   The diagonal stair animation is a separately reviewable polish step.
+3. **Build the first gameplay interaction.** Specify and implement the frying-pan
+   attack and its sprite poses in a focused fixture, then introduce one enemy
+   and the minimum damage/recovery rules needed to test combat. Review these as
+   separate steps before adding encounter placement to generated rooms.
+4. **Reward exploration.** Introduce a collectible and optional-room placement,
+   followed by breakable eggs and lifting/throwing. Prefer better treasure farther
+   from the critical route, while keeping nearby side rooms worthwhile. Tune the
+   reward rule once actual items exist.
+5. **Expand the biome vocabulary.** Reuse the proven generation/composition
+   contracts for Patio, Kitchen, and Freezer, reviewing assets in small groups.
+   Freezer sliding, boss-arena exceptions, and the final boss remain explicit
+   later work.
+
+Do not replace free-floating traversal platforms wholesale while dressing rooms.
+Floor-level furniture cannot supply the same ascent routes; replacing those
+platforms requires new structural ledges/templates and renewed traversal proof.
+Look-up art and held Up/Down camera inspection remain useful independent player
+polish, but are not prerequisites for the next cosmetic pass.
 
 ## Completed
 

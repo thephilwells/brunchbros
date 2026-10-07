@@ -22,8 +22,8 @@ the structural PRNG. Floor furniture yields when a wall fixture already owns a
 candidate cell.
 
 **Status:** Host gallery accepted. Implemented in RGBDS with complete-map parity
-passing in SameBoy for seeds 0, 1, 77, `$1234`, and `$FFFF`. Random-seed manual
-playtesting remains the acceptance gate.
+passing in SameBoy for seeds 0, 1, 77, `$1234`, and `$FFFF`. Phil's subsequent
+SameBoy review accepted the dining-room result on 2026-10-05.
 
 ---
 
