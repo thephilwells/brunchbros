@@ -1,8 +1,8 @@
 # Dining-room composition
 
 Status: **host/runtime floor furniture and background placement accepted after
-gallery, fixed-seed parity, and SameBoy review (2026-10-05); host-side wallpaper
-motif pass implemented and awaiting gallery review**.
+gallery, fixed-seed parity, and SameBoy review (2026-10-05); wallpaper gallery
+accepted and runtime placement implemented, awaiting production-ROM review**.
 
 ## Purpose
 
@@ -161,7 +161,8 @@ tiles against the complete decorated host export before entering gameplay;
 seeds 0, 1, 77 (paired sconces), `$1234`, and `$FFFF` pass. The normal ROM keeps
 its timing-derived seed and does not embed the parity oracle.
 
-The accepted runtime parity target currently stops after fixtures and furniture.
-The host-only wallpaper pass remains outside that oracle until its gallery is
-accepted and the rules are ported to RGBDS. Encounters, loot eggs, and movable
-objects remain later composition passes.
+The runtime parity target includes wallpaper. A 160-byte footprint bitset keeps
+transparent cells inside fixtures unavailable without duplicating the complete
+tilemap. Fixed-seed parity covers seeds 0, 1, 77, `$1234`, and `$FFFF` across all
+1,280 cells. Encounters, loot eggs, and movable objects remain later composition
+passes.

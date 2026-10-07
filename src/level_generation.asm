@@ -67,6 +67,19 @@ FurnitureWorldX: db
 FurnitureWorldY: db
 FurnitureLeftDistance: db
 FurnitureRightDistance: db
+WallpaperBlockedTiles: ds 160
+WallpaperCandidateCount: db
+WallpaperTargetCount: db
+WallpaperSelectionIndex: db
+WallpaperTargetOrdinal: db
+WallpaperCandidateOrdinal: db
+WallpaperLocalX: db
+WallpaperLocalY: db
+WallpaperWidth: db
+WallpaperHeight: db
+WallpaperPlacementRoom: db
+WallpaperRoomX: db
+WallpaperRoomY: db
 
 SECTION "Level Generation", ROM0
 GenerateLevel:
@@ -99,8 +112,10 @@ ENDC
 	call ApplyProtectedEndpoints
 	call ConvertSemanticMap
 	call PlaceExitDoor
+	call ClearWallpaperBlockedTiles
 	call PlaceDiningRoomBackground
 	call PlaceDiningRoomFurniture
+	call PlaceDiningRoomWallpaper
 IF DEF(FURNITURE_PARITY_TEST)
 	call VerifyFurnitureParity
 ENDC
@@ -1951,6 +1966,7 @@ GetBackgroundTopPointer:
 	ret
 
 PlaceBackgroundComponent:
+	call MarkBackgroundWallpaperFootprint
 	call GetBackgroundTopPointer
 	push hl
 	ld hl, DiningBackgroundTilePointers
@@ -2318,6 +2334,7 @@ GetFurnitureTopPointer:
 	ret
 
 PlaceFurnitureComponent:
+	call MarkFurnitureWallpaperFootprint
 	call GetFurnitureTopPointer
 	push hl
 	ld a, [FurnitureComponent]
@@ -2516,6 +2533,451 @@ FurnitureSelectionModulo:
 	pop af
 	ret
 
+ClearWallpaperBlockedTiles:
+	ld hl, WallpaperBlockedTiles
+	ld b, 160
+	xor a
+.loop
+	ld [hl+], a
+	dec b
+	jr nz, .loop
+	ret
+
+MarkBackgroundWallpaperFootprint:
+	call GetBackgroundTopPointer
+	ld a, [BackgroundWidth]
+	ld [WallpaperWidth], a
+	ld a, [BackgroundHeight]
+	ld [WallpaperHeight], a
+	jp MarkWallpaperFootprint
+
+MarkFurnitureWallpaperFootprint:
+	call GetFurnitureTopPointer
+	ld a, [FurnitureWidth]
+	ld [WallpaperWidth], a
+	ld a, [FurnitureHeight]
+	ld [WallpaperHeight], a
+
+MarkWallpaperFootprint:
+	ld a, [WallpaperHeight]
+	ld b, a
+.rowLoop
+	push bc
+	ld a, [WallpaperWidth]
+	ld c, a
+.cellLoop
+	push bc
+	push hl
+	call MarkWallpaperCellBlocked
+	pop hl
+	pop bc
+	inc hl
+	dec c
+	jr nz, .cellLoop
+	ld a, 40
+	ld c, a
+	ld a, [WallpaperWidth]
+	ld b, a
+	ld a, c
+	sub a, b
+	ld e, a
+	ld d, 0
+	add hl, de
+	pop bc
+	dec b
+	jr nz, .rowLoop
+	ret
+
+MarkWallpaperCellBlocked:
+	ld de, LevelMap
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, l
+	and a, 7
+	ld e, a
+	ld d, 0
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	ld bc, WallpaperBlockedTiles
+	add hl, bc
+	push hl
+	ld hl, BitMasks
+	add hl, de
+	ld a, [hl]
+	pop hl
+	or a, [hl]
+	ld [hl], a
+	ret
+
+PlaceDiningRoomWallpaper:
+	xor a
+	ld [GenerationRoom], a
+.chamberLoop
+	ld a, [GenerationRoom]
+	cp a, 16
+	ret z
+	call IsBackgroundChamberAnchor
+	jp nc, .nextRoom
+	ld a, [GenerationRoom]
+	ld [BackgroundAnchorRoom], a
+	call LoadWallpaperChamberDimensions
+	call CountWallpaperCandidates
+	and a
+	jp z, .nextRoom
+	ld [WallpaperCandidateCount], a
+	ld b, a
+	ld a, [WallpaperTargetCount]
+	cp a, b
+	jr c, .targetReady
+	ld a, b
+	ld [WallpaperTargetCount], a
+.targetReady
+	ld a, b
+	call WallpaperSelectionRandomModulo
+	ld [GenerationTarget], a
+	xor a
+	ld [WallpaperSelectionIndex], a
+.selectionLoop
+	call SetWallpaperTargetOrdinal
+	call FindWallpaperCandidate
+	ld a, DINING_WALLPAPER_MOTIF_TILE
+	ld [hl], a
+	ld hl, WallpaperSelectionIndex
+	inc [hl]
+	ld a, [WallpaperTargetCount]
+	ld b, a
+	ld a, [WallpaperSelectionIndex]
+	cp a, b
+	jr c, .selectionLoop
+.nextRoom
+	ld hl, GenerationRoom
+	inc [hl]
+	jp .chamberLoop
+
+LoadWallpaperChamberDimensions:
+	ld a, 10
+	ld [WallpaperWidth], a
+	ld a, 8
+	ld [WallpaperHeight], a
+	ld a, 1
+	ld [WallpaperTargetCount], a
+	ld a, [BackgroundAnchorRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomWidePorts
+	add hl, de
+	bit 1, [hl]
+	jr z, .vertical
+	ld a, 20
+	ld [WallpaperWidth], a
+	jr .domino
+.vertical
+	bit 3, [hl]
+	ret z
+	ld a, 16
+	ld [WallpaperHeight], a
+.domino
+	ld a, 2
+	ld [WallpaperTargetCount], a
+	ret
+
+CountWallpaperCandidates:
+	xor a
+	ld [WallpaperCandidateCount], a
+	call ResetWallpaperCandidatePosition
+.loop
+	call IsWallpaperCandidate
+	jr nc, .advance
+	ld hl, WallpaperCandidateCount
+	inc [hl]
+.advance
+	call AdvanceWallpaperCandidatePosition
+	jr c, .loop
+	ld a, [WallpaperCandidateCount]
+	ret
+
+ResetWallpaperCandidatePosition:
+	ld a, DINING_WALLPAPER_X_OFFSET
+	ld [WallpaperLocalX], a
+	ld a, DINING_WALLPAPER_Y_OFFSET
+	ld [WallpaperLocalY], a
+	ret
+
+AdvanceWallpaperCandidatePosition:
+	ld a, [WallpaperLocalX]
+	add a, DINING_WALLPAPER_X_STRIDE
+	ld [WallpaperLocalX], a
+	ld b, a
+	ld a, [WallpaperWidth]
+	dec a
+	cp a, b
+	jr c, .nextRow
+	jr z, .nextRow
+	scf
+	ret
+.nextRow
+	ld a, DINING_WALLPAPER_X_OFFSET
+	ld [WallpaperLocalX], a
+	ld a, [WallpaperLocalY]
+	add a, DINING_WALLPAPER_Y_STRIDE
+	ld [WallpaperLocalY], a
+	ld b, a
+	ld a, [WallpaperHeight]
+	dec a
+	cp a, b
+	jr c, .done
+	jr z, .done
+	scf
+	ret
+.done
+	and a
+	ret
+
+SetWallpaperTargetOrdinal:
+	ld a, [GenerationTarget]
+	ld b, a
+	ld a, [WallpaperSelectionIndex]
+	and a
+	jr z, .wrap
+	ld a, [WallpaperCandidateCount]
+	srl a
+	add a, b
+	ld b, a
+.wrap
+	ld a, [WallpaperCandidateCount]
+	cp a, b
+	jr c, .subtract
+	jr z, .subtract
+	ld a, b
+	ld [WallpaperTargetOrdinal], a
+	ret
+.subtract
+	ld a, b
+	ld c, a
+	ld a, [WallpaperCandidateCount]
+	ld b, a
+	ld a, c
+	sub a, b
+	ld [WallpaperTargetOrdinal], a
+	ret
+
+FindWallpaperCandidate:
+	xor a
+	ld [WallpaperCandidateOrdinal], a
+	call ResetWallpaperCandidatePosition
+.loop
+	call IsWallpaperCandidate
+	jr nc, .advance
+	ld a, [WallpaperCandidateOrdinal]
+	ld b, a
+	ld a, [WallpaperTargetOrdinal]
+	cp a, b
+	jp z, GetWallpaperCandidatePointer
+	ld hl, WallpaperCandidateOrdinal
+	inc [hl]
+.advance
+	call AdvanceWallpaperCandidatePosition
+	jr .loop
+
+IsWallpaperCandidate:
+	call SetWallpaperRoomPosition
+	call IsWallpaperPointReserved
+	jr c, .invalid
+	call GetWallpaperCandidatePointer
+	ld a, [hl]
+	cp a, DINING_WALLPAPER_BACKGROUND_TILE
+	jr z, .tileReady
+	cp a, DINING_WALLPAPER_MOTIF_TILE
+	jr nz, .invalid
+.tileReady
+	call IsWallpaperCellBlocked
+	jr nc, .invalid
+	scf
+	ret
+.invalid
+	and a
+	ret
+
+SetWallpaperRoomPosition:
+	ld a, [BackgroundAnchorRoom]
+	ld [WallpaperPlacementRoom], a
+	ld a, [WallpaperLocalX]
+	ld [WallpaperRoomX], a
+	cp a, 10
+	jr c, .vertical
+	sub a, 10
+	ld [WallpaperRoomX], a
+	ld hl, WallpaperPlacementRoom
+	inc [hl]
+.vertical
+	ld a, [WallpaperLocalY]
+	ld [WallpaperRoomY], a
+	cp a, 8
+	ret c
+	sub a, 8
+	ld [WallpaperRoomY], a
+	ld hl, WallpaperPlacementRoom
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+
+IsWallpaperPointReserved:
+	ld a, [WallpaperPlacementRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomTraversalClasses
+	add hl, de
+	ld a, [hl]
+	and a
+	jp nz, .reserved
+	ld a, [WallpaperPlacementRoom]
+	ld b, a
+	ld a, [CriticalRoute]
+	cp a, b
+	jr nz, .exit
+	ld a, [WallpaperRoomX]
+	cp a, 5
+	jp c, .reserved
+.exit
+	ld a, [CriticalRouteLength]
+	dec a
+	ld e, a
+	ld d, 0
+	ld hl, CriticalRoute
+	add hl, de
+	ld a, [hl]
+	cp a, b
+	jr nz, .ports
+	ld a, [WallpaperRoomX]
+	cp a, 6
+	jr c, .reserved
+.ports
+	ld e, b
+	ld d, 0
+	ld hl, RoomPorts
+	add hl, de
+	ld b, [hl]
+	ld hl, RoomWidePorts
+	add hl, de
+	ld c, [hl]
+	bit 0, b
+	jr z, .east
+	ld a, [WallpaperRoomX]
+	cp a, 3
+	jr nc, .east
+	bit 0, c
+	jr nz, .reserved
+	ld a, [WallpaperRoomY]
+	cp a, 3
+	jr nc, .reserved
+.east
+	bit 1, b
+	jr z, .north
+	ld a, [WallpaperRoomX]
+	cp a, 7
+	jr c, .north
+	bit 1, c
+	jr nz, .reserved
+	ld a, [WallpaperRoomY]
+	cp a, 3
+	jr nc, .reserved
+.north
+	bit 2, b
+	jr z, .south
+	ld a, [WallpaperRoomY]
+	cp a, 4
+	jr nc, .south
+	bit 2, c
+	jr nz, .reserved
+	ld a, [WallpaperRoomX]
+	cp a, 3
+	jr c, .south
+	cp a, 8
+	jr c, .reserved
+.south
+	bit 3, b
+	jr z, .clear
+	ld a, [WallpaperRoomY]
+	cp a, 4
+	jr c, .clear
+	bit 3, c
+	jr nz, .reserved
+	ld a, [WallpaperRoomX]
+	cp a, 3
+	jr c, .clear
+	cp a, 8
+	jr c, .reserved
+.clear
+	and a
+	ret
+.reserved
+	scf
+	ret
+
+GetWallpaperCandidatePointer:
+	ld a, [BackgroundAnchorRoom]
+	call GetRoomDestination
+	ld a, [WallpaperLocalY]
+	ld b, a
+	ld de, 40
+.rowLoop
+	ld a, b
+	and a
+	jr z, .rowsReady
+	add hl, de
+	dec b
+	jr .rowLoop
+.rowsReady
+	ld a, [WallpaperLocalX]
+	ld e, a
+	ld d, 0
+	add hl, de
+	ret
+
+IsWallpaperCellBlocked:
+	ld de, LevelMap
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, l
+	and a, 7
+	ld e, a
+	ld d, 0
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	ld bc, WallpaperBlockedTiles
+	add hl, bc
+	ld a, [hl]
+	ld hl, BitMasks
+	add hl, de
+	and a, [hl]
+	jr nz, .blocked
+	scf
+	ret
+.blocked
+	and a
+	ret
+
+WallpaperSelectionRandomModulo:
+	ld de, DINING_WALLPAPER_SELECTION_SALT
+	jp BackgroundSelectionModulo
+
 IF DEF(FURNITURE_PARITY_TEST)
 VerifyFurnitureParity:
 	ld hl, LevelMap
@@ -2576,6 +3038,7 @@ FurnitureRoomMix:
 
 INCLUDE "build/dining_room_background.inc"
 INCLUDE "build/dining_room_furniture.inc"
+INCLUDE "build/dining_room_wallpaper.inc"
 
 IF DEF(FURNITURE_PARITY_TEST)
 FurnitureParityMap:

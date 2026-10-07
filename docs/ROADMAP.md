@@ -163,7 +163,9 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    adding new assets or changing room geometry in this step.
    The host pass is implemented with tile 80 on a fixed chamber lattice: one
    motif per ordinary chamber and two per domino where legal. All 65,536 seeds
-   pass; the 256-seed gallery is awaiting review before any RGBDS work.
+   pass and the 256-seed gallery is accepted. The RGBDS port now matches the
+   complete host map for seeds 0, 1, 77, `$1234`, and `$FFFF`; production-ROM
+   review remains.
 2. **Make the exit functional.** Define Down-at-door activation and a minimal
    descent/reload state before implementation. Initially prove generation of a
    fresh dining-room map and complete player/camera/streaming reset. Keep the

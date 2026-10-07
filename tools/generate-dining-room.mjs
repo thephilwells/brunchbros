@@ -6,6 +6,7 @@ const height = 64;
 const shades = [255, 170, 85, 0];
 const furnitureManifest = JSON.parse(readFileSync('data/dining-room-furniture.json', 'utf8'));
 const backgroundManifest = JSON.parse(readFileSync('data/dining-room-background.json', 'utf8'));
+const wallpaperManifest = JSON.parse(readFileSync('data/dining-room-wallpaper.json', 'utf8'));
 const pilot = readFileSync('gfx/structural_pilot.png');
 const compressed = [];
 for (let offset = 8; offset < pilot.length;) {
@@ -434,6 +435,16 @@ writeFileSync('build/dining_room_background.inc', [
     `DiningBackgroundTiles${index}:`,
     `\tdb ${component.tiles.flat().join(', ')}`,
   ]),
+  '',
+].join('\n'));
+writeFileSync('build/dining_room_wallpaper.inc', [
+  `DEF DINING_WALLPAPER_BACKGROUND_TILE EQU ${wallpaperManifest.backgroundTile}`,
+  `DEF DINING_WALLPAPER_MOTIF_TILE EQU ${wallpaperManifest.motifTile}`,
+  `DEF DINING_WALLPAPER_X_OFFSET EQU ${wallpaperManifest.xOffset}`,
+  `DEF DINING_WALLPAPER_X_STRIDE EQU ${wallpaperManifest.xStride}`,
+  `DEF DINING_WALLPAPER_Y_OFFSET EQU ${wallpaperManifest.yOffset}`,
+  `DEF DINING_WALLPAPER_Y_STRIDE EQU ${wallpaperManifest.yStride}`,
+  `DEF DINING_WALLPAPER_SELECTION_SALT EQU $${wallpaperManifest.selectionSalt.toString(16).padStart(4, '0')}`,
   '',
 ].join('\n'));
 

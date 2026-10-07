@@ -27,8 +27,8 @@ The runtime is split between `src/main.asm` and the included
   compatible horizontal and vertical domino seams, selects an eligible
   ledge-catch room, copies semantic room templates into WRAM, applies variants
   and protected endpoints, converts semantic solids to connectivity tile IDs,
-  and places the exit doorway. It consumes the xorshift state selected on the
-  title screen.
+  places the exit doorway, then composes wall fixtures, furniture, and wallpaper.
+  It consumes the xorshift state selected on the title screen.
 - **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
   At the start of VBlank it streams one newly exposed or restored background
   column when needed, then commits the camera registers and all four player

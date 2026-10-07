@@ -126,6 +126,10 @@ Start:
 	ld a, %10000001
 	ldh [$ff40], a
 
+IF DEF(FURNITURE_PARITY_TEST)
+	jp .startGame
+ENDC
+
 .titleLoop
 .waitTitleNotVBlank
 	ldh a, [$ff44]
@@ -180,6 +184,7 @@ Start:
 	ld a, [GenerationRandomState + 1]
 	ld [SelectedSeed + 1], a
 
+.startGame
 	ld hl, $ff40
 	res 7, [hl]
 IF DEF(ROOM_VARIANT_PLAYTEST)
