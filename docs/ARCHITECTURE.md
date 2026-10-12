@@ -49,6 +49,12 @@ The runtime is split between `src/main.asm` and the included
   remains in force. Otherwise, one-way support moves the Chef's feet one pixel
   below the landing plane and resumes gravity, preventing immediate re-landing
   on the same tile top.
+- **Exit descent** — Down while grounded at the closed exit takes priority over
+  crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
+  centers the Chef at the threshold, and advances the existing right-facing
+  walk frames diagonally for 24 frames. OAM background priority lets nonzero
+  doorway pixels mask the Chef while the color-0 opening remains transparent.
+  The finished state hides the Chef; biome loading is not implemented yet.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
   into the 4 OAM entries that make up the 16×16 player, converting to
   screen coordinates by subtracting the current `SCX`/`SCY` (sprites don't
@@ -103,6 +109,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerTileBase` | Index of the current animation frame's first tile (idle/walk/jump/ascent/crouch/ledge all reuse this one mechanism) |
 | `AnimTimer` | Frame counter gating animation speed, decoupled from the 60fps loop |
 | `FacingFlip` | `0` or `$20` (the OAM horizontal-flip attribute bit), selects which `UpdateSprites` block runs |
+| `PlayerSpriteAttributes` | OAM attributes shared by all four Chef tiles; currently used for the exit animation's background-priority bit |
 | `PlayerVelY` | Signed (two's-complement) vertical velocity; gravity increments it, capped at 16 while falling |
 | `PrevButtons` | Previous frame's A-button state, for edge-detecting the jump press |
 | `LandTimer` | Frames remaining to hold the landing-squash pose after a hard enough landing |
@@ -111,6 +118,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `LedgeTop` | Scratch world Y coordinate for the tile top currently considered by swept ledge detection |
 | `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
 | `FallingPastWorld` | Marks a tentative falling Y past 255 so swept support checks run before a world-bottom clamp |
+| `ExitAnimationTimer` | `0` when inactive, a 24-frame descent countdown while active, and `$FF` after the Chef is hidden |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
@@ -122,12 +130,12 @@ sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
 The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
-all 128 slots there, with IDs 0–30, 32–75, 80, and 112–127 authored. IDs
+all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in
 `LevelMap`; `$9800–$9BFF` contains its streamed 32-column view. The map includes
 a maximum compatible matching of reciprocal horizontal and vertical domino
 seams, at most one generated ledge-catch room, and the shared descent exit.
-Biome-transition runtime code does not exist yet. See
+The exit descent presentation exists; loading the next biome does not. See
 `specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates

@@ -86,6 +86,17 @@ for (let y = 14; y <= 17; y++) {
   for (let x = 4 + inset; x <= 11 - inset; x++) composite(25, 2, x, y, 0);
 }
 
+for (let id = 81; id <= 86; id++) fill(id, 1);
+for (let y = 0; y < 24; y++) for (let x = 0; x < 16; x++) {
+  const frame = (y === 0 && x >= 4 && x <= 11) ||
+    (y === 1 && (x === 2 || x === 3 || x === 12 || x === 13)) ||
+    (y >= 2 && (x === 1 || x === 14)) ||
+    (y === 22 && x >= 1 && x <= 14) ||
+    (y === 23 && x >= 0 && x <= 15);
+  const interior = y >= 2 && y < 22 && x >= 2 && x <= 13;
+  composite(81, 2, x, y, frame ? 3 : interior ? 0 : 1);
+}
+
 for (let id = 32; id <= 43; id++) fill(id, 1);
 for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) {
   if (x === 0 || x === 31 || y === 0 || y === 15) composite(32, 4, x, y, 2);
@@ -327,6 +338,12 @@ const tiles = Array.from({ length: 128 }, (_, id) => {
     properties.push(`<property name="part_x" type="int" value="${(id - 25) % 2}"/>`);
     properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 25) / 2)}"/>`);
     properties.push('<property name="interaction" value="press_down"/>');
+  } else if (id >= 81 && id <= 86) {
+    name = `descent_exit_open_${id - 81}`;
+    role = 'exit';
+    properties.push('<property name="component" value="descent_exit_open"/>');
+    properties.push(`<property name="part_x" type="int" value="${(id - 81) % 2}"/>`);
+    properties.push(`<property name="part_y" type="int" value="${Math.floor((id - 81) / 2)}"/>`);
   } else if (id >= 32 && id <= 39) {
     name = `menu_board_${id - 32}`;
     role = 'fixture';

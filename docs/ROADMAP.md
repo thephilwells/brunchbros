@@ -165,13 +165,16 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    motif per ordinary chamber and two per domino where legal. All 65,536 seeds
    pass and the 256-seed gallery is accepted. The RGBDS port now matches the
    complete host map for seeds 0, 1, 77, `$1234`, and `$FFFF`; production-ROM
-   review remains.
+   review is accepted.
 2. **Make the exit functional.** Define Down-at-door activation and a minimal
    descent/reload state before implementation. Initially prove generation of a
    fresh dining-room map and complete player/camera/streaming reset. Keep the
    planned Patio → Dining Room → Kitchen → Freezer chain explicit; reusing the
    dining room is a test of transitions, not a change to biome progression.
-   The diagonal stair animation is a separately reviewable polish step.
+   The diagonal stair animation is implemented as a focused prototype: Down at
+   the threshold opens the doorway, walks the Chef right/down behind its frame,
+   and leaves him hidden. Hands-on animation review and the fresh-map reload
+   remain before this step is complete.
 3. **Build the first gameplay interaction.** Specify and implement the frying-pan
    attack and its sprite poses in a focused fixture, then introduce one enemy
    and the minimum damage/recovery rules needed to test combat. Review these as

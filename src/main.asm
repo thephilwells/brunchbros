@@ -7,6 +7,9 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
+DEF EXIT_ANIMATION_FRAMES EQU 24
+DEF EXIT_ANIMATION_FINISHED EQU $ff
+DEF EXIT_OPEN_TILE_BASE EQU 81
 IF DEF(ROOM_VARIANT_PLAYTEST)
 INCLUDE "build/room_variant_playtest.inc"
 ENDC
@@ -33,6 +36,7 @@ StreamedColumns: db
 PlayerTileBase: db
 AnimTimer: db
 FacingFlip: db
+PlayerSpriteAttributes: db
 PlayerVelY: db
 PrevButtons: db
 LandTimer: db
@@ -41,6 +45,7 @@ LedgeSide: db
 LedgeTop: db
 PlayerGrounded: db
 FallingPastWorld: db
+ExitAnimationTimer: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -232,6 +237,8 @@ ENDC
 	ld [AnimTimer], a
 	ld a, 0
 	ld [FacingFlip], a
+	ld [PlayerSpriteAttributes], a
+	ld [ExitAnimationTimer], a
 	ld a, 0
 	ld [PlayerVelY], a
 	ld a, $ff
@@ -240,6 +247,9 @@ ENDC
 	ld [LandTimer], a
 	ld [LedgeSide], a
 	ld [PlayerGrounded], a
+IF DEF(EXIT_ANIMATION_PLAYTEST)
+	call SetPlayerAtExitThreshold
+ENDC
 	call UpdateSprites
 
 	ld a, %10000011
@@ -363,6 +373,7 @@ MainLoop:
 
 .scxReady
 	call UpdateStreaming
+	call DrawOpenExitDoor
 	ld a, [CameraX]
 	ldh [$ff43], a
 
@@ -444,6 +455,19 @@ MainLoop:
 	jp .applyGravity
 
 .notHanging
+	ld a, [ExitAnimationTimer]
+	and a
+	jr z, .checkExit
+	call AdvanceExitDescent
+	jp MainLoop
+
+.checkExit
+	push bc
+	push de
+	call TryStartExitDescent
+	pop de
+	pop bc
+	jp c, MainLoop
 
 ; Determine walking vs idle from the D-pad reading, advance animation accordingly
 	ld a, b
@@ -982,6 +1006,18 @@ StreamColumn:
 
 ; Projects PlayerY/PlayerX (world coords) into the 4 OAM entries, converting to screen coords via SCX/SCY
 UpdateSprites:
+	ld a, [ExitAnimationTimer]
+	cp a, EXIT_ANIMATION_FINISHED
+	jr nz, .visible
+	ld hl, $fe00
+	ld b, 16
+	xor a
+.hide
+	ld [hl+], a
+	dec b
+	jr nz, .hide
+	ret
+.visible
 	ldh a, [$ff42]
 	ld b, a
 	ldh a, [$ff43]
@@ -1000,7 +1036,7 @@ UpdateSprites:
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	ld [hl+], a
-	ld a, 0
+	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
 
 	ld a, [PlayerY]
@@ -1013,7 +1049,7 @@ UpdateSprites:
 	ld a, [PlayerTileBase]
 	add a, 1
 	ld [hl+], a
-	ld a, 0
+	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
 
 	ld a, [PlayerY]
@@ -1026,7 +1062,7 @@ UpdateSprites:
 	ld a, [PlayerTileBase]
 	add a, 2
 	ld [hl+], a
-	ld a, 0
+	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
 
 	ld a, [PlayerY]
@@ -1040,7 +1076,7 @@ UpdateSprites:
 	ld a, [PlayerTileBase]
 	add a, 3
 	ld [hl+], a
-	ld a, 0
+	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
 
 	ret
@@ -1056,7 +1092,8 @@ UpdateSprites:
 	ld a, [PlayerTileBase]
 	add a, 1
 	ld [hl+], a
-	ld a, $20
+	ld a, [PlayerSpriteAttributes]
+	or a, $20
 	ld [hl+], a
 
 	ld a, [PlayerY]
@@ -1068,7 +1105,8 @@ UpdateSprites:
 	ld [hl+], a
 	ld a, [PlayerTileBase]
 	ld [hl+], a
-	ld a, $20
+	ld a, [PlayerSpriteAttributes]
+	or a, $20
 	ld [hl+], a
 
 	ld a, [PlayerY]
@@ -1081,7 +1119,8 @@ UpdateSprites:
 	ld a, [PlayerTileBase]
 	add a, 3
 	ld [hl+], a
-	ld a, $20
+	ld a, [PlayerSpriteAttributes]
+	or a, $20
 	ld [hl+], a
 
 	ld a, [PlayerY]
@@ -1095,9 +1134,155 @@ UpdateSprites:
 	ld a, [PlayerTileBase]
 	add a, 2
 	ld [hl+], a
-	ld a, $20
+	ld a, [PlayerSpriteAttributes]
+	or a, $20
 	ld [hl+], a
 
+	ret
+
+TryStartExitDescent:
+	ld a, [PlayerGrounded]
+	and a
+	jr z, .notStarted
+	ld a, [CurrentDpad]
+	bit 3, a
+	jr nz, .notStarted
+	call LoadPlayerX
+	ld a, [PlayerY]
+	sub a, 8
+	ld d, a
+	call ReadLevelTile
+	cp a, 25
+	jr c, .notStarted
+	cp a, 31
+	jr nc, .notStarted
+	call SetPlayerAtExitThreshold
+	call OpenExitDoor
+	ld a, EXIT_ANIMATION_FRAMES
+	ld [ExitAnimationTimer], a
+	ld a, $80
+	ld [PlayerSpriteAttributes], a
+	ld a, 9
+	ld [PlayerTileBase], a
+	xor a
+	ld [FacingFlip], a
+	ld [PlayerVelY], a
+	ld [LandTimer], a
+	ld [LedgeSide], a
+	scf
+	ret
+.notStarted
+	and a
+	ret
+
+SetPlayerAtExitThreshold:
+	ld a, [GeneratedExitX]
+	ld l, a
+	ld h, 0
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld de, 8
+	add hl, de
+	ld a, l
+	ld [PlayerX], a
+	ld a, h
+	ld [PlayerX + 1], a
+	ld a, [GeneratedExitY]
+	add a, 3
+	add a, a
+	add a, a
+	add a, a
+	ld [PlayerY], a
+	ret
+
+OpenExitDoor:
+	ld a, [GeneratedExitX]
+	ld b, a
+	ld a, [GeneratedExitY]
+	ld c, a
+	call GetMapTilePointer
+	ld a, EXIT_OPEN_TILE_BASE
+	ld b, 3
+.rowLoop
+	ld [hl+], a
+	inc a
+	ld [hl], a
+	inc a
+	ld de, 39
+	add hl, de
+	dec b
+	jr nz, .rowLoop
+	ret
+
+DrawOpenExitDoor:
+	ld a, [ExitAnimationTimer]
+	and a
+	ret z
+	ld a, [GeneratedExitX]
+	ld b, a
+	ld a, [GeneratedExitY]
+	ld c, a
+	ld d, EXIT_OPEN_TILE_BASE
+	ld e, 3
+.rowLoop
+	call WriteExitBackgroundTile
+	inc b
+	inc d
+	call WriteExitBackgroundTile
+	dec b
+	inc c
+	inc d
+	dec e
+	jr nz, .rowLoop
+	ret
+
+WriteExitBackgroundTile:
+	push de
+	ld h, 0
+	ld l, c
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld de, $9800
+	add hl, de
+	ld a, b
+	and a, 31
+	ld e, a
+	ld d, 0
+	add hl, de
+	pop de
+	ld [hl], d
+	ret
+
+AdvanceExitDescent:
+	ld a, [ExitAnimationTimer]
+	cp a, EXIT_ANIMATION_FINISHED
+	ret z
+	call IncrementPlayerX
+	ld a, [ExitAnimationTimer]
+	and a, 3
+	jr nz, .animation
+	ld hl, PlayerY
+	inc [hl]
+.animation
+	ld a, [ExitAnimationTimer]
+	and a, 3
+	jr nz, .timer
+	ld a, [PlayerTileBase]
+	add a, 4
+	cp a, 33
+	jr c, .storeFrame
+	ld a, 9
+.storeFrame
+	ld [PlayerTileBase], a
+.timer
+	ld hl, ExitAnimationTimer
+	dec [hl]
+	ret nz
+	ld [hl], EXIT_ANIMATION_FINISHED
 	ret
 
 ReadLevelTile:

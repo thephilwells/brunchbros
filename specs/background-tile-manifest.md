@@ -1,7 +1,7 @@
 # Background tile manifest
 
-Status: **IDs 0–30, 32–78, 80, and 112–127 implemented in the dining-room sheet**,
-2026-09-24. Remaining assignments and art are proposed. Contract and VRAM addresses:
+Status: **IDs 0–30, 32–78, 80–86, and 112–127 implemented in the dining-room sheet**,
+2026-10-12. Remaining assignments and art are proposed. Contract and VRAM addresses:
 [background asset specification](background-assets.md).
 
 ## Sheet layout and counting
@@ -16,16 +16,16 @@ One slot costs 16 bytes regardless of how often it appears in a room.
 | 0–31 | 32 | Shared structural vocabulary | 31 authored, 1 reserved |
 | 32–63 | 32 | Biome fixtures assembled from several tiles | 32 dining authored |
 | 64–79 | 16 | Biome landmark/entrance artwork | 15 dining authored, 1 budgeted |
-| 80–95 | 16 | Biome rear surfaces | 1 dining authored, 15 budgeted |
+| 80–95 | 16 | Biome rear surfaces and exit state | 7 dining authored, 9 budgeted |
 | 96–111 | 16 | Biome decorative details | Budget only |
 | 112–115 | 4 | Dining-room fixture extension | 4 counter tiles authored |
 | 116–127 | 12 | Shared title font | 12 authored |
-| **0–127** | **128** | **2,048 bytes resident** | **95 authored, 32 budgeted, 1 reserved** |
+| **0–127** | **128** | **2,048 bytes resident** | **101 authored, 26 budgeted, 1 reserved** |
 
 These are caps, not a request to fill every slot. The common-material
 pilot authors 17 tiles (0–16) and marks all other slots reserved in its
 TSX. The dining sheet adds eight shared rear/trim tiles, a six-tile shared
-descent exit, 18 passable dining fixture tiles, one one-way test tile, five dining-table tiles, three
+descent exit plus its six-tile open state, 18 passable dining fixture tiles, one one-way test tile, five dining-table tiles, three
 dining-chair tiles plus three mirrored-chair tiles, five booth tiles, four counter tiles, a 12-tile
 landmark, one wallpaper motif, and 12 shared title glyphs. Its
 unassigned slots remain reserved in the TSX.
@@ -99,7 +99,7 @@ scenery behind the chef, whereas solid walls block movement.
 | 22 | trim_h_middle | trim | Horizontal band, repeats left/right |
 | 23 | trim_h_right | trim | Right cap matching the middle |
 | 24 | trim_h_single | trim | One-cell band with both ends finished |
-| 25–30 | `descent_exit` | exit | Shared 2×3 visual portal; passable, with future Down-button interaction |
+| 25–30 | `descent_exit` | exit | Shared 2×3 closed portal; passable, activated by Down at its threshold |
 | 31 | reserved_shared | reserved | Opaque white; not placeable |
 
 Trim backgrounds must match rear_plain. They replace cells in the rendered
@@ -107,16 +107,22 @@ map, so placing the same trim over a different rear texture requires a
 separate composite tile and budget review. Bands must read as wall trim,
 not supporting platforms. Apply the same principle to future props.
 
-## Shared descent exit: IDs 25–30
+## Shared descent exit: IDs 25–30 and 81–86
 
-The 2×3-tile (16×24 px) doorway uses IDs 25–30 in row-major order and is
-identical in every biome. Its dark opening, frame, threshold, and downward
-arrow identify it as the run's exit rather than an ordinary background
-door. All six tiles have `collision=empty`, `role=exit`, and
-`interaction=press_down`. The future room runtime will descend when the
-chef overlaps the doorway and presses Down; tile metadata alone does not
-perform the transition. Entrance art is unnecessary—the chef appears at
-the biome's spawn point.
+The 2×3-tile (16×24 px) doorway uses closed IDs 25–30 and open IDs 81–86,
+both in row-major order. It is identical in every biome. The closed state's
+dark opening, frame, threshold, and downward arrow identify it as the run's
+exit rather than an ordinary background door. All twelve tiles have
+`collision=empty` and `role=exit`; closed tiles also have
+`interaction=press_down`.
+
+While grounded at the threshold, Down opens the doorway and starts a
+24-frame diagonal right/down walk. The Chef's OAM priority bit is set during
+the animation. Nonzero background colors in the frame and threshold then
+mask the sprite, while background color 0 in the open interior leaves it
+visible until it passes behind the right jamb. The animation ends with the
+Chef hidden. Loading the next biome remains a separate pending step.
+Entrance art is unnecessary—the Chef appears at the biome's spawn point.
 
 Normal progression is Patio → Dining Room → Kitchen → Deep Freezer. The
 first three biomes use this doorway to reach the next one. The Deep Freezer
@@ -172,7 +178,7 @@ identify. The floor continues through column 39 so the Chef can cross the
 X=256 seam and return without a forced jump.
 
 These groups exhaust the current *passable wall-decoration* vocabulary,
-not the tile budget. ID 79 and IDs 81–111 remain reserved in
+not the tile budget. ID 79 and IDs 87–111 remain reserved in
 the current atlas. The 32–63 fixture band is full; the counter uses
 IDs 112–115 in the initial sheet without expanding VRAM use.
 

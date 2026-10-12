@@ -112,6 +112,12 @@ for (let row = 0; row < 3; row++) {
 }
 for (let x = 36; x <= 37; x++) assert.equal(collision[at(x, 27)], 1);
 
+for (let id = 81; id <= 86; id++) {
+  assert.equal(collision[id], 0);
+  assert.match(tiles[id][2], /name="role" value="exit"/);
+  assert.match(tiles[id][2], /name="component" value="descent_exit_open"/);
+}
+
 for (let x = 32; x < mapWidth; x++) assert.equal(collision[at(x, 27)], 1);
 for (let x = 32; x <= 34; x++) assert.equal(collision[at(x, 24)], 1);
 for (let y = 25; y <= 26; y++) assert.equal(collision[at(25, y)], 0);

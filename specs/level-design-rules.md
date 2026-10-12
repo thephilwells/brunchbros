@@ -142,9 +142,11 @@ variation.
 - The final required-route transition lands on the approach apron using
   ordinary tolerances. Reaching or entering the exit cannot depend on a
   boundary jump, ledge catch, long drop, later ability, or consumable resource.
-- Exit activation remains a separate runtime interaction: overlap the doorway
-  while grounded at its threshold and press Down. Generation validates only
-  the structural footprint and safe approach.
+- Exit activation is a runtime interaction: overlap the doorway while grounded
+  at its threshold and press Down. A 24-frame diagonal descent opens the door,
+  masks the Chef behind its frame, and leaves him hidden. Loading the next
+  biome remains pending. Generation validates only the structural footprint
+  and safe approach.
 
 ## Room scale and biome dressing
 
