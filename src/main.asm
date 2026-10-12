@@ -7,7 +7,7 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
-DEF EXIT_ANIMATION_FRAMES EQU 24
+DEF EXIT_ANIMATION_FRAMES EQU 32
 DEF EXIT_ANIMATION_FINISHED EQU $ff
 DEF EXIT_OPEN_TILE_BASE EQU 81
 IF DEF(ROOM_VARIANT_PLAYTEST)
@@ -190,8 +190,11 @@ ENDC
 	ld [SelectedSeed + 1], a
 
 .startGame
-	ld hl, $ff40
-	res 7, [hl]
+	call LoadCurrentLevel
+	jp MainLoop
+
+LoadCurrentLevel:
+	call DisableLCD
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -239,14 +242,15 @@ ENDC
 	ld [FacingFlip], a
 	ld [PlayerSpriteAttributes], a
 	ld [ExitAnimationTimer], a
-	ld a, 0
 	ld [PlayerVelY], a
-	ld a, $ff
-	ld [PrevButtons], a
-	ld a, 0
 	ld [LandTimer], a
+	ld [CurrentDpad], a
 	ld [LedgeSide], a
+	ld [LedgeTop], a
 	ld [PlayerGrounded], a
+	ld [FallingPastWorld], a
+	call ReadActionButtons
+	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
 	call SetPlayerAtExitThreshold
 ENDC
@@ -254,7 +258,27 @@ ENDC
 
 	ld a, %10000011
 	ldh [$ff40], a
-	jp MainLoop
+	ret
+
+DisableLCD:
+	ldh a, [$ff40]
+	bit 7, a
+	ret z
+.waitVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr c, .waitVBlank
+	ld hl, $ff40
+	res 7, [hl]
+	ret
+
+AdvanceLevelSeed:
+	call NextGenerationRandom
+	ld a, [GenerationRandomState]
+	ld [SelectedSeed], a
+	ld a, [GenerationRandomState + 1]
+	ld [SelectedSeed + 1], a
+	ret
 
 IF DEF(ROOM_VARIANT_PLAYTEST)
 LoadRoomVariantPlaytest:
@@ -458,7 +482,14 @@ MainLoop:
 	ld a, [ExitAnimationTimer]
 	and a
 	jr z, .checkExit
+	cp a, EXIT_ANIMATION_FINISHED
+	jr z, .loadNextLevel
 	call AdvanceExitDescent
+	jp MainLoop
+
+.loadNextLevel
+	call AdvanceLevelSeed
+	call LoadCurrentLevel
 	jp MainLoop
 
 .checkExit
@@ -1261,10 +1292,17 @@ AdvanceExitDescent:
 	ld a, [ExitAnimationTimer]
 	cp a, EXIT_ANIMATION_FINISHED
 	ret z
+	and a, 1
+	jr nz, .vertical
 	call IncrementPlayerX
+
+.vertical
 	ld a, [ExitAnimationTimer]
 	and a, 3
 	jr nz, .animation
+	ld a, [ExitAnimationTimer]
+	cp a, 4
+	jr z, .animation
 	ld hl, PlayerY
 	inc [hl]
 .animation

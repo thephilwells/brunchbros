@@ -18,10 +18,11 @@ The runtime is split between `src/main.asm` and the included
   animation frames at `$8010`, draws a BG-only title screen, and waits for a
   fresh Start press while counting frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
-  then disables the LCD, generates the dining room, loads its first 32 columns
-  into the background tile map, zeroes the camera and streaming state, uses the
-  generated spawn position for the player's initial state, and turns the LCD
-  back on with signed background addressing before entering `MainLoop`.
+  then calls `LoadCurrentLevel` before entering `MainLoop`.
+- **`LoadCurrentLevel`** — waits for a safe LCD-disable point, generates the
+  dining room, loads its first 32 columns into the background tile map, resets
+  player, input-edge, camera, and streaming state, places the Chef at the
+  generated spawn, and restores the LCD. Boot and exit descent share this path.
 - **`GenerateLevel`** — reproduces the host xorshift16 draw order, builds the
   directed route and optional-room tree, computes a maximum matching of
   compatible horizontal and vertical domino seams, selects an eligible
@@ -52,9 +53,11 @@ The runtime is split between `src/main.asm` and the included
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
-  walk frames diagonally for 24 frames. OAM background priority lets nonzero
+  walk frames diagonally for 32 frames. OAM background priority lets nonzero
   doorway pixels mask the Chef while the color-0 opening remains transparent.
-  The finished state hides the Chef; biome loading is not implemented yet.
+  The finished state hides the Chef. The next frame advances the xorshift state,
+  preserves that value as the next seed, and calls `LoadCurrentLevel`. Until
+  other biome generators exist, this immediately produces another dining room.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
   into the 4 OAM entries that make up the 16×16 player, converting to
   screen coordinates by subtracting the current `SCX`/`SCY` (sprites don't
@@ -118,7 +121,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `LedgeTop` | Scratch world Y coordinate for the tile top currently considered by swept ledge detection |
 | `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
 | `FallingPastWorld` | Marks a tentative falling Y past 255 so swept support checks run before a world-bottom clamp |
-| `ExitAnimationTimer` | `0` when inactive, a 24-frame descent countdown while active, and `$FF` after the Chef is hidden |
+| `ExitAnimationTimer` | `0` when inactive, a 32-frame descent countdown while active, and `$FF` after the Chef is hidden |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
@@ -135,7 +138,8 @@ all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. 
 `LevelMap`; `$9800–$9BFF` contains its streamed 32-column view. The map includes
 a maximum compatible matching of reciprocal horizontal and vertical domino
 seams, at most one generated ledge-catch room, and the shared descent exit.
-The exit descent presentation exists; loading the next biome does not. See
+Exit descent currently reloads a freshly seeded dining room through the shared
+level-load path. Biome selection and non-dining generators do not exist. See
 `specs/background-assets.md` for the remaining VRAM allocation.
 
 ## World vs. screen coordinates

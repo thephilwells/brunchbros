@@ -171,10 +171,11 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    fresh dining-room map and complete player/camera/streaming reset. Keep the
    planned Patio → Dining Room → Kitchen → Freezer chain explicit; reusing the
    dining room is a test of transitions, not a change to biome progression.
-   The diagonal stair animation is implemented as a focused prototype: Down at
-   the threshold opens the doorway, walks the Chef right/down behind its frame,
-   and leaves him hidden. Hands-on animation review and the fresh-map reload
-   remain before this step is complete.
+   The diagonal stair animation and right-jamb masking are accepted. After the
+   Chef disappears, the runtime advances to a fresh seed and immediately uses
+   a shared boot/transition load path to regenerate the dining room and reset
+   player, input, camera, and streaming state. Fixed- and fresh-seed diagnostics
+   pass; hands-on production traversal remains before this step is complete.
 3. **Build the first gameplay interaction.** Specify and implement the frying-pan
    attack and its sprite poses in a focused fixture, then introduce one enemy
    and the minimum damage/recovery rules needed to test combat. Review these as

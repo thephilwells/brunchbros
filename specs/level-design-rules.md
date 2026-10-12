@@ -143,10 +143,12 @@ variation.
   ordinary tolerances. Reaching or entering the exit cannot depend on a
   boundary jump, ledge catch, long drop, later ability, or consumable resource.
 - Exit activation is a runtime interaction: overlap the doorway while grounded
-  at its threshold and press Down. A 24-frame diagonal descent opens the door,
-  masks the Chef behind its frame, and leaves him hidden. Loading the next
-  biome remains pending. Generation validates only the structural footprint
-  and safe approach.
+  at its threshold and press Down. A 32-frame diagonal descent opens the door,
+  masks the Chef behind its frame, and leaves him hidden. The runtime then
+  advances the seed and immediately generates another dining-room level,
+  resetting player, camera, and streaming state at its spawn. This same-biome
+  cycle proves the transition machinery; biome selection remains pending.
+  Generation validates only the structural footprint and safe approach.
 
 ## Room scale and biome dressing
 

@@ -86,9 +86,10 @@ their focused specifications and playtests.
 - Down+A drop-through changes navigation through one-way furniture but does
   not change the guaranteed structural route; it may follow the first
   generator.
-- The exit descent animation and biome-state transition can follow once two
-  biome maps exist. Generated rooms only need to reserve a reachable 2×3
-  doorway footprint and safe interaction space.
+- The accepted exit descent now immediately regenerates a fresh dining-room
+  level as a transition proof. A future polish pass may hold briefly on the
+  exited view after the Chef disappears so a short musical flourish can play.
+  Biome selection still waits for additional biome generators.
 - Freezer sliding belongs to the freezer biome profile. Its later traversal
   measurements may tighten freezer-specific room rules without changing the
   shared generator architecture.

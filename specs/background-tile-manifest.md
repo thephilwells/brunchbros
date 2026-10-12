@@ -117,11 +117,12 @@ exit rather than an ordinary background door. All twelve tiles have
 `interaction=press_down`.
 
 While grounded at the threshold, Down opens the doorway and starts a
-24-frame diagonal right/down walk. The Chef's OAM priority bit is set during
+32-frame diagonal right/down walk. The Chef's OAM priority bit is set during
 the animation. Nonzero background colors in the frame and threshold then
 mask the sprite, while background color 0 in the open interior leaves it
 visible until it passes behind the right jamb. The animation ends with the
-Chef hidden. Loading the next biome remains a separate pending step.
+Chef hidden, then the current runtime immediately generates another seeded
+dining-room level. Selecting and loading the next biome remains pending.
 Entrance art is unnecessary—the Chef appears at the biome's spawn point.
 
 Normal progression is Patio → Dining Room → Kitchen → Deep Freezer. The
