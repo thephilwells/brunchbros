@@ -175,7 +175,7 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    Chef disappears, the runtime advances to a fresh seed and immediately uses
    a shared boot/transition load path to regenerate the dining room and reset
    player, input, camera, and streaming state. Fixed- and fresh-seed diagnostics
-   pass; hands-on production traversal remains before this step is complete.
+   pass, and hands-on production traversal accepted the fresh-level spawn.
 3. **Build the first gameplay interaction.** Specify and implement the frying-pan
    attack and its sprite poses in a focused fixture, then introduce one enemy
    and the minimum damage/recovery rules needed to test combat. Review these as
