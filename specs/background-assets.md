@@ -45,8 +45,8 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | VRAM range | Owner | Slots | Bytes |
 |---|---|---:|---:|
 | `$8000–$800F` | Sprite index 0, reserved | 1 | 16 |
-| `$8010–$830F` | Existing chef, sprite indices 1–48 | 48 | 768 |
-| `$8310–$87FF` | Remaining sprite capacity, indices 49–127 | 79 | 1,264 |
+| `$8010–$848F` | Chef and frying pan, sprite indices 1–72 | 72 | 1,152 |
+| `$8490–$87FF` | Remaining sprite capacity, indices 73–127 | 55 | 880 |
 | `$8800–$8BFF` | Environment expansion, BG IDs 128–191 | 64 | 1,024 |
 | `$8C00–$8DFF` | Future HUD, BG/Window IDs 192–223 | 32 | 512 |
 | `$8E00–$8FFF` | Unassigned BG/Window capacity, IDs 224–255 | 32 | 512 |

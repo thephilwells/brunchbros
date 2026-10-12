@@ -10,6 +10,13 @@ DEF STREAMED_COLUMN_COUNT EQU 8
 DEF EXIT_ANIMATION_FRAMES EQU 32
 DEF EXIT_ANIMATION_FINISHED EQU $ff
 DEF EXIT_OPEN_TILE_BASE EQU 81
+DEF ATTACK_DURATION EQU 19
+DEF PLAYER_ATTACK_WINDUP_TILE EQU 49
+DEF PLAYER_ATTACK_STRIKE_TILE EQU 53
+DEF PLAYER_ATTACK_RECOVERY_TILE EQU 57
+DEF PAN_ATTACK_WINDUP_TILE EQU 61
+DEF PAN_ATTACK_STRIKE_TILE EQU 65
+DEF PAN_ATTACK_RECOVERY_TILE EQU 69
 IF DEF(ROOM_VARIANT_PLAYTEST)
 INCLUDE "build/room_variant_playtest.inc"
 ENDC
@@ -46,6 +53,8 @@ LedgeTop: db
 PlayerGrounded: db
 FallingPastWorld: db
 ExitAnimationTimer: db
+AttackTimer: db
+AttackPanTileBase: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -109,7 +118,7 @@ Start:
 
 	ld de, ChefFrames
 	ld hl, $8010
-	ld b, 12
+	ld b, 18
 .copyChefOuter
 	ld c, 64
 .copyChefInner
@@ -242,6 +251,8 @@ ENDC
 	ld [FacingFlip], a
 	ld [PlayerSpriteAttributes], a
 	ld [ExitAnimationTimer], a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
 	ld [PlayerVelY], a
 	ld [LandTimer], a
 	ld [CurrentDpad], a
@@ -499,6 +510,19 @@ MainLoop:
 	pop de
 	pop bc
 	jp c, MainLoop
+
+	ld a, [AttackTimer]
+	and a
+	jr nz, .attackInputDone
+	ld a, b
+	bit 3, a
+	jr z, .attackInputDone
+	ld a, e
+	bit 1, a
+	jr z, .attackInputDone
+	ld a, ATTACK_DURATION
+	ld [AttackTimer], a
+.attackInputDone
 
 ; Determine walking vs idle from the D-pad reading, advance animation accordingly
 	ld a, b
@@ -906,6 +930,33 @@ MainLoop:
 	ld [PlayerTileBase], a
 
 .poseOverrideDone
+	ld a, [AttackTimer]
+	and a
+	jr z, .attackPoseDone
+	dec a
+	ld [AttackTimer], a
+	jr z, .attackPoseDone
+	cp a, 13
+	jr nc, .attackWindup
+	cp a, 7
+	jr nc, .attackStrike
+	ld a, PLAYER_ATTACK_RECOVERY_TILE
+	ld [PlayerTileBase], a
+	ld a, PAN_ATTACK_RECOVERY_TILE
+	ld [AttackPanTileBase], a
+	jr .attackPoseDone
+.attackStrike
+	ld a, PLAYER_ATTACK_STRIKE_TILE
+	ld [PlayerTileBase], a
+	ld a, PAN_ATTACK_STRIKE_TILE
+	ld [AttackPanTileBase], a
+	jr .attackPoseDone
+.attackWindup
+	ld a, PLAYER_ATTACK_WINDUP_TILE
+	ld [PlayerTileBase], a
+	ld a, PAN_ATTACK_WINDUP_TILE
+	ld [AttackPanTileBase], a
+.attackPoseDone
 
 	jp MainLoop
 
@@ -1041,7 +1092,7 @@ UpdateSprites:
 	cp a, EXIT_ANIMATION_FINISHED
 	jr nz, .visible
 	ld hl, $fe00
-	ld b, 16
+	ld b, 32
 	xor a
 .hide
 	ld [hl+], a
@@ -1056,7 +1107,7 @@ UpdateSprites:
 	ld hl, $fe00
 	ld a, [FacingFlip]
 	and a, a
-	jr nz, .flipped
+	jp nz, UpdateSpritesFlipped
 
 ; --- Facing right (normal) ---
 	ld a, [PlayerY]
@@ -1110,10 +1161,170 @@ UpdateSprites:
 	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
 
+	call UpdateAttackPan
+	ret
+
+UpdateAttackPan:
+	ld a, [AttackTimer]
+	and a
+	jr nz, .visible
+	ld b, 16
+	xor a
+.hide
+	ld [hl+], a
+	dec b
+	jr nz, .hide
+	ret
+.visible
+	ldh a, [$ff42]
+	ld b, a
+	ldh a, [$ff43]
+	ld c, a
+	ld a, [PlayerY]
+	ld d, a
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .checkStrikeY
+	ld a, d
+	sub a, 5
+	ld d, a
+	jr .yReady
+.checkStrikeY
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .yReady
+	ld a, d
+	sub a, 4
+	ld d, a
+.yReady
+	ld a, [FacingFlip]
+	and a
+	jr nz, .flippedPan
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr z, .rightXReady
+	ld a, e
+	add a, 8
+	ld e, a
+.rightXReady
+
+	ld a, d
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+
+	ld a, d
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+
+	ld a, d
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+
+	ld a, d
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	add a, 3
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ret
+
+.flippedPan
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr z, .leftXReady
+	ld a, e
+	sub a, 8
+	ld e, a
+.leftXReady
+	ld a, d
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	inc a
+	ld [hl+], a
+	ld a, $20
+	ld [hl+], a
+
+	ld a, d
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	ld [hl+], a
+	ld a, $20
+	ld [hl+], a
+
+	ld a, d
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	add a, 3
+	ld [hl+], a
+	ld a, $20
+	ld [hl+], a
+
+	ld a, d
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [AttackPanTileBase]
+	add a, 2
+	ld [hl+], a
+	ld a, $20
+	ld [hl+], a
 	ret
 
 ; --- Facing left (flipped): swap left/right tiles within each row, set flip bit ---
-.flipped
+UpdateSpritesFlipped:
 	ld a, [PlayerY]
 	sub a, b
 	ld [hl+], a
@@ -1169,6 +1380,7 @@ UpdateSprites:
 	or a, $20
 	ld [hl+], a
 
+	call UpdateAttackPan
 	ret
 
 TryStartExitDescent:
@@ -1200,6 +1412,7 @@ TryStartExitDescent:
 	ld [PlayerVelY], a
 	ld [LandTimer], a
 	ld [LedgeSide], a
+	ld [AttackTimer], a
 	scf
 	ret
 .notStarted
@@ -1533,6 +1746,7 @@ TryLedgeCatch:
 	ld [PlayerVelY], a
 	ld [PlayerGrounded], a
 	ld [LandTimer], a
+	ld [AttackTimer], a
 	ld a, PLAYER_LEDGE_TILE
 	ld [PlayerTileBase], a
 	scf
@@ -1583,3 +1797,9 @@ ChefFrames:
 	INCBIN "build/chef_ascent.2bpp"
 	INCBIN "build/chef_crouch.2bpp"
 	INCBIN "build/chef_ledge.2bpp"
+	INCBIN "build/chef_attack_windup.2bpp"
+	INCBIN "build/chef_attack_strike.2bpp"
+	INCBIN "build/chef_attack_recovery.2bpp"
+	INCBIN "build/pan_attack_windup.2bpp"
+	INCBIN "build/pan_attack_strike.2bpp"
+	INCBIN "build/pan_attack_recovery.2bpp"

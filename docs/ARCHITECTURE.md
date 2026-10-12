@@ -14,8 +14,8 @@ The runtime is split between `src/main.asm` and the included
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
-  loads the 128-slot dining-room atlas at `$9000` and all 12 chef
-  animation frames at `$8010`, draws a BG-only title screen, and waits for a
+  loads the 128-slot dining-room atlas at `$9000` and all 18 Chef/pan
+  animation composites at `$8010`, draws a BG-only title screen, and waits for a
   fresh Start press while counting frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
   then calls `LoadCurrentLevel` before entering `MainLoop`.
@@ -32,10 +32,10 @@ The runtime is split between `src/main.asm` and the included
   It consumes the xorshift state selected on the title screen.
 - **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
   At the start of VBlank it streams one newly exposed or restored background
-  column when needed, then commits the camera registers and all four player
-  OAM entries together. It then reads the D-pad for animation state, drives
-  idle/walk tile-swap animation, reads the A button (edge-detected) for
-  jumping, applies horizontal movement with full-solid wall checks, applies
+  column when needed, then commits the camera registers and player OAM entries
+  together. It then reads the D-pad for animation state, drives idle/walk
+  tile-swap animation, reads edge-detected action buttons for jumping and the
+  frying-pan attack, applies horizontal movement with full-solid wall checks, applies
   gravity (velocity update, capped while falling, with tile-top swept landing
   checks and full-solid head-bump checks), clamps `PlayerX`/`PlayerY` to the
   world's bounds, picks a jump/ascent/crouch pose override when airborne or
@@ -50,6 +50,11 @@ The runtime is split between `src/main.asm` and the included
   remains in force. Otherwise, one-way support moves the Chef's feet one pixel
   below the landing plane and resumes gravity, preventing immediate re-landing
   on the same tile top.
+- **Frying-pan animation** — a fresh B press starts six frames each of wind-up,
+  strike, and recovery while ordinary physics continues. Three 16×16 body
+  poses and three separate 16×16 pan composites use eight OAM entries during
+  the attack. Down blocks attack startup; ledge catch and exit descent cancel
+  it. The pan has no hitbox or damage behavior yet.
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
@@ -59,7 +64,8 @@ The runtime is split between `src/main.asm` and the included
   preserves that value as the next seed, and calls `LoadCurrentLevel`. Until
   other biome generators exist, this immediately produces another dining room.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
-  into the 4 OAM entries that make up the 16×16 player, converting to
+  into the four OAM entries that make up the 16×16 player and, while attacking,
+  the adjacent four-entry pan composite, converting to
   screen coordinates by subtracting the current `SCX`/`SCY` (sprites don't
   scroll with the background on real hardware — this subtraction is what
   makes them track it anyway). Has a normal-facing block and a `.flipped`
@@ -109,12 +115,12 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerY` / `PlayerX` | Authoritative feet line and horizontal center of the 12×16 terrain hitbox, in **world coordinates**; X is 16-bit and Y is 8-bit |
 | `CameraX` | 16-bit logical horizontal camera position; its low byte is committed to `SCX` |
 | `StreamedColumns` | Number of wrapped columns currently representing logical columns 32–39 |
-| `PlayerTileBase` | Index of the current animation frame's first tile (idle/walk/jump/ascent/crouch/ledge all reuse this one mechanism) |
+| `PlayerTileBase` | Index of the current animation frame's first tile (idle/walk/jump/ascent/crouch/ledge/attack all reuse this one mechanism) |
 | `AnimTimer` | Frame counter gating animation speed, decoupled from the 60fps loop |
 | `FacingFlip` | `0` or `$20` (the OAM horizontal-flip attribute bit), selects which `UpdateSprites` block runs |
 | `PlayerSpriteAttributes` | OAM attributes shared by all four Chef tiles; currently used for the exit animation's background-priority bit |
 | `PlayerVelY` | Signed (two's-complement) vertical velocity; gravity increments it, capped at 16 while falling |
-| `PrevButtons` | Previous frame's A-button state, for edge-detecting the jump press |
+| `PrevButtons` | Previous frame's action-button state, for edge-detecting A, B, and Start presses |
 | `LandTimer` | Frames remaining to hold the landing-squash pose after a hard enough landing |
 | `CurrentDpad` | Active-low directional input retained for ledge detection after physics reuses registers |
 | `LedgeSide` | `0` when free, `1` while hanging from a wall on the right, `2` for a wall on the left |
@@ -122,6 +128,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerGrounded` | `1` after support collision resolves a landing; cleared before airborne physics |
 | `FallingPastWorld` | Marks a tentative falling Y past 255 so swept support checks run before a world-bottom clamp |
 | `ExitAnimationTimer` | `0` when inactive, a 32-frame descent countdown while active, and `$FF` after the Chef is hidden |
+| `AttackTimer` / `AttackPanTileBase` | Remaining frying-pan animation time and the active pan composite's first OBJ tile |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
@@ -131,7 +138,7 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (joypad), OAM (`$FE00`–`$FE9F`), background tile map (`$9800`–`$9BFF`),
 sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
-The chef uses sprite tile indices 1–48 in `$8010–$830F`. Signed background
+The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in

@@ -45,6 +45,7 @@ Aseprite are installed in `/Applications`. Verification history:
 ```sh
 node tools/generate-structural-pilot.mjs
 node tools/generate-dining-room.mjs
+node tools/generate-chef-attack.mjs
 node tools/generate-room-template-fixture.mjs
 node tools/generate-room-template-playtest.mjs
 node tools/generate-seeded-level.mjs --seed 0
@@ -59,7 +60,7 @@ node tools/verify-room-templates.mjs
 node tools/verify-room-template-playtest.mjs
 node tools/verify-seeded-level.mjs
 node tools/verify-room-variant-playtest.mjs
-for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge; do
+for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge chef_attack_windup chef_attack_strike chef_attack_recovery pan_attack_windup pan_attack_strike pan_attack_recovery; do
   rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
 done
 rgbasm -o build/main.o src/main.asm

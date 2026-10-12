@@ -179,7 +179,13 @@ combined change. Keep the gallery → review → runtime → parity → playtest
 3. **Build the first gameplay interaction.** Specify and implement the frying-pan
    attack and its sprite poses in a focused fixture, then introduce one enemy
    and the minimum damage/recovery rules needed to test combat. Review these as
-   separate steps before adding encounter placement to generated rooms.
+   separate steps before adding encounter placement to generated rooms. The
+   B-button wind-up/strike/recovery animation and separate pan composite are
+   implemented in a fixed-seed fixture; hands-on animation review is pending.
+   Pan art and future damage reach are capped at one 8-pixel tile beyond the
+   Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
+   travels from an overhead opening capable of catching a flying enemy one tile
+   above, through a forward slash, to the accepted waist-height finish.
 4. **Reward exploration.** Introduce a collectible and optional-room placement,
    followed by breakable eggs and lifting/throwing. Prefer better treasure farther
    from the critical route, while keeping nearby side rooms worthwhile. Tune the

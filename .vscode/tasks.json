@@ -16,6 +16,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate Chef Attack",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-chef-attack.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Room Template Fixture",
       "type": "shell",
       "command": "node",
@@ -130,7 +137,7 @@
     {
       "label": "Convert Chef Frames",
       "type": "shell",
-      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
+      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge chef_attack_windup chef_attack_strike chef_attack_recovery pan_attack_windup pan_attack_strike pan_attack_recovery; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
       "problemMatcher": []
     },
     {
@@ -174,7 +181,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -308,6 +315,64 @@
         "${workspaceFolder}/build/brunchbros-exit-animation.gb"
       ],
       "dependsOn": "Build Exit Animation Playtest ROM",
+      "problemMatcher": []
+    },
+    {
+      "label": "Assemble Attack Animation Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DFURNITURE_PARITY_TEST=1",
+        "-o",
+        "build/attack_animation_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link Attack Animation Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-attack-animation.gb",
+        "-m",
+        "build/attack_animation_main.map",
+        "-n",
+        "build/attack_animation_main.sym",
+        "build/attack_animation_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix Attack Animation Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-attack-animation.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Attack Animation Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Assemble Attack Animation Playtest", "Link Attack Animation Playtest", "Fix Attack Animation Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Attack Animation Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-attack-animation.gb"
+      ],
+      "dependsOn": "Build Attack Animation Playtest ROM",
       "problemMatcher": []
     }
   ]
