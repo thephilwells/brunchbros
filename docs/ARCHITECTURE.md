@@ -14,8 +14,8 @@ The runtime is split between `src/main.asm` and the included
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
-  loads the 128-slot dining-room atlas at `$9000` and all 18 Chef/pan
-  animation composites at `$8010`, draws a BG-only title screen, and waits for a
+  loads the 128-slot dining-room atlas at `$9000`, all 18 Chef/pan animation
+  composites at `$8010`, and three HUD heart tiles at `$8490`, draws a BG-only title screen, and waits for a
   fresh Start press while counting frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
   then calls `LoadCurrentLevel` before entering `MainLoop`.
@@ -54,7 +54,13 @@ The runtime is split between `src/main.asm` and the included
   strike, and recovery while ordinary physics continues. Three 16×16 body
   poses and three separate 16×16 pan composites use eight OAM entries during
   the attack. Down blocks attack startup; ledge catch and exit descent cancel
-  it. The pan has no hitbox or damage behavior yet.
+  it. The pan has no hitbox or damage behavior yet. Its four transient OAM
+  entries are retired at the start of VBlank before variable-length streaming,
+  then redrawn only while the attack remains active.
+- **Health HUD** — `CurrentHealth` stores zero through six half-heart units.
+  Three fixed screen-space sprites select full, half-full, or empty 8×8 heart
+  tiles and remain independent of the scrolling camera. New runs start at six;
+  level transitions preserve the value. Damage and healing do not exist yet.
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
@@ -129,6 +135,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `FallingPastWorld` | Marks a tentative falling Y past 255 so swept support checks run before a world-bottom clamp |
 | `ExitAnimationTimer` | `0` when inactive, a 32-frame descent countdown while active, and `$FF` after the Chef is hidden |
 | `AttackTimer` / `AttackPanTileBase` | Remaining frying-pan animation time and the active pan composite's first OBJ tile |
+| `CurrentHealth` | Health in half-heart units from zero through six |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
@@ -138,7 +145,8 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (joypad), OAM (`$FE00`–`$FE9F`), background tile map (`$9800`–`$9BFF`),
 sprite tile data (`$8000` up), and background tile data (`$9000` up).
 
-The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`. Signed background
+The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`; HUD
+hearts use sprite indices 73–75 in `$8490–$84BF`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in

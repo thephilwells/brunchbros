@@ -65,9 +65,10 @@ we actually start on it.
 - **Loot and carried objects** — introduces breakable loot eggs plus lifting,
   carrying, throwing, and their Chef poses. Inventory consequences remain a
   separate decision.
-- **HUD** — after Hazards/Enemies, once there's an actual value (health)
-  worth displaying. Needs the **Window layer** (`LCDC` bit 5, `WY`/`WX`) —
-  hardware we haven't touched at all yet.
+- **HUD** — moved ahead of enemy damage so health has a stable representation
+  before combat consumes it. The first pass uses three fixed 8×8 sprites for
+  full, half-full, and empty hearts; the Window-layer approach was rejected
+  after its top-edge raster cutoff proved unsuitable for the current loop.
 - **Inventory** — right after Gameplay systems, where "items or
   interactable objects" (see `docs/PROJECT.md`) already conceptually lives,
   but substantial enough to name explicitly rather than leave buried.

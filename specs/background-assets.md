@@ -46,9 +46,10 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 |---|---|---:|---:|
 | `$8000–$800F` | Sprite index 0, reserved | 1 | 16 |
 | `$8010–$848F` | Chef and frying pan, sprite indices 1–72 | 72 | 1,152 |
-| `$8490–$87FF` | Remaining sprite capacity, indices 73–127 | 55 | 880 |
+| `$8490–$84BF` | HUD hearts, sprite indices 73–75 | 3 | 48 |
+| `$84C0–$87FF` | Remaining sprite capacity, indices 76–127 | 52 | 832 |
 | `$8800–$8BFF` | Environment expansion, BG IDs 128–191 | 64 | 1,024 |
-| `$8C00–$8DFF` | Future HUD, BG/Window IDs 192–223 | 32 | 512 |
+| `$8C00–$8DFF` | Future BG/Window HUD expansion, IDs 192–223 | 32 | 512 |
 | `$8E00–$8FFF` | Unassigned BG/Window capacity, IDs 224–255 | 32 | 512 |
 | `$9000–$91FF` | Shared vocabulary, BG IDs 0–31 | 32 | 512 |
 | `$9200–$97FF` | Current biome allocation, BG IDs 32–127 | 96 | 1,536 |

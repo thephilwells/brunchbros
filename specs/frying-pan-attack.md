@@ -1,8 +1,8 @@
 # Frying-pan attack
 
-Status: **animation prototype implemented; hands-on review pending** as of
-2026-10-12. Hit detection, damage, enemies, sound, and impact effects are not
-part of this pass.
+Status: **animation prototype implemented and accepted** as of 2026-10-12.
+Hit detection, damage, enemies, sound, and impact effects are not part of this
+pass.
 
 ## Input and state
 
@@ -34,6 +34,11 @@ pan communicates its arc. The pan never extends more than one tile beyond the
 Chef's visual top or facing edge and has no collision effect in this pass. OBJ
 color 0 supplies transparent space; source PNGs remain opaque four-shade images
 converted by `rgbgfx -c dmg=E4`.
+
+All four pan OAM entries are hidden at the beginning of every VBlank before
+variable-length background streaming. An active attack writes its current pan
+pose afterward. This prevents an expired pan entry from surviving when a busy
+streaming frame leaves less OAM-access time than usual.
 
 Future damage checks follow the swing while retaining the one-tile limit. The
 opening can hit an enemy overlapping the 8-pixel band immediately above the

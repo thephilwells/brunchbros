@@ -17,6 +17,10 @@ DEF PLAYER_ATTACK_RECOVERY_TILE EQU 57
 DEF PAN_ATTACK_WINDUP_TILE EQU 61
 DEF PAN_ATTACK_STRIKE_TILE EQU 65
 DEF PAN_ATTACK_RECOVERY_TILE EQU 69
+DEF HUD_FULL_HEART_TILE EQU 73
+DEF HUD_HALF_HEART_TILE EQU 74
+DEF HUD_EMPTY_HEART_TILE EQU 75
+DEF HUD_MAX_HEALTH EQU 6
 IF DEF(ROOM_VARIANT_PLAYTEST)
 INCLUDE "build/room_variant_playtest.inc"
 ENDC
@@ -55,6 +59,7 @@ FallingPastWorld: db
 ExitAnimationTimer: db
 AttackTimer: db
 AttackPanTileBase: db
+CurrentHealth: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -130,6 +135,16 @@ Start:
 	dec b
 	jr nz, .copyChefOuter
 
+	ld de, HUDTiles
+	ld hl, $8490
+	ld b, 3 * 16
+.copyHUDTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec b
+	jr nz, .copyHUDTiles
+
 	call LoadTitleScreen
 	xor a
 	ld [TitleSeedCounter], a
@@ -199,6 +214,8 @@ ENDC
 	ld [SelectedSeed + 1], a
 
 .startGame
+	ld a, HUD_MAX_HEALTH
+	ld [CurrentHealth], a
 	call LoadCurrentLevel
 	jp MainLoop
 
@@ -347,6 +364,43 @@ LoadTitleScreen:
 	jr nz, .copyPrompt
 	ret
 
+UpdateHUDSprites:
+	ld a, [CurrentHealth]
+	ld d, a
+	ld hl, $fe20
+	ld e, 120
+	ld c, 3
+.heart
+	ld a, 16
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, d
+	and a, a
+	jr z, .empty
+	cp a, 1
+	jr z, .half
+	ld a, HUD_FULL_HEART_TILE
+	dec d
+	dec d
+	jr .write
+.half
+	ld a, HUD_HALF_HEART_TILE
+	ld d, 0
+	jr .write
+.empty
+	ld a, HUD_EMPTY_HEART_TILE
+.write
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	add a, 16
+	ld e, a
+	dec c
+	jr nz, .heart
+	ret
+
 ReadActionButtons:
 	ld a, %00010000
 	ldh [$ff00], a
@@ -366,6 +420,10 @@ MainLoop:
 	ldh a, [$ff44]
 	cp a, 144
 	jr c, .waitVBlank
+
+	; Retire transient pan sprites before variable-length streaming can consume VBlank.
+	call HideAttackPanSprites
+	call UpdateHUDSprites
 
 ; Commit streamed background, camera, and sprite state while VRAM/OAM are accessible.
 	ld a, [PlayerX + 1]
@@ -1167,15 +1225,17 @@ UpdateSprites:
 UpdateAttackPan:
 	ld a, [AttackTimer]
 	and a
-	jr nz, .visible
-	ld b, 16
+	jr nz, UpdateAttackPanVisible
+	jp HideAttackPanSprites
+
+HideAttackPanSprites:
 	xor a
-.hide
-	ld [hl+], a
-	dec b
-	jr nz, .hide
+	ld [$fe10], a
+	ld [$fe14], a
+	ld [$fe18], a
+	ld [$fe1c], a
 	ret
-.visible
+UpdateAttackPanVisible:
 	ldh a, [$ff42]
 	ld b, a
 	ldh a, [$ff43]
@@ -1803,3 +1863,6 @@ ChefFrames:
 	INCBIN "build/pan_attack_windup.2bpp"
 	INCBIN "build/pan_attack_strike.2bpp"
 	INCBIN "build/pan_attack_recovery.2bpp"
+
+HUDTiles:
+	INCBIN "build/hud_hearts.2bpp"

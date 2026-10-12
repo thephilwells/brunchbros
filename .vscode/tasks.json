@@ -23,6 +23,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate HUD",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-hud.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Room Template Fixture",
       "type": "shell",
       "command": "node",
@@ -55,6 +62,13 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/dining_room.2bpp", "gfx/dining_room.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert HUD",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/hud_hearts.2bpp", "gfx/hud_hearts.png"],
       "problemMatcher": []
     },
     {
@@ -181,7 +195,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true
