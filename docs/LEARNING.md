@@ -315,12 +315,14 @@ milestone) if useful.
   subtraction is the correct OAM coordinate even after `PlayerX` crosses
   X=256.
 
-- **Direct OAM writes must happen during a known writable display period.**
-  The CPU cannot access OAM during LCD modes 2 and 3. Writing four sprite
-  entries at the end of an increasingly long frame eventually produced a
-  split update: some coordinates changed while the lower half retained an
-  old Y position. The main loop now commits the camera and all four Chef OAM
-  entries immediately after entering VBlank, then calculates the next state.
+- **Shadow OAM plus DMA decouples sprite composition from the narrow OAM-write
+  window.** The CPU cannot access OAM during LCD modes 2 and 3. Direct updates
+  eventually caused partial composites, blanking, and corruption as the sprite
+  roster grew. The runtime now composes all 40 entries in an aligned 160-byte
+  WRAM buffer, then starts `$FF46` DMA immediately after entering VBlank. Since
+  OAM DMA blocks the main bus on DMG, its ten-byte start/wait routine runs from
+  HRAM. Camera state and shadow sprites are prepared together before the wait,
+  so the transferred frame and committed scroll registers remain coherent.
 
 - **An in-place map conversion can retain source-state information in an
   unused output bit.** Runtime generation first stores semantic empty, solid,

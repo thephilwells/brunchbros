@@ -35,10 +35,9 @@ Chef's visual top or facing edge and has no collision effect in this pass. OBJ
 color 0 supplies transparent space; source PNGs remain opaque four-shade images
 converted by `rgbgfx -c dmg=E4`.
 
-All four pan OAM entries are hidden at the beginning of every VBlank before
-variable-length background streaming. An active attack writes its current pan
-pose afterward. This prevents an expired pan entry from surviving when a busy
-streaming frame leaves less OAM-access time than usual.
+The pan owns shadow-OAM slots 4–7. An inactive attack sets their Y bytes to
+zero; an active attack composes its current pose before VBlank. The complete
+shadow buffer transfers atomically with the rest of the sprite frame.
 
 Future damage checks follow the swing while retaining the one-tile limit. The
 opening can hit an enemy overlapping the 8-pixel band immediately above the

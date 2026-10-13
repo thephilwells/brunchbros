@@ -27,6 +27,7 @@ DEF WEINER_FRAME_DURATION EQU 8
 DEF WEINER_HITBOX_LEFT EQU 7
 DEF WEINER_HITBOX_RIGHT EQU 6
 DEF WEINER_HITBOX_TOP EQU 7
+DEF WEINER_CRAWL_TOP EQU 15
 DEF COMBAT_PLAYTEST_WEINER_X EQU 280
 DEF COMBAT_PLAYTEST_WEINER_Y EQU 56
 IF DEF(ROOM_VARIANT_PLAYTEST)
@@ -51,6 +52,7 @@ SECTION "Player State", WRAM0
 PlayerY: db
 PlayerX: dw
 CameraX: dw
+CameraY: db
 StreamedColumns: db
 PlayerTileBase: db
 AnimTimer: db
@@ -76,6 +78,12 @@ WeinerTileBase: db
 ENDC
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+
+SECTION "Shadow OAM", WRAM0, ALIGN[8]
+ShadowOAM: ds 160
+
+SECTION "OAM DMA State", HRAM
+hOAMDMA: ds 10
 
 ; Boot ROM jumps here after the logo/chime; $104-$14F is reserved header space
 SECTION "Entry Point", ROM0[$100]
@@ -122,18 +130,29 @@ Start:
 	xor a
 	ld [CameraX], a
 	ld [CameraX + 1], a
+	ld [CameraY], a
 	ld [StreamedColumns], a
 	ldh [$ff42], a
 	ldh [$ff43], a
 
-	; clear all of OAM
-	ld hl, $fe00
-	ld a, 0
+	ld hl, ShadowOAM
+	xor a
 	ld c, 160
-.clearOAM
+.clearShadowOAM
 	ld [hl+], a
 	dec c
-	jr nz, .clearOAM
+	jr nz, .clearShadowOAM
+
+	ld de, OAMDMARoutine
+	ld hl, hOAMDMA
+	ld c, OAMDMARoutineEnd - OAMDMARoutine
+.copyOAMDMARoutine
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyOAMDMARoutine
+	call hOAMDMA
 
 	ld de, ChefFrames
 	ld hl, $8010
@@ -280,6 +299,7 @@ ENDC
 	xor a
 	ld [CameraX], a
 	ld [CameraX + 1], a
+	ld [CameraY], a
 	ld [StreamedColumns], a
 	ldh [$ff42], a
 	ldh [$ff43], a
@@ -324,10 +344,12 @@ ENDC
 IF DEF(EXIT_ANIMATION_PLAYTEST)
 	call SetPlayerAtExitThreshold
 ENDC
+	call UpdateHUDSprites
 	call UpdateSprites
 IF DEF(COMBAT_PLAYTEST)
 	call UpdateWeinerSprite
 ENDC
+	call hOAMDMA
 
 	ld a, %10000011
 	ldh [$ff40], a
@@ -412,7 +434,7 @@ LoadTitleScreen:
 UpdateHUDSprites:
 	ld a, [CurrentHealth]
 	ld d, a
-	ld hl, $fe20
+	ld hl, ShadowOAM + $20
 	ld e, 120
 	ld c, 3
 .heart
@@ -453,8 +475,76 @@ ReadActionButtons:
 	ldh a, [$ff00]
 	ret
 
+PrepareSpriteBuffer:
+	call UpdateCameraState
+	call UpdateHUDSprites
+IF DEF(COMBAT_PLAYTEST)
+	call AdvanceWeinerAnimation
+ENDC
+	call UpdateSprites
+IF DEF(COMBAT_PLAYTEST)
+	call UpdateWeinerSprite
+ENDC
+	ret
+
+UpdateCameraState:
+	ld a, [PlayerX + 1]
+	and a, a
+	jr nz, .subtractX
+	ld a, [PlayerX]
+	cp a, 80
+	jr c, .minimumX
+
+.subtractX
+	ld a, [PlayerX]
+	sub a, 80
+	ld e, a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	and a, a
+	jr nz, .maximumX
+	ld a, e
+	cp a, 161
+	jr c, .storeX
+
+.maximumX
+	ld a, 160
+	ld [CameraX], a
+	xor a
+	ld [CameraX + 1], a
+	jr .calculateY
+
+.minimumX
+	xor a
+	ld [CameraX], a
+	ld [CameraX + 1], a
+	jr .calculateY
+
+.storeX
+	ld a, e
+	ld [CameraX], a
+	xor a
+	ld [CameraX + 1], a
+
+.calculateY
+	ld a, [PlayerY]
+	cp a, 72
+	jr c, .minimumY
+	sub a, 72
+	cp a, 113
+	jr c, .storeY
+	ld a, 112
+	jr .storeY
+
+.minimumY
+	xor a
+.storeY
+	ld [CameraY], a
+	ret
+
 ; --- Main loop: runs once per frame, forever ---
 MainLoop:
+	call PrepareSpriteBuffer
 ; Sync to a fresh VBlank (two phases — see docs/LEARNING.md for why one phase isn't enough)
 .waitNotVBlank
 	ldh a, [$ff44]
@@ -466,75 +556,13 @@ MainLoop:
 	cp a, 144
 	jr c, .waitVBlank
 
-	; Retire transient pan sprites before variable-length streaming can consume VBlank.
-	call HideAttackPanSprites
-	call UpdateHUDSprites
-
-; Commit streamed background, camera, and sprite state while VRAM/OAM are accessible.
-	ld a, [PlayerX + 1]
-	and a, a
-	jr nz, .scxSubtract
-	ld a, [PlayerX]
-	cp a, 80
-	jr c, .scxMin
-
-.scxSubtract
-	ld a, [PlayerX]
-	sub a, 80
-	ld e, a
-	ld a, [PlayerX + 1]
-	sbc a, 0
-	and a, a
-	jr nz, .scxMax
-	ld a, e
-	cp a, 161
-	jr c, .scxStore
-
-.scxMax
-	ld a, 160
-	ld [CameraX], a
-	xor a
-	ld [CameraX + 1], a
-	jr .scxReady
-
-.scxMin
-	xor a
-	ld [CameraX], a
-	ld [CameraX + 1], a
-	jr .scxReady
-
-.scxStore
-	ld a, e
-	ld [CameraX], a
-	xor a
-	ld [CameraX + 1], a
-
-.scxReady
+	call hOAMDMA
 	call UpdateStreaming
 	call DrawOpenExitDoor
 	ld a, [CameraX]
 	ldh [$ff43], a
-
-	ld a, [PlayerY]
-	cp a, 72
-	jr c, .scyMin
-
-	sub a, 72
-	cp a, 113
-	jr c, .scyDone
-	ld a, 112
-	jr .scyDone
-
-.scyMin
-	ld a, 0
-
-.scyDone
+	ld a, [CameraY]
 	ldh [$ff42], a
-	call UpdateSprites
-IF DEF(COMBAT_PLAYTEST)
-	call AdvanceWeinerAnimation
-	call UpdateWeinerSprite
-ENDC
 
 ; Read the D-pad (needed both for animation mode below and movement further down)
 	ld a, %00100000
@@ -1198,7 +1226,7 @@ UpdateSprites:
 	ld a, [ExitAnimationTimer]
 	cp a, EXIT_ANIMATION_FINISHED
 	jr nz, .visible
-	ld hl, $fe00
+	ld hl, ShadowOAM
 	ld b, 32
 	xor a
 .hide
@@ -1207,11 +1235,11 @@ UpdateSprites:
 	jr nz, .hide
 	ret
 .visible
-	ldh a, [$ff42]
+	ld a, [CameraY]
 	ld b, a
-	ldh a, [$ff43]
+	ld a, [CameraX]
 	ld c, a
-	ld hl, $fe00
+	ld hl, ShadowOAM
 	ld a, [FacingFlip]
 	and a, a
 	jp nz, UpdateSpritesFlipped
@@ -1279,15 +1307,15 @@ UpdateAttackPan:
 
 HideAttackPanSprites:
 	xor a
-	ld [$fe10], a
-	ld [$fe14], a
-	ld [$fe18], a
-	ld [$fe1c], a
+	ld [ShadowOAM + $10], a
+	ld [ShadowOAM + $14], a
+	ld [ShadowOAM + $18], a
+	ld [ShadowOAM + $1c], a
 	ret
 UpdateAttackPanVisible:
-	ldh a, [$ff42]
+	ld a, [CameraY]
 	ld b, a
-	ldh a, [$ff43]
+	ld a, [CameraX]
 	ld c, a
 	ld a, [PlayerY]
 	ld d, a
@@ -1448,14 +1476,63 @@ AdvanceWeinerAnimation:
 	ld a, WEINER_FIRST_TILE
 .storeTile
 	ld [WeinerTileBase], a
+	cp a, WEINER_FIRST_TILE
+	jr z, .advance
+	cp a, WEINER_FIRST_TILE + 12
+	ret nz
+.advance
+	jp TryAdvanceWeinerRight
+
+TryAdvanceWeinerRight:
+	call LoadWeinerXRightEdge
+	ld a, [WeinerY]
+	sub a, WEINER_CRAWL_TOP
+	ld d, a
+	call IsWall
+	ret z
+
+	call LoadWeinerXRightEdge
+	ld a, [WeinerY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	ret z
+
+	call LoadWeinerXRightEdge
+	ld a, [WeinerY]
+	dec a
+	ld d, a
+	call IsWall
+	ret z
+
+	call LoadWeinerXRightEdge
+	ld a, [WeinerY]
+	ld d, a
+	call IsSupport
+	ret nz
+
+	ld hl, WeinerX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+
+LoadWeinerXRightEdge:
+	ld a, [WeinerX]
+	add a, WEINER_HITBOX_RIGHT + 2
+	ld e, a
+	ld a, [WeinerX + 1]
+	adc a, 0
+	ld c, a
 	ret
 
 UpdateWeinerSprite:
-	ldh a, [$ff42]
+	ld a, [CameraY]
 	ld b, a
-	ldh a, [$ff43]
+	ld a, [CameraX]
 	ld c, a
-	ld hl, $fe2c
+	ld hl, ShadowOAM + $2c
 	ld a, [WeinerY]
 	sub a, b
 	ld [hl+], a
@@ -1963,6 +2040,17 @@ RoomVariantPlaytestMap:
 RoomVariantPlaytestMapEnd:
 ASSERT RoomVariantPlaytestMapEnd - RoomVariantPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC
+
+OAMDMARoutine:
+	ld a, HIGH(ShadowOAM)
+	ldh [$ff46], a
+	ld a, 40
+.wait
+	dec a
+	jr nz, .wait
+	ret
+OAMDMARoutineEnd:
+ASSERT OAMDMARoutineEnd - OAMDMARoutine == 10
 
 CollisionTypes:
 	INCBIN "build/dining_room_collision.bin"

@@ -33,8 +33,10 @@ than front-loading a full hardware manual before it's relevant.
   tiles always use unsigned `$8000` addressing**, regardless of that bit.
 - **OAM (`$FE00`–`$FE9F`): 40 sprite slots, 4 bytes each** (`Y`, `X`, tile
   index, attributes). Not guaranteed zero at power-on — needs explicit
-  clearing. CPU access is blocked during LCD modes 2 and 3, so direct OAM
-  updates must complete during VBlank. Stored `Y`/`X` are offset (`Y = screen
+  clearing. CPU access is blocked during LCD modes 2 and 3. The runtime builds
+  a 160-byte WRAM shadow and transfers it with `$FF46` OAM DMA at the start of
+  VBlank; the DMA wait routine must execute from HRAM because the main bus is
+  blocked during the transfer. Stored `Y`/`X` are offset (`Y = screen
   row + 16`, `X = screen column + 8`) so any position, including partially
   off-screen, is representable without negative numbers. **Sprite coordinates
   are always screen-space — sprites do not scroll with the background.** No

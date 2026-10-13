@@ -32,16 +32,18 @@ The runtime is split between `src/main.asm` and the included
   and protected endpoints, converts semantic solids to connectivity tile IDs,
   places the exit doorway, then composes wall fixtures, furniture, and wallpaper.
   It consumes the xorshift state selected on the title screen.
-- **`MainLoop`** — runs once per frame, synced to VBlank (two-phase wait).
-  At the start of VBlank it streams one newly exposed or restored background
-  column when needed, then commits the camera registers and player OAM entries
-  together. It then reads the D-pad for animation state, drives idle/walk
-  tile-swap animation, reads edge-detected action buttons for jumping and the
-  frying-pan attack, applies horizontal movement with full-solid wall checks, applies
-  gravity (velocity update, capped while falling, with tile-top swept landing
-  checks and full-solid head-bump checks), clamps `PlayerX`/`PlayerY` to the
-  world's bounds, picks a jump/ascent/crouch pose override when airborne or
-  just landed, then loops. Gameplay changes become visible at the next VBlank.
+- **`MainLoop`** — runs once per frame. Before its two-phase VBlank wait it
+  derives the next camera state and composes every sprite into shadow OAM. At
+  the start of VBlank it transfers all 40 entries with OAM DMA, streams one
+  newly exposed or restored background column when needed, then commits the
+  matching camera registers. It then reads the D-pad for animation state,
+  drives idle/walk tile-swap animation, reads edge-detected action buttons for
+  jumping and the frying-pan attack, applies horizontal movement with
+  full-solid wall checks, applies gravity (velocity update, capped while
+  falling, with tile-top swept landing checks and full-solid head-bump checks),
+  clamps `PlayerX`/`PlayerY` to the world's bounds, picks a
+  jump/ascent/crouch pose override when airborne or just landed, then loops.
+  Gameplay changes become visible at the next VBlank.
 - **Ledge catch** — while descending and holding toward a full-solid exposed
   upper corner, swept detection snaps the Chef into a hanging state. A jumps
   upward and away, while Down drops. One-way cells are never catchable.
@@ -56,17 +58,17 @@ The runtime is split between `src/main.asm` and the included
   strike, and recovery while ordinary physics continues. Three 16×16 body
   poses and three separate 16×16 pan composites use eight OAM entries during
   the attack. Down blocks attack startup; ledge catch and exit descent cancel
-  it. The pan has no hitbox or damage behavior yet. Its four transient OAM
-  entries are retired at the start of VBlank before variable-length streaming,
-  then redrawn only while the attack remains active.
+  it. The pan has no hitbox or damage behavior yet. Its four shadow-OAM entries
+  receive Y=0 whenever the attack is inactive.
 - **Health HUD** — `CurrentHealth` stores zero through six half-heart units.
   Three fixed screen-space sprites select full, half-full, or empty 8×8 heart
   tiles and remain independent of the scrolling camera. New runs start at six;
   level transitions preserve the value. Damage and healing do not exist yet.
-- **Combat fixture** — defining `COMBAT_PLAYTEST` adds a stationary 16×16
-  WEINER to the fixed seed-0 spawn room. Its four OAM entries project the same
-  world-centered X and feet-line Y convention as the Chef. Enemy behavior and
-  collision response are not implemented yet.
+- **Combat fixture** — defining `COMBAT_PLAYTEST` adds a 16×16 WEINER to the
+  fixed seed-0 spawn room. Its four OAM entries project the same world-centered
+  X and feet-line Y convention as the Chef. The four-pose cycle crawls right by
+  two pixels every 32 frames and stops before a full-solid wall or missing
+  support. Surface turns and collision response are not implemented yet.
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
@@ -76,7 +78,7 @@ The runtime is split between `src/main.asm` and the included
   preserves that value as the next seed, and calls `LoadCurrentLevel`. Until
   other biome generators exist, this immediately produces another dining room.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
-  into the four OAM entries that make up the 16×16 player and, while attacking,
+  into the four shadow-OAM entries that make up the 16×16 player and, while attacking,
   the adjacent four-entry pan composite, converting to
   screen coordinates by subtracting the current `SCX`/`SCY` (sprites don't
   scroll with the background on real hardware — this subtraction is what
@@ -125,7 +127,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | Symbol | Meaning |
 |---|---|
 | `PlayerY` / `PlayerX` | Authoritative feet line and horizontal center of the 12×16 terrain hitbox, in **world coordinates**; X is 16-bit and Y is 8-bit |
-| `CameraX` | 16-bit logical horizontal camera position; its low byte is committed to `SCX` |
+| `CameraX` / `CameraY` | Prepared logical camera position committed with the next shadow-OAM frame |
 | `StreamedColumns` | Number of wrapped columns currently representing logical columns 32–39 |
 | `PlayerTileBase` | Index of the current animation frame's first tile (idle/walk/jump/ascent/crouch/ledge/attack all reuse this one mechanism) |
 | `AnimTimer` | Frame counter gating animation speed, decoupled from the 60fps loop |
@@ -146,12 +148,15 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion cadence and the active four-tile WEINER pose |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
+| `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |
+| `hOAMDMA` | Ten-byte HRAM routine that transfers `ShadowOAM` while the main bus is blocked |
 | Generation state | PRNG/shift words, route columns and descriptors, connected-room and frontier work lists, generated spawn/exit coordinates, and loop scratch used during boot |
 
 Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`SCY`/`SCX`), `$FF44` (`LY`), `$FF47`/`$FF48` (`BGP`/`OBP0`), `$FF00`
-(joypad), OAM (`$FE00`–`$FE9F`), background tile map (`$9800`–`$9BFF`),
-sprite tile data (`$8000` up), and background tile data (`$9000` up).
+(joypad), `$FF46` (OAM DMA), OAM (`$FE00`–`$FE9F`), background tile map
+(`$9800`–`$9BFF`), sprite tile data (`$8000` up), and background tile data
+(`$9000` up).
 
 The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`; HUD
 hearts use sprite indices 73–75 in `$8490–$84BF`; the WEINER horizontal cycle
@@ -173,8 +178,9 @@ the 320×256px logical level. `SCX`/`SCY` pick the 160×144 hardware view;
 horizontal streaming keeps its wrapped tile columns synchronized with the
 logical map. Because OAM sprite coordinates are always screen-space on real
 hardware, `UpdateSprites` derives the on-screen position every frame as
-`world − camera` before writing OAM. The low-byte subtraction remains correct
-across X=256 because the visible difference is always less than 256 pixels.
+`world − camera` before writing shadow OAM. The low-byte subtraction remains
+correct across X=256 because the visible difference is always less than 256
+pixels.
 
 ## Not yet in place
 

@@ -183,8 +183,11 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    separate steps before adding encounter placement to generated rooms. The
    B-button wind-up/strike/recovery animation and separate pan composite are
    implemented and accepted in a fixed-seed fixture. The three-heart HUD and
-   transient-pan cleanup are also accepted. A stationary flat WEINER now forms
-   the first focused enemy fixture; sprite and placement review are pending.
+   transient-pan cleanup are also accepted. The WEINER's four-pose horizontal
+   cycle and synchronized rightward floor crawl are accepted in the focused
+   enemy fixture. Sprite composition now uses a 160-byte WRAM shadow buffer and
+   one early-VBlank OAM DMA; hands-on scrolling and animation stress testing
+   confirmed that the prior blanking and ghosting are gone.
    Pan art and future damage reach are capped at one 8-pixel tile beyond the
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile

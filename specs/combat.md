@@ -1,12 +1,12 @@
 # Combat
 
-Status: **stationary WEINER horizontal animation implemented and accepted** as
-of 2026-10-13. Pan damage, contact damage, knockback,
+Status: **WEINER horizontal animation and rightward crawl accepted** as of
+2026-10-13. Pan damage, contact damage, knockback,
 invulnerability, death, and Game Over are not implemented yet.
 
 ## Calibration fixture
 
-The first enemy is a stationary WEINER on the seed-0 spawn-room floor. Its
+The first enemy is a WEINER on the seed-0 spawn-room floor. Its
 four 16×16 horizontal poses use OBJ tiles 76–91 and advance every eight frames.
 The leading face remains planted at floor level while the body bunches behind
 it. Its world position uses the same convention as the Chef: `WeinerX` is its
@@ -20,10 +20,13 @@ The contact box is 14×7 pixels:
 - bottom: `WeinerY - 1`
 
 The one-pixel horizontal and upper insets describe the original flat contact
-fixture and require recalibration after the motion art is accepted. The
-focused `COMBAT_PLAYTEST` build fixes the WEINER at
-world position `(280, 56)`, four pixels beyond the Chef's initial visual edge.
-It intentionally has no collision response during this visual review.
+fixture and require recalibration before combat. The focused
+`COMBAT_PLAYTEST` build starts the WEINER at world position `(280, 56)`, four
+pixels beyond the Chef's initial visual edge. It advances one pixel when the
+body extends and another when it pulls flat, for two pixels per 32-frame cycle.
+It stops before full-solid walls and unsupported floor. Wall turns, edge turns,
+and contact response are not implemented yet. Its four entries
+are composed in shadow OAM and transferred with the complete sprite frame.
 
 ## Accepted initial rules
 
