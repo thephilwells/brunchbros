@@ -30,6 +30,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate WEINER",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-weiner.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Room Template Fixture",
       "type": "shell",
       "command": "node",
@@ -69,6 +76,13 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/hud_hearts.2bpp", "gfx/hud_hearts.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert WEINER",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/weiner_motion.2bpp", "gfx/weiner_motion.png"],
       "problemMatcher": []
     },
     {
@@ -195,7 +209,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -387,6 +401,65 @@
         "${workspaceFolder}/build/brunchbros-attack-animation.gb"
       ],
       "dependsOn": "Build Attack Animation Playtest ROM",
+      "problemMatcher": []
+    },
+    {
+      "label": "Assemble Combat Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DFURNITURE_PARITY_TEST=1",
+        "-DCOMBAT_PLAYTEST=1",
+        "-o",
+        "build/combat_playtest_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link Combat Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-combat-playtest.gb",
+        "-m",
+        "build/combat_playtest_main.map",
+        "-n",
+        "build/combat_playtest_main.sym",
+        "build/combat_playtest_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix Combat Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-combat-playtest.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Combat Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Assemble Combat Playtest", "Link Combat Playtest", "Fix Combat Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Combat Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-combat-playtest.gb"
+      ],
+      "dependsOn": "Build Combat Playtest ROM",
       "problemMatcher": []
     }
   ]

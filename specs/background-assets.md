@@ -47,7 +47,8 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | `$8000–$800F` | Sprite index 0, reserved | 1 | 16 |
 | `$8010–$848F` | Chef and frying pan, sprite indices 1–72 | 72 | 1,152 |
 | `$8490–$84BF` | HUD hearts, sprite indices 73–75 | 3 | 48 |
-| `$84C0–$87FF` | Remaining sprite capacity, indices 76–127 | 52 | 832 |
+| `$84C0–$85BF` | WEINER horizontal animation, indices 76–91 | 16 | 256 |
+| `$85C0–$87FF` | Remaining sprite capacity, indices 92–127 | 36 | 576 |
 | `$8800–$8BFF` | Environment expansion, BG IDs 128–191 | 64 | 1,024 |
 | `$8C00–$8DFF` | Future BG/Window HUD expansion, IDs 192–223 | 32 | 512 |
 | `$8E00–$8FFF` | Unassigned BG/Window capacity, IDs 224–255 | 32 | 512 |

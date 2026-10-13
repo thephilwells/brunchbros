@@ -469,6 +469,7 @@ ROM0 bank #0:
 	         $2bd1 = RoomTemplateDataEnd
 	         $2c51 = ChefFrames
 	         $30d1 = HUDTiles
+	         $3101 = WeinerTiles
 	EMPTY: $3101-$3fff ($0eff bytes)
 	TOTAL EMPTY: $0fff bytes
 

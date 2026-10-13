@@ -461,6 +461,7 @@
 00:2bd1 RoomTemplateDataEnd
 00:2c51 ChefFrames
 00:30d1 HUDTiles
+00:3101 WeinerTiles
 00:c000 PlayerY
 00:c001 PlayerX
 00:c003 CameraX

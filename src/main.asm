@@ -21,6 +21,14 @@ DEF HUD_FULL_HEART_TILE EQU 73
 DEF HUD_HALF_HEART_TILE EQU 74
 DEF HUD_EMPTY_HEART_TILE EQU 75
 DEF HUD_MAX_HEALTH EQU 6
+DEF WEINER_FIRST_TILE EQU 76
+DEF WEINER_AFTER_LAST_TILE EQU 92
+DEF WEINER_FRAME_DURATION EQU 8
+DEF WEINER_HITBOX_LEFT EQU 7
+DEF WEINER_HITBOX_RIGHT EQU 6
+DEF WEINER_HITBOX_TOP EQU 7
+DEF COMBAT_PLAYTEST_WEINER_X EQU 280
+DEF COMBAT_PLAYTEST_WEINER_Y EQU 56
 IF DEF(ROOM_VARIANT_PLAYTEST)
 INCLUDE "build/room_variant_playtest.inc"
 ENDC
@@ -60,6 +68,12 @@ ExitAnimationTimer: db
 AttackTimer: db
 AttackPanTileBase: db
 CurrentHealth: db
+IF DEF(COMBAT_PLAYTEST)
+WeinerY: db
+WeinerX: dw
+WeinerAnimTimer: db
+WeinerTileBase: db
+ENDC
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -144,6 +158,22 @@ Start:
 	inc de
 	dec b
 	jr nz, .copyHUDTiles
+
+IF DEF(COMBAT_PLAYTEST)
+	ld de, WeinerTiles
+	ld hl, $84c0
+	ld b, 16
+.copyWeinerTilesOuter
+	ld c, 16
+.copyWeinerTilesInner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyWeinerTilesInner
+	dec b
+	jr nz, .copyWeinerTilesOuter
+ENDC
 
 	call LoadTitleScreen
 	xor a
@@ -277,12 +307,27 @@ ENDC
 	ld [LedgeTop], a
 	ld [PlayerGrounded], a
 	ld [FallingPastWorld], a
+IF DEF(COMBAT_PLAYTEST)
+	ld a, COMBAT_PLAYTEST_WEINER_Y
+	ld [WeinerY], a
+	ld a, LOW(COMBAT_PLAYTEST_WEINER_X)
+	ld [WeinerX], a
+	ld a, HIGH(COMBAT_PLAYTEST_WEINER_X)
+	ld [WeinerX + 1], a
+	xor a
+	ld [WeinerAnimTimer], a
+	ld a, WEINER_FIRST_TILE
+	ld [WeinerTileBase], a
+ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
 	call SetPlayerAtExitThreshold
 ENDC
 	call UpdateSprites
+IF DEF(COMBAT_PLAYTEST)
+	call UpdateWeinerSprite
+ENDC
 
 	ld a, %10000011
 	ldh [$ff40], a
@@ -486,6 +531,10 @@ MainLoop:
 .scyDone
 	ldh [$ff42], a
 	call UpdateSprites
+IF DEF(COMBAT_PLAYTEST)
+	call AdvanceWeinerAnimation
+	call UpdateWeinerSprite
+ENDC
 
 ; Read the D-pad (needed both for animation mode below and movement further down)
 	ld a, %00100000
@@ -1383,6 +1432,80 @@ UpdateAttackPanVisible:
 	ld [hl+], a
 	ret
 
+IF DEF(COMBAT_PLAYTEST)
+AdvanceWeinerAnimation:
+	ld hl, WeinerAnimTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, WEINER_FRAME_DURATION
+	ret c
+	xor a
+	ld [hl], a
+	ld a, [WeinerTileBase]
+	add a, 4
+	cp a, WEINER_AFTER_LAST_TILE
+	jr c, .storeTile
+	ld a, WEINER_FIRST_TILE
+.storeTile
+	ld [WeinerTileBase], a
+	ret
+
+UpdateWeinerSprite:
+	ldh a, [$ff42]
+	ld b, a
+	ldh a, [$ff43]
+	ld c, a
+	ld hl, $fe2c
+	ld a, [WeinerY]
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, [WeinerY]
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, [WeinerY]
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, [WeinerY]
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	add a, 3
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+ENDC
+
 ; --- Facing left (flipped): swap left/right tiles within each row, set flip bit ---
 UpdateSpritesFlipped:
 	ld a, [PlayerY]
@@ -1866,3 +1989,8 @@ ChefFrames:
 
 HUDTiles:
 	INCBIN "build/hud_hearts.2bpp"
+
+WeinerTiles:
+IF DEF(COMBAT_PLAYTEST)
+	INCBIN "build/weiner_motion.2bpp"
+ENDC

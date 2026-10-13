@@ -1,8 +1,7 @@
 # HUD
 
-Status: **three-heart prototype implemented; hands-on review pending** as of
-2026-10-12. Damage, healing, death, and game-over behavior are not part of this
-pass.
+Status: **three-heart prototype implemented and accepted** as of 2026-10-12.
+Damage, healing, death, and game-over behavior are not part of this pass.
 
 ## Health
 

@@ -182,7 +182,9 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    and the minimum damage/recovery rules needed to test combat. Review these as
    separate steps before adding encounter placement to generated rooms. The
    B-button wind-up/strike/recovery animation and separate pan composite are
-   implemented in a fixed-seed fixture; hands-on animation review is pending.
+   implemented and accepted in a fixed-seed fixture. The three-heart HUD and
+   transient-pan cleanup are also accepted. A stationary flat WEINER now forms
+   the first focused enemy fixture; sprite and placement review are pending.
    Pan art and future damage reach are capped at one 8-pixel tile beyond the
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile
