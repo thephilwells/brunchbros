@@ -185,9 +185,11 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    implemented and accepted in a fixed-seed fixture. The three-heart HUD and
    transient-pan cleanup are also accepted. The WEINER's four-pose horizontal
    cycle and synchronized rightward floor crawl are accepted in the focused
-   enemy fixture. Sprite composition now uses a 160-byte WRAM shadow buffer and
-   one early-VBlank OAM DMA; hands-on scrolling and animation stress testing
-   confirmed that the prior blanking and ghosting are gone.
+   enemy fixture. Its four poses now have calibrated 14-pixel-wide contact
+   bounds with pose-specific heights that follow the changing body mass while
+   excluding the narrow arch crown. Sprite composition now uses a 160-byte WRAM
+   shadow buffer and one early-VBlank OAM DMA; hands-on scrolling and animation
+   stress testing confirmed that the prior blanking and ghosting are gone.
    Pan art and future damage reach are capped at one 8-pixel tile beyond the
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile

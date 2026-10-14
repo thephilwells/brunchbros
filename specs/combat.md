@@ -1,8 +1,9 @@
 # Combat
 
-Status: **WEINER horizontal animation and rightward crawl accepted** as of
-2026-10-13. Pan damage, contact damage, knockback,
-invulnerability, death, and Game Over are not implemented yet.
+Status: **WEINER horizontal animation and rightward crawl accepted**. The
+pose-specific contact bounds were calibrated for review on 2026-10-14. Pan
+damage, contact damage, knockback, invulnerability, death, and Game Over are
+not implemented yet.
 
 ## Calibration fixture
 
@@ -12,15 +13,24 @@ The leading face remains planted at floor level while the body bunches behind
 it. Its world position uses the same convention as the Chef: `WeinerX` is its
 horizontal center and `WeinerY` is its feet line.
 
-The contact box is 14×7 pixels:
+The contact box is 14 pixels wide:
 
 - left: `WeinerX - 7`
 - right: `WeinerX + 6`
-- top: `WeinerY - 7`
 - bottom: `WeinerY - 1`
 
-The one-pixel horizontal and upper insets describe the original flat contact
-fixture and require recalibration before combat. The focused
+Its top follows the active animation pose:
+
+| Pose | Top | Height |
+|---|---:|---:|
+| flat | `WeinerY - 7` | 7 pixels |
+| pull | `WeinerY - 10` | 10 pixels |
+| arch | `WeinerY - 12` | 12 pixels |
+| extend | `WeinerY - 10` | 10 pixels |
+
+The horizontal inset keeps the transparent edge columns harmless. The changing
+height follows the body mass without making the narrow crown of the tallest
+arch damaging. The focused
 `COMBAT_PLAYTEST` build starts the WEINER at world position `(280, 56)`, four
 pixels beyond the Chef's initial visual edge. It advances one pixel when the
 body extends and another when it pulls flat, for two pixels per 32-frame cycle.
