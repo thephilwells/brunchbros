@@ -73,6 +73,9 @@ ExitAnimationTimer: db
 AttackTimer: db
 AttackPanTileBase: db
 CurrentHealth: db
+PlayerInvulnerabilityTimer: db
+PlayerKnockbackRemaining: db
+PlayerKnockbackDirection: db
 IF DEF(COMBAT_PLAYTEST)
 WeinerY: db
 WeinerX: dw
@@ -332,6 +335,9 @@ ENDC
 	ld [LedgeTop], a
 	ld [PlayerGrounded], a
 	ld [FallingPastWorld], a
+	ld [PlayerInvulnerabilityTimer], a
+	ld [PlayerKnockbackRemaining], a
+	ld [PlayerKnockbackDirection], a
 IF DEF(COMBAT_PLAYTEST)
 	ld a, COMBAT_PLAYTEST_WEINER_Y
 	ld [WeinerY], a
@@ -592,6 +598,12 @@ MainLoop:
 
 	ld a, d
 	ld [PrevButtons], a
+	ld hl, PlayerInvulnerabilityTimer
+	ld a, [hl]
+	and a
+	jr z, .invulnerabilityReady
+	dec [hl]
+.invulnerabilityReady
 
 	ld a, [LedgeSide]
 	and a, a
@@ -655,6 +667,13 @@ MainLoop:
 	pop bc
 	jp c, MainLoop
 
+	ld a, [PlayerKnockbackRemaining]
+	and a
+	jr z, .checkAttackInput
+	call ApplyPlayerKnockback
+	jp .applyGravity
+
+.checkAttackInput
 	ld a, [AttackTimer]
 	and a
 	jr nz, .attackInputDone
@@ -1107,6 +1126,7 @@ ENDC
 .attackPoseDone
 IF DEF(COMBAT_PLAYTEST)
 	call TryPanHitWeiner
+	call TryWeinerContact
 ENDC
 
 	jp MainLoop
@@ -1130,6 +1150,52 @@ DecrementPlayerX:
 .decrementLow
 	dec [hl]
 	ret
+
+ApplyPlayerKnockback:
+	ld hl, PlayerKnockbackRemaining
+	dec [hl]
+	ld a, [PlayerKnockbackDirection]
+	bit 7, a
+	jr nz, .left
+	call LoadPlayerXRightEdge
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld d, a
+	call IsWall
+	ret z
+	call LoadPlayerXRightEdge
+	ld a, [PlayerY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	ret z
+	call LoadPlayerXRightEdge
+	ld a, [PlayerY]
+	dec a
+	ld d, a
+	call IsWall
+	ret z
+	jp IncrementPlayerX
+.left
+	call LoadPlayerXLeftEdge
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld d, a
+	call IsWall
+	ret z
+	call LoadPlayerXLeftEdge
+	ld a, [PlayerY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	ret z
+	call LoadPlayerXLeftEdge
+	ld a, [PlayerY]
+	dec a
+	ld d, a
+	call IsWall
+	ret z
+	jp DecrementPlayerX
 
 LoadPlayerX:
 	ld a, [PlayerX]
@@ -1251,6 +1317,16 @@ UpdateSprites:
 	jr nz, .hide
 	ret
 .visible
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	jr z, .opaque
+	bit 2, a
+	jr nz, .opaque
+	ld hl, ShadowOAM
+	ld b, 32
+	xor a
+	jr .hide
+.opaque
 	ld a, [CameraY]
 	ld b, a
 	ld a, [CameraX]
@@ -1572,38 +1648,7 @@ TryPanHitWeiner:
 CheckWeinerAttackX:
 	ld a, [AttackPanTileBase]
 	cp a, PAN_ATTACK_WINDUP_TILE
-	jr nz, .forward
-	ld a, [WeinerX]
-	ld l, a
-	ld a, [WeinerX + 1]
-	ld h, a
-	ld a, [PlayerX]
-	ld e, a
-	ld a, [PlayerX + 1]
-	ld d, a
-	ld a, l
-	sub a, e
-	ld l, a
-	ld a, h
-	sbc a, d
-	ld h, a
-	bit 7, h
-	jr z, .compareOverhead
-	ld a, l
-	cpl
-	add a, 1
-	ld l, a
-	ld a, h
-	cpl
-	adc a, 0
-	ld h, a
-.compareOverhead
-	ld a, h
-	and a
-	jr nz, .miss
-	ld a, l
-	cp a, 13
-	ret
+	jp z, CheckWeinerCloseX
 .forward
 	ld a, [FacingFlip]
 	and a
@@ -1651,6 +1696,42 @@ CheckWeinerAttackX:
 	and a
 	ret
 
+CheckWeinerCloseX:
+	ld a, [WeinerX]
+	ld l, a
+	ld a, [WeinerX + 1]
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .compare
+	ld a, l
+	cpl
+	add a, 1
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.compare
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.miss
+	and a
+	ret
+
 CheckWeinerAttackY:
 	ld a, [PlayerY]
 	ld b, a
@@ -1682,18 +1763,7 @@ CheckWeinerAttackY:
 	dec a
 	cp a, b
 	jr c, .miss
-	ld a, [WeinerTileBase]
-	ld d, WEINER_FLAT_HITBOX_TOP
-	cp a, WEINER_FIRST_TILE + 4
-	jr c, .enemyTopReady
-	ld d, WEINER_PULL_HITBOX_TOP
-	cp a, WEINER_FIRST_TILE + 8
-	jr c, .enemyTopReady
-	ld d, WEINER_ARCH_HITBOX_TOP
-	cp a, WEINER_FIRST_TILE + 12
-	jr c, .enemyTopReady
-	ld d, WEINER_EXTEND_HITBOX_TOP
-.enemyTopReady
+	call LoadWeinerHitboxTop
 	ld a, [WeinerY]
 	sub a, d
 	ld d, a
@@ -1704,6 +1774,91 @@ CheckWeinerAttackY:
 	ret
 .miss
 	and a
+	ret
+
+LoadWeinerHitboxTop:
+	ld a, [WeinerTileBase]
+	ld d, WEINER_FLAT_HITBOX_TOP
+	cp a, WEINER_FIRST_TILE + 4
+	ret c
+	ld d, WEINER_PULL_HITBOX_TOP
+	cp a, WEINER_FIRST_TILE + 8
+	ret c
+	ld d, WEINER_ARCH_HITBOX_TOP
+	cp a, WEINER_FIRST_TILE + 12
+	ret c
+	ld d, WEINER_EXTEND_HITBOX_TOP
+	ret
+
+TryWeinerContact:
+	ld a, [WeinerActive]
+	and a
+	ret z
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	ret nz
+	call CheckWeinerCloseX
+	ret nc
+	ld a, [PlayerY]
+	dec a
+	ld b, a
+	call LoadWeinerHitboxTop
+	ld a, [WeinerY]
+	sub a, d
+	ld c, a
+	ld a, b
+	cp a, c
+	jr c, .miss
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, [WeinerY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [CurrentHealth]
+	and a
+	ret z
+	dec a
+	ld [CurrentHealth], a
+	ld a, 60
+	ld [PlayerInvulnerabilityTimer], a
+	ld a, 4
+	ld [PlayerKnockbackRemaining], a
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [WeinerX]
+	ld e, a
+	ld a, [WeinerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, h
+	or a, l
+	jr z, .knockLeft
+	bit 7, h
+	jr nz, .knockLeft
+	ld a, 1
+	jr .storeKnockback
+.knockLeft
+	ld a, -1
+.storeKnockback
+	ld [PlayerKnockbackDirection], a
+	xor a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	ret
+.miss
 	ret
 
 UpdateWeinerSprite:

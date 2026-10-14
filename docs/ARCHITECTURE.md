@@ -64,7 +64,9 @@ The runtime is split between `src/main.asm` and the included
 - **Health HUD** — `CurrentHealth` stores zero through six half-heart units.
   Three fixed screen-space sprites select full, half-full, or empty 8×8 heart
   tiles and remain independent of the scrolling camera. New runs start at six;
-  level transitions preserve the value. Damage and healing do not exist yet.
+  level transitions preserve the value. In the combat fixture, WEINER contact
+  removes one unit, applies four solid-aware knockback steps, and starts 60
+  frames of four-frame-block flicker. Healing does not exist yet.
 - **Combat fixture** — defining `COMBAT_PLAYTEST` adds a 16×16 WEINER to the
   fixed seed-0 spawn room. Its four OAM entries project the same world-centered
   X and feet-line Y convention as the Chef. The four-pose cycle crawls right by
@@ -147,6 +149,8 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `ExitAnimationTimer` | `0` when inactive, a 32-frame descent countdown while active, and `$FF` after the Chef is hidden |
 | `AttackTimer` / `AttackPanTileBase` | Remaining frying-pan animation time and the active pan composite's first OBJ tile |
 | `CurrentHealth` | Health in half-heart units from zero through six |
+| `PlayerInvulnerabilityTimer` | Remaining contact-damage immunity frames; also drives four-frame flicker blocks |
+| `PlayerKnockbackRemaining` / `PlayerKnockbackDirection` | Remaining one-pixel solid-aware push steps and signed horizontal direction |
 | `WeinerY` / `WeinerX` | Combat-fixture WEINER feet line and 16-bit horizontal center in world coordinates |
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion cadence and the active four-tile WEINER pose |
 | `WeinerActive` / `WeinerHitThisSwing` | Fixture lifetime and per-swing repeat-hit latch |

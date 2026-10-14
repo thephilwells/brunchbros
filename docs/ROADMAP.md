@@ -189,9 +189,11 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    bounds with pose-specific heights that follow the changing body mass while
    excluding the narrow arch crown. Pan overlap now resolves in world space
    against those bounds, permits only one hit per enemy per swing, and despawns
-   the one-health fixture WEINER. Sprite composition now uses a 160-byte WRAM
-   shadow buffer and one early-VBlank OAM DMA; hands-on scrolling and animation
-   stress testing confirmed that the prior blanking and ghosting are gone.
+   the one-health fixture WEINER. WEINER contact now removes a half-heart,
+   pushes the Chef four solid-aware pixels, and grants 60 frames of flickering
+   invulnerability. Sprite composition now uses a 160-byte WRAM shadow buffer
+   and one early-VBlank OAM DMA; hands-on scrolling and animation stress testing
+   confirmed that the prior blanking and ghosting are gone.
    Pan art and future damage reach are capped at one 8-pixel tile beyond the
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile

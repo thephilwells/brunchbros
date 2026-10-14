@@ -1,8 +1,8 @@
 # Frying-pan attack
 
 Status: **animation prototype implemented and accepted** as of 2026-10-12.
-World-space hit detection against the focused WEINER fixture was implemented
-for review on 2026-10-14. Sound and impact effects are not implemented.
+World-space hit detection and one-hit WEINER defeat were accepted on
+2026-10-14. Sound and impact effects are not implemented.
 
 ## Input and state
 

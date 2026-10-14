@@ -1,9 +1,8 @@
 # Combat
 
-Status: **WEINER horizontal animation and rightward crawl accepted**. The
-pose-specific contact bounds and one-hit pan defeat were implemented for review
-on 2026-10-14. Contact damage, knockback, invulnerability, death, and Game Over
-are not implemented yet.
+Status: **WEINER horizontal animation, crawl, contact bounds, and one-hit pan
+defeat accepted**. Contact damage, knockback, and invulnerability were
+implemented for review on 2026-10-14. Death and Game Over are not implemented.
 
 ## Calibration fixture
 
@@ -35,8 +34,8 @@ arch damaging. The focused
 pixels beyond the Chef's initial visual edge. It advances one pixel when the
 body extends and another when it pulls flat, for two pixels per 32-frame cycle.
 It stops before full-solid walls and unsupported floor. Wall turns, edge turns,
-and contact response are not implemented yet. Its four entries
-are composed in shadow OAM and transferred with the complete sprite frame.
+and defeat effects are not implemented yet. Its four entries are composed in
+shadow OAM and transferred with the complete sprite frame.
 
 ## Accepted initial rules
 
@@ -68,3 +67,19 @@ These world-space bands overlap the WEINER's pose-specific contact bounds; they
 do not use center distance. A per-enemy swing latch prevents repeat hits. The
 fixture WEINER has one health, stops updating when struck, and clears its four
 shadow-OAM entries on the following composition pass.
+
+## Chef damage response
+
+An active WEINER overlapping the Chef's 12×16 terrain box removes one
+half-heart. Pan damage resolves first, so a WEINER defeated by the current
+swing cannot deal contact damage on that frame. Damage cancels an attack or
+ledge grab and selects the crouch frame as the initial hit pose.
+
+The next four frames move the Chef one pixel per frame away from the WEINER.
+Each step uses the standing hitbox's three wall probes and is shortened if
+full-solid terrain blocks it. Player movement, jumping, and attack startup are
+suppressed during those four frames; gravity continues normally.
+
+The hit frame begins a 60-frame invulnerability window. While it is nonzero,
+further overlap cannot deal damage. The Chef and pan alternate between visible
+and hidden in four-frame blocks while the HUD remains visible.
