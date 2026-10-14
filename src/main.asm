@@ -78,6 +78,8 @@ WeinerY: db
 WeinerX: dw
 WeinerAnimTimer: db
 WeinerTileBase: db
+WeinerActive: db
+WeinerHitThisSwing: db
 ENDC
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -341,6 +343,10 @@ IF DEF(COMBAT_PLAYTEST)
 	ld [WeinerAnimTimer], a
 	ld a, WEINER_FIRST_TILE
 	ld [WeinerTileBase], a
+	ld a, 1
+	ld [WeinerActive], a
+	xor a
+	ld [WeinerHitThisSwing], a
 ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
@@ -660,6 +666,10 @@ MainLoop:
 	jr z, .attackInputDone
 	ld a, ATTACK_DURATION
 	ld [AttackTimer], a
+IF DEF(COMBAT_PLAYTEST)
+	xor a
+	ld [WeinerHitThisSwing], a
+ENDC
 .attackInputDone
 
 ; Determine walking vs idle from the D-pad reading, advance animation accordingly
@@ -1095,6 +1105,9 @@ MainLoop:
 	ld a, PAN_ATTACK_WINDUP_TILE
 	ld [AttackPanTileBase], a
 .attackPoseDone
+IF DEF(COMBAT_PLAYTEST)
+	call TryPanHitWeiner
+ENDC
 
 	jp MainLoop
 
@@ -1465,6 +1478,9 @@ UpdateAttackPanVisible:
 
 IF DEF(COMBAT_PLAYTEST)
 AdvanceWeinerAnimation:
+	ld a, [WeinerActive]
+	and a
+	ret z
 	ld hl, WeinerAnimTimer
 	inc [hl]
 	ld a, [hl]
@@ -1530,7 +1546,177 @@ LoadWeinerXRightEdge:
 	ld c, a
 	ret
 
+TryPanHitWeiner:
+	ld a, [WeinerActive]
+	and a
+	ret z
+	ld a, [WeinerHitThisSwing]
+	and a
+	ret nz
+	ld a, [AttackTimer]
+	and a
+	ret z
+	ld a, [AttackPanTileBase]
+	and a
+	ret z
+	call CheckWeinerAttackX
+	ret nc
+	call CheckWeinerAttackY
+	ret nc
+	ld a, 1
+	ld [WeinerHitThisSwing], a
+	xor a
+	ld [WeinerActive], a
+	ret
+
+CheckWeinerAttackX:
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .forward
+	ld a, [WeinerX]
+	ld l, a
+	ld a, [WeinerX + 1]
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .compareOverhead
+	ld a, l
+	cpl
+	add a, 1
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.compareOverhead
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.forward
+	ld a, [FacingFlip]
+	and a
+	jr nz, .left
+	ld a, [WeinerX]
+	ld l, a
+	ld a, [WeinerX + 1]
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	jr .compare
+.left
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [WeinerX]
+	ld e, a
+	ld a, [WeinerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+.compare
+	bit 7, h
+	jr nz, .miss
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 21
+	ret
+.miss
+	and a
+	ret
+
+CheckWeinerAttackY:
+	ld a, [PlayerY]
+	ld b, a
+	ld c, a
+	dec c
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .checkStrike
+	ld a, b
+	sub a, 24
+	ld b, a
+	ld a, c
+	sub a, 16
+	ld c, a
+	jr .attackBoundsReady
+.checkStrike
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .recovery
+	ld a, b
+	sub a, 16
+	ld b, a
+	jr .attackBoundsReady
+.recovery
+	ld a, b
+	sub a, 8
+	ld b, a
+.attackBoundsReady
+	ld a, [WeinerY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [WeinerTileBase]
+	ld d, WEINER_FLAT_HITBOX_TOP
+	cp a, WEINER_FIRST_TILE + 4
+	jr c, .enemyTopReady
+	ld d, WEINER_PULL_HITBOX_TOP
+	cp a, WEINER_FIRST_TILE + 8
+	jr c, .enemyTopReady
+	ld d, WEINER_ARCH_HITBOX_TOP
+	cp a, WEINER_FIRST_TILE + 12
+	jr c, .enemyTopReady
+	ld d, WEINER_EXTEND_HITBOX_TOP
+.enemyTopReady
+	ld a, [WeinerY]
+	sub a, d
+	ld d, a
+	ld a, c
+	cp a, d
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
 UpdateWeinerSprite:
+	ld a, [WeinerActive]
+	and a
+	jr nz, .visible
+	xor a
+	ld [ShadowOAM + $2c], a
+	ld [ShadowOAM + $30], a
+	ld [ShadowOAM + $34], a
+	ld [ShadowOAM + $38], a
+	ret
+.visible
 	ld a, [CameraY]
 	ld b, a
 	ld a, [CameraX]

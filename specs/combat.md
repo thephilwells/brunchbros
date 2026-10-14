@@ -1,9 +1,9 @@
 # Combat
 
 Status: **WEINER horizontal animation and rightward crawl accepted**. The
-pose-specific contact bounds were calibrated for review on 2026-10-14. Pan
-damage, contact damage, knockback, invulnerability, death, and Game Over are
-not implemented yet.
+pose-specific contact bounds and one-hit pan defeat were implemented for review
+on 2026-10-14. Contact damage, knockback, invulnerability, death, and Game Over
+are not implemented yet.
 
 ## Calibration fixture
 
@@ -58,3 +58,13 @@ are composed in shadow OAM and transferred with the complete sprite frame.
   from `gfx/ChefA1.png`, launches upward, ignores collision, then falls below
   the viewport. The resulting Game Over screen waits for Start and returns to
   the title screen for a new run.
+
+## Pan hit bands
+
+The wind-up checks the eight-pixel band directly above the Chef's 12×16 terrain
+box. The strike checks a full-height eight-pixel band immediately in front of
+that box. Recovery checks the lower eight pixels of the same forward band.
+These world-space bands overlap the WEINER's pose-specific contact bounds; they
+do not use center distance. A per-enemy swing latch prevents repeat hits. The
+fixture WEINER has one health, stops updating when struck, and clears its four
+shadow-OAM entries on the following composition pass.

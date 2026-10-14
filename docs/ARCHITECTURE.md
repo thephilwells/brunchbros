@@ -58,8 +58,9 @@ The runtime is split between `src/main.asm` and the included
   strike, and recovery while ordinary physics continues. Three 16×16 body
   poses and three separate 16×16 pan composites use eight OAM entries during
   the attack. Down blocks attack startup; ledge catch and exit descent cancel
-  it. The pan has no hitbox or damage behavior yet. Its four shadow-OAM entries
-  receive Y=0 whenever the attack is inactive.
+  it. In the combat fixture, wind-up checks an overhead band while strike and
+  recovery check full-height and waist-height forward bands. Its four
+  shadow-OAM entries receive Y=0 whenever the attack is inactive.
 - **Health HUD** — `CurrentHealth` stores zero through six half-heart units.
   Three fixed screen-space sprites select full, half-full, or empty 8×8 heart
   tiles and remain independent of the scrolling camera. New runs start at six;
@@ -68,7 +69,9 @@ The runtime is split between `src/main.asm` and the included
   fixed seed-0 spawn room. Its four OAM entries project the same world-centered
   X and feet-line Y convention as the Chef. The four-pose cycle crawls right by
   two pixels every 32 frames and stops before a full-solid wall or missing
-  support. Surface turns and collision response are not implemented yet.
+  support. Each pose has a calibrated contact height. One pan overlap marks the
+  WEINER inactive, stops its updates, and hides its four shadow-OAM entries.
+  Surface turns and contact damage are not implemented yet.
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
@@ -146,6 +149,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `CurrentHealth` | Health in half-heart units from zero through six |
 | `WeinerY` / `WeinerX` | Combat-fixture WEINER feet line and 16-bit horizontal center in world coordinates |
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion cadence and the active four-tile WEINER pose |
+| `WeinerActive` / `WeinerHitThisSwing` | Fixture lifetime and per-swing repeat-hit latch |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |
