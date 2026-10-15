@@ -1,41 +1,42 @@
 # Combat
 
-Status: **WEINER horizontal animation, crawl, contact bounds, and one-hit pan
-defeat accepted**. Contact damage, knockback, and invulnerability were
-implemented for review on 2026-10-14. Death and Game Over are not implemented.
+Status: **WEINER horizontal animation, crawl, contact bounds, one-hit pan
+defeat, contact damage, knockback, and invulnerability accepted**. Death and
+Game Over were implemented for review on 2026-10-14. Surface-relative wall,
+ceiling, concave-corner, and convex-corner locomotion is implemented in the
+focused fixture for hands-on review.
 
 ## Calibration fixture
 
-The first enemy is a WEINER on the seed-0 spawn-room floor. Its
-four 16×16 horizontal poses use OBJ tiles 76–91 and advance every eight frames.
+The combat-only map is a compact closed chamber with a solid protrusion rising
+from its floor and a one-tile-thick shelf attached to its left wall. Its
+continuous inner boundary exercises floor and ceiling crawling, both wall
+orientations, inward corners, exposed-edge wraps, and consecutive wraps around
+a thin ledge. The Chef starts on the chamber floor near the WEINER so contact
+and pan attacks remain testable.
+
+The WEINER's four 16×16 horizontal poses use OBJ tiles 76–91 and advance every eight frames.
 The leading face remains planted at floor level while the body bunches behind
-it. Its world position uses the same convention as the Chef: `WeinerX` is its
-horizontal center and `WeinerY` is its feet line.
+it. `WeinerX` and `WeinerY` identify the composite's top-left world pixel.
 
-The contact box is 14 pixels wide:
-
-- left: `WeinerX - 7`
-- right: `WeinerX + 6`
-- bottom: `WeinerY - 1`
-
-Its top follows the active animation pose:
-
-| Pose | Top | Height |
-|---|---:|---:|
-| flat | `WeinerY - 7` | 7 pixels |
-| pull | `WeinerY - 10` | 10 pixels |
-| arch | `WeinerY - 12` | 12 pixels |
-| extend | `WeinerY - 10` | 10 pixels |
-
-The horizontal inset keeps the transparent edge columns harmless. The changing
-height follows the body mass without making the narrow crown of the tallest
-arch damaging. The focused
-`COMBAT_PLAYTEST` build starts the WEINER at world position `(280, 56)`, four
-pixels beyond the Chef's initial visual edge. It advances one pixel when the
+The surface-crawl fixture uses a 14×14 contact box inset one pixel from every
+edge of the 16×16 composite. The orientation-independent box keeps contact and
+pan-hit behavior stable while the body rotates. Pose-specific rotated bounds
+can be restored after hands-on corner review if the uniform box feels too
+generous around the arch crown. The focused
+`COMBAT_PLAYTEST` build starts the WEINER at top-left world position `(80, 216)`.
+It advances one pixel when the
 body extends and another when it pulls flat, for two pixels per 32-frame cycle.
-It stops before full-solid walls and unsupported floor. Wall turns, edge turns,
-and defeat effects are not implemented yet. Its four entries are composed in
-shadow OAM and transferred with the complete sprite frame.
+Full-solid probes keep the surface on its right: a blocked forward edge starts
+an inward turn, while missing forward support starts an exposed-edge wrap.
+Sixteen generated turn poses cover both turn classes in every orientation.
+An exposed-edge wrap holds two poses across eight frames, measures the
+remaining supported depth from one through 16 pixels, then re-anchors once on
+the adjacent face. This keeps one-tile-thick ledges from leaving the crawler
+detached between two consecutive wraps.
+The fixture sheet therefore contains 24 poses and 96 OBJ tiles. It does not
+follow one-way platforms. Its four entries are composed in shadow OAM and
+transferred with the complete sprite frame.
 
 ## Accepted initial rules
 
@@ -47,16 +48,17 @@ shadow OAM and transferred with the complete sprite frame.
   movement and attacking are suppressed only during knockback.
 - Damage grants 60 frames of invulnerability. The Chef flickers every four
   frames, regaining control after knockback ends.
-- Enemies are not solid terrain. Remaining overlapped cannot deal damage again
-  until invulnerability ends.
+- Enemies are not solid terrain. Remaining overlapped with an enemy cannot deal
+  damage again until invulnerability ends.
 - Pan damage resolves before contact damage. Killing an enemy on the contact
   frame prevents that enemy from damaging the Chef.
 - Each enemy can take damage at most once per swing. Ordinary damage cancels an
   active attack or ledge grab.
-- At zero health, gameplay and the camera freeze. The Chef uses frame `[0, 4]`
-  from `gfx/ChefA1.png`, launches upward, ignores collision, then falls below
-  the viewport. The resulting Game Over screen waits for Start and returns to
-  the title screen for a new run.
+- At zero health, gameplay and the camera freeze. The Chef uses the wide-eyed
+  frame at sheet cell `[0, 4]`, source pixel `(64, 0)`, in `gfx/ChefA1.png`,
+  launches upward, ignores collision, then falls below the viewport. The
+  resulting Game Over screen waits for Start and returns to the title screen
+  for a new run.
 
 ## Pan hit bands
 
@@ -83,3 +85,17 @@ suppressed during those four frames; gravity continues normally.
 The hit frame begins a 60-frame invulnerability window. While it is nonzero,
 further overlap cannot deal damage. The Chef and pan alternate between visible
 and hidden in four-frame blocks while the HUD remains visible.
+
+## Death and Game Over
+
+Fatal damage bypasses ordinary knockback and enters a dedicated death state.
+The camera, WEINER, input, collision, and ordinary animation stop. The Chef uses
+the wide-eyed frame at sheet cell `[0, 4]`, source pixel `(64, 0)`, in
+`gfx/ChefA1.png` and holds it for 60 frames. The Chef then launches at −6 pixels
+per frame, accelerates downward by one pixel per frame, and caps at eight pixels
+per frame. Screen-space 16-bit Y allows the sprite to travel above and below
+the viewport without wrapping at the world's 8-bit vertical boundary.
+
+Once the Chef falls below the viewport, the level is replaced by a `GAME OVER`
+screen. Start returns to the title screen; starting there creates a new seed and
+restores all three hearts. The death frame occupies OBJ indices 172–175.

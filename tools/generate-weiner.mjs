@@ -117,6 +117,12 @@ function rotateClockwise(points) {
   return points.map(([x, y]) => [15 - y, x]);
 }
 
+function rotate(points, count) {
+  let result = points;
+  for (let index = 0; index < count; index++) result = rotateClockwise(result);
+  return result;
+}
+
 const horizontal = [
   [[3, 12], [12, 12]],
   [[3, 12], [5, 8], [8, 7], [10, 9], [12, 12]],
@@ -124,16 +130,20 @@ const horizontal = [
   [[3, 12], [6, 11], [9, 8], [11, 10], [13, 12]],
 ];
 const vertical = horizontal.map(rotateClockwise);
-const turns = [
+const concave = [
   [[4, 12], [9, 12], [12, 10], [12, 5]],
   [[5, 13], [9, 12], [11, 9], [11, 4]],
+];
+const convex = [
   [[4, 5], [9, 5], [12, 8], [12, 13]],
   [[5, 4], [9, 5], [11, 8], [11, 13]],
 ];
-const poses = [...horizontal, ...vertical, ...turns].map(makePose);
-const motion = horizontal.flatMap(makePose);
+const cornerPoses = [concave, convex].flatMap(turn =>
+  Array.from({ length: 4 }, (_, heading) => turn.map(points => rotate(points, heading))).flat());
+const poses = [...horizontal, ...vertical, ...cornerPoses].map(makePose);
+const motion = poses.flat();
 const review = [];
-for (let row = 0; row < 3; row++) {
+for (let row = 0; row < 6; row++) {
   for (let y = 0; y < 16; y++) review.push(poses.slice(row * 4, row * 4 + 4).map(pose => pose[y]).join(''));
 }
 

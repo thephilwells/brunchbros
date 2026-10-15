@@ -42,3 +42,7 @@ DMA prevents partial or forbidden CPU writes from corrupting OAM; it does not
 increase DMG rendering capacity. At most 40 entries exist, and only the first
 10 entries encountered on a scanline are rendered. Every new actor therefore
 needs both a tile-storage budget and an OAM/per-scanline budget.
+
+The combat fixture's 24-pose WEINER sheet occupies 96 tiles in ROM bank 1 but
+still uses only four OAM entries at runtime. Pose count does not increase the
+scanline cost.

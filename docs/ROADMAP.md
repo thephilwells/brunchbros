@@ -191,10 +191,12 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    against those bounds, permits only one hit per enemy per swing, and despawns
    the one-health fixture WEINER. WEINER contact now removes a half-heart,
    pushes the Chef four solid-aware pixels, and grants 60 frames of flickering
-   invulnerability. Sprite composition now uses a 160-byte WRAM shadow buffer
-   and one early-VBlank OAM DMA; hands-on scrolling and animation stress testing
-   confirmed that the prior blanking and ghosting are gone.
-   Pan art and future damage reach are capped at one 8-pixel tile beyond the
+   invulnerability. Zero health now freezes gameplay, launches the wide-eyed
+   Chef through a collision-free death arc, and ends at a Game Over screen whose
+   Start prompt returns to the title for a fresh run. Sprite composition now
+   uses a 160-byte WRAM shadow buffer and one early-VBlank OAM DMA; hands-on
+   scrolling and animation stress testing confirmed that the prior blanking and
+   ghosting are gone. Pan art and damage reach are capped at one 8-pixel tile beyond the
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile
    above, through a forward slash, to the accepted waist-height finish.

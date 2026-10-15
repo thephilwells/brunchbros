@@ -37,6 +37,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate Combat Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-combat-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Room Template Fixture",
       "type": "shell",
       "command": "node",
@@ -165,7 +172,7 @@
     {
       "label": "Convert Chef Frames",
       "type": "shell",
-      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge chef_attack_windup chef_attack_strike chef_attack_recovery pan_attack_windup pan_attack_strike pan_attack_recovery; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
+      "command": "for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_walk4 chef_walk5 chef_jump chef_ascent chef_crouch chef_ledge chef_attack_windup chef_attack_strike chef_attack_recovery chef_death pan_attack_windup pan_attack_strike pan_attack_recovery; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
       "problemMatcher": []
     },
     {
@@ -447,7 +454,7 @@
     {
       "label": "Build Combat Playtest ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Build ROM", "Assemble Combat Playtest", "Link Combat Playtest", "Fix Combat Playtest"],
+      "dependsOn": ["Build ROM", "Generate Combat Playtest", "Assemble Combat Playtest", "Link Combat Playtest", "Fix Combat Playtest"],
       "problemMatcher": []
     },
     {

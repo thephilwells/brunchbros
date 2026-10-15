@@ -1,7 +1,8 @@
 # HUD
 
-Status: **three-heart prototype implemented and accepted** as of 2026-10-12.
-Damage, healing, death, and game-over behavior are not part of this pass.
+Status: **three-heart display and half-heart damage behavior implemented and
+accepted**. Death and Game Over were implemented for review on 2026-10-14;
+healing is not implemented.
 
 ## Health
 
@@ -9,7 +10,8 @@ Damage, healing, death, and game-over behavior are not part of this pass.
 - A new run starts at six health: three filled hearts.
 - Hearts drain from right to left. An odd value displays a filled left half and
   empty right half in the rightmost remaining heart.
-- Level transitions preserve health. A later death/restart flow will restore it.
+- Level transitions preserve health. Returning to the title after Game Over and
+  starting a new run restores all three hearts.
 
 ## Rendering
 

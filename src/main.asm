@@ -22,19 +22,29 @@ DEF HUD_HALF_HEART_TILE EQU 74
 DEF HUD_EMPTY_HEART_TILE EQU 75
 DEF HUD_MAX_HEALTH EQU 6
 DEF WEINER_FIRST_TILE EQU 76
-DEF WEINER_AFTER_LAST_TILE EQU 92
+DEF WEINER_VERTICAL_FIRST_TILE EQU 92
+DEF WEINER_CORNER_FIRST_TILE EQU 108
 DEF WEINER_FRAME_DURATION EQU 8
-DEF WEINER_HITBOX_LEFT EQU 7
-DEF WEINER_HITBOX_RIGHT EQU 6
-DEF WEINER_FLAT_HITBOX_TOP EQU 7
-DEF WEINER_PULL_HITBOX_TOP EQU 10
-DEF WEINER_ARCH_HITBOX_TOP EQU 12
-DEF WEINER_EXTEND_HITBOX_TOP EQU 10
-DEF WEINER_CRAWL_TOP EQU 15
-DEF COMBAT_PLAYTEST_WEINER_X EQU 280
-DEF COMBAT_PLAYTEST_WEINER_Y EQU 56
+DEF WEINER_DIRECTION_RIGHT EQU 0
+DEF WEINER_DIRECTION_DOWN EQU 1
+DEF WEINER_DIRECTION_LEFT EQU 2
+DEF WEINER_DIRECTION_UP EQU 3
+DEF WEINER_TURN_CONCAVE EQU 1
+DEF WEINER_TURN_CONVEX EQU 2
+DEF PLAYER_DEATH_TILE EQU 172
+DEF DEATH_STATE_ACTIVE EQU 1
+DEF DEATH_STATE_GAME_OVER EQU 2
+DEF DEATH_HOLD_FRAMES EQU 60
+DEF DEATH_LAUNCH_VELOCITY EQU -6
+DEF DEATH_TERMINAL_VELOCITY EQU 8
+DEF GAME_OVER_G_TILE EQU 87
+DEF GAME_OVER_M_TILE EQU 88
+DEF GAME_OVER_V_TILE EQU 89
 IF DEF(ROOM_VARIANT_PLAYTEST)
 INCLUDE "build/room_variant_playtest.inc"
+ENDC
+IF DEF(COMBAT_PLAYTEST)
+INCLUDE "build/combat_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -76,6 +86,10 @@ CurrentHealth: db
 PlayerInvulnerabilityTimer: db
 PlayerKnockbackRemaining: db
 PlayerKnockbackDirection: db
+DeathState: db
+DeathScreenY: dw
+DeathVelocity: db
+DeathHoldTimer: db
 IF DEF(COMBAT_PLAYTEST)
 WeinerY: db
 WeinerX: dw
@@ -83,6 +97,10 @@ WeinerAnimTimer: db
 WeinerTileBase: db
 WeinerActive: db
 WeinerHitThisSwing: db
+WeinerDirection: db
+WeinerTurnKind: db
+WeinerTurnTimer: db
+WeinerCornerDistance: db
 ENDC
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -189,7 +207,7 @@ Start:
 IF DEF(COMBAT_PLAYTEST)
 	ld de, WeinerTiles
 	ld hl, $84c0
-	ld b, 16
+	ld b, 96
 .copyWeinerTilesOuter
 	ld c, 16
 .copyWeinerTilesInner
@@ -201,6 +219,15 @@ IF DEF(COMBAT_PLAYTEST)
 	dec b
 	jr nz, .copyWeinerTilesOuter
 ENDC
+	ld de, DeathTiles
+	ld hl, $8ac0
+	ld c, 64
+.copyDeathTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyDeathTiles
 
 	call LoadTitleScreen
 	xor a
@@ -213,10 +240,10 @@ ENDC
 	ldh [$ff40], a
 
 IF DEF(FURNITURE_PARITY_TEST)
-	jp .startGame
+	jp StartGame
 ENDC
 
-.titleLoop
+TitleLoop:
 .waitTitleNotVBlank
 	ldh a, [$ff44]
 	cp a, 144
@@ -243,7 +270,7 @@ ENDC
 	ld a, d
 	ld [PrevButtons], a
 	bit 3, e
-	jr z, .titleLoop
+	jr z, TitleLoop
 
 	ldh a, [$ff04]
 	ld b, a
@@ -270,7 +297,7 @@ ENDC
 	ld a, [GenerationRandomState + 1]
 	ld [SelectedSeed + 1], a
 
-.startGame
+StartGame:
 	ld a, HUD_MAX_HEALTH
 	ld [CurrentHealth], a
 	call LoadCurrentLevel
@@ -282,6 +309,9 @@ IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
 	call GenerateLevel
+ENDC
+IF DEF(COMBAT_PLAYTEST)
+	call LoadCombatPlaytest
 ENDC
 
 	ld de, LevelMap
@@ -338,6 +368,11 @@ ENDC
 	ld [PlayerInvulnerabilityTimer], a
 	ld [PlayerKnockbackRemaining], a
 	ld [PlayerKnockbackDirection], a
+	ld [DeathState], a
+	ld [DeathScreenY], a
+	ld [DeathScreenY + 1], a
+	ld [DeathVelocity], a
+	ld [DeathHoldTimer], a
 IF DEF(COMBAT_PLAYTEST)
 	ld a, COMBAT_PLAYTEST_WEINER_Y
 	ld [WeinerY], a
@@ -353,6 +388,10 @@ IF DEF(COMBAT_PLAYTEST)
 	ld [WeinerActive], a
 	xor a
 	ld [WeinerHitThisSwing], a
+	ld [WeinerDirection], a
+	ld [WeinerTurnKind], a
+	ld [WeinerTurnTimer], a
+	ld [WeinerCornerDistance], a
 ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
@@ -381,6 +420,30 @@ DisableLCD:
 	ld hl, $ff40
 	res 7, [hl]
 	ret
+
+IF DEF(COMBAT_PLAYTEST)
+LoadCombatPlaytest:
+	ld de, CombatPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(COMBAT_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(COMBAT_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, COMBAT_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
 
 AdvanceLevelSeed:
 	call NextGenerationRandom
@@ -446,6 +509,100 @@ LoadTitleScreen:
 	jr nz, .copyPrompt
 	ret
 
+LoadGameOverScreen:
+	call DisableLCD
+	ld de, GameOverFontTiles
+	ld hl, $9570
+	ld c, 48
+.copyFont
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyFont
+	ld hl, $9800
+	ld bc, 32 * 32
+.clearMap
+	ld [hl], TITLE_BLANK_TILE
+	inc hl
+	dec bc
+	ld a, b
+	or a, c
+	jr nz, .clearMap
+	ld de, GameOverTiles
+	ld hl, $9800 + 8 * 32 + 5
+	ld b, 9
+.copyName
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec b
+	jr nz, .copyName
+	ld de, TitlePromptTiles
+	ld hl, $9800 + 11 * 32 + 4
+	ld b, 11
+.copyPrompt
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec b
+	jr nz, .copyPrompt
+	xor a
+	ld [CameraX], a
+	ld [CameraX + 1], a
+	ld [CameraY], a
+	ldh [$ff42], a
+	ldh [$ff43], a
+	ld hl, ShadowOAM
+	ld c, 160
+.clearSprites
+	ld [hl+], a
+	dec c
+	jr nz, .clearSprites
+	call hOAMDMA
+	call ReadActionButtons
+	ld [PrevButtons], a
+	ld a, %10000001
+	ldh [$ff40], a
+	ret
+
+GameOverLoop:
+.waitNotVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr nc, .waitNotVBlank
+.waitVBlank
+	ldh a, [$ff44]
+	cp a, 144
+	jr c, .waitVBlank
+	call ReadActionButtons
+	ld d, a
+	cpl
+	ld e, a
+	ld a, [PrevButtons]
+	and a, e
+	ld e, a
+	ld a, d
+	ld [PrevButtons], a
+	bit 3, e
+	jr z, GameOverLoop
+	jp ReturnToTitle
+
+ReturnToTitle:
+	call DisableLCD
+	call LoadTitleScreen
+	xor a
+	ld [DeathState], a
+	ld [TitleSeedCounter], a
+	ld [TitleSeedCounter + 1], a
+	ldh [$ff42], a
+	ldh [$ff43], a
+	call ReadActionButtons
+	ld [PrevButtons], a
+	ld a, %10000001
+	ldh [$ff40], a
+	jp TitleLoop
+
 UpdateHUDSprites:
 	ld a, [CurrentHealth]
 	ld d, a
@@ -491,6 +648,16 @@ ReadActionButtons:
 	ret
 
 PrepareSpriteBuffer:
+	ld a, [DeathState]
+	cp a, DEATH_STATE_ACTIVE
+	jr nz, .gameplay
+	call UpdateHUDSprites
+	call UpdateDeathSprite
+IF DEF(COMBAT_PLAYTEST)
+	call UpdateWeinerSprite
+ENDC
+	ret
+.gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
 IF DEF(COMBAT_PLAYTEST)
@@ -578,6 +745,9 @@ MainLoop:
 	ldh [$ff43], a
 	ld a, [CameraY]
 	ldh [$ff42], a
+	ld a, [DeathState]
+	cp a, DEATH_STATE_ACTIVE
+	jp z, AdvancePlayerDeath
 
 ; Read the D-pad (needed both for animation mode below and movement further down)
 	ld a, %00100000
@@ -1304,6 +1474,31 @@ StreamColumn:
 	ret
 
 ; Projects PlayerY/PlayerX (world coords) into the 4 OAM entries, converting to screen coords via SCX/SCY
+UpdateDeathSprite:
+	ld a, [DeathScreenY + 1]
+	and a
+	jr z, .visible
+	ld hl, ShadowOAM
+	ld b, 32
+	xor a
+.hide
+	ld [hl+], a
+	dec b
+	jr nz, .hide
+	ret
+.visible
+	ld a, [PlayerY]
+	push af
+	ld a, [CameraY]
+	ld b, a
+	ld a, [DeathScreenY]
+	add a, b
+	ld [PlayerY], a
+	call UpdateSprites
+	pop af
+	ld [PlayerY], a
+	ret
+
 UpdateSprites:
 	ld a, [ExitAnimationTimer]
 	cp a, EXIT_ANIMATION_FINISHED
@@ -1557,6 +1752,9 @@ AdvanceWeinerAnimation:
 	ld a, [WeinerActive]
 	and a
 	ret z
+	ld a, [WeinerTurnKind]
+	and a
+	jp nz, AdvanceWeinerTurn
 	ld hl, WeinerAnimTimer
 	inc [hl]
 	ld a, [hl]
@@ -1566,46 +1764,272 @@ AdvanceWeinerAnimation:
 	ld [hl], a
 	ld a, [WeinerTileBase]
 	add a, 4
-	cp a, WEINER_AFTER_LAST_TILE
+	ld b, WEINER_FIRST_TILE + 16
+	ld c, WEINER_FIRST_TILE
+	ld a, [WeinerDirection]
+	and a, 1
+	jr z, .rangeReady
+	ld b, WEINER_VERTICAL_FIRST_TILE + 16
+	ld c, WEINER_VERTICAL_FIRST_TILE
+.rangeReady
+	ld a, [WeinerTileBase]
+	add a, 4
+	cp a, b
 	jr c, .storeTile
-	ld a, WEINER_FIRST_TILE
+	ld a, c
 .storeTile
 	ld [WeinerTileBase], a
-	cp a, WEINER_FIRST_TILE
+	cp a, c
 	jr z, .advance
-	cp a, WEINER_FIRST_TILE + 12
+	ld b, c
+	ld c, a
+	ld a, b
+	add a, 12
+	cp a, c
 	ret nz
 .advance
-	jp TryAdvanceWeinerRight
+	call WeinerForwardBlocked
+	jr c, StartWeinerConcaveTurn
+	call WeinerHasForwardSupport
+	jr nc, StartWeinerConvexTurn
+	jp MoveWeinerForward
 
-TryAdvanceWeinerRight:
-	call LoadWeinerXRightEdge
-	ld a, [WeinerY]
-	sub a, WEINER_CRAWL_TOP
-	ld d, a
-	call IsWall
+StartWeinerConcaveTurn:
+	ld a, WEINER_TURN_CONCAVE
+	ld [WeinerTurnKind], a
+	xor a
+	ld [WeinerTurnTimer], a
+	jp SetWeinerCornerTileBase
+
+StartWeinerConvexTurn:
+	call MeasureWeinerSupportRun
+	ld a, WEINER_TURN_CONVEX
+	ld [WeinerTurnKind], a
+	xor a
+	ld [WeinerTurnTimer], a
+	jp SetWeinerCornerTileBase
+
+AdvanceWeinerTurn:
+	ld hl, WeinerTurnTimer
+	inc [hl]
+	ld a, [hl]
+	ld b, 8
+	ld a, [WeinerTurnKind]
+	cp a, WEINER_TURN_CONVEX
+	jr nz, .frameTimeReady
+	ld b, 4
+.frameTimeReady
+	ld a, [WeinerTurnTimer]
+	cp a, b
+	jr nz, .checkFinish
+	ld hl, WeinerTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+.checkFinish
+	ld a, [WeinerTurnKind]
+	cp a, WEINER_TURN_CONVEX
+	ld b, 8
+	jr z, .durationReady
+	ld b, 16
+.durationReady
+	ld a, [WeinerTurnTimer]
+	cp a, b
+	ret c
+	ld a, [WeinerTurnKind]
+	cp a, WEINER_TURN_CONVEX
+	jr nz, .turnLeft
+	call SnapWeinerAroundConvexCorner
+	ld a, [WeinerDirection]
+	inc a
+	and a, 3
+	jr .storeDirection
+.turnLeft
+	ld a, [WeinerDirection]
+	dec a
+	and a, 3
+.storeDirection
+	ld [WeinerDirection], a
+	xor a
+	ld [WeinerTurnKind], a
+	ld [WeinerTurnTimer], a
+	ld [WeinerAnimTimer], a
+	jp SetWeinerNormalTileBase
+
+SetWeinerNormalTileBase:
+	ld a, [WeinerDirection]
+	and a, 1
+	ld a, WEINER_FIRST_TILE
+	jr z, .store
+	ld a, WEINER_VERTICAL_FIRST_TILE
+.store
+	ld [WeinerTileBase], a
+	ret
+
+SetWeinerCornerTileBase:
+	ld a, [WeinerTurnKind]
+	dec a
+	swap a
+	add a, a
+	ld b, a
+	ld a, [WeinerDirection]
+	add a, a
+	add a, a
+	add a, a
+	add a, b
+	add a, WEINER_CORNER_FIRST_TILE
+	ld [WeinerTileBase], a
+	ret
+
+MoveWeinerForward:
+	ld a, [WeinerDirection]
+	and a
+	jp z, IncrementWeinerX
+	dec a
+	jp z, IncrementWeinerY
+	dec a
+	jp z, DecrementWeinerX
+	jp DecrementWeinerY
+
+SnapWeinerAroundConvexCorner:
+	ld a, [WeinerCornerDistance]
+	ld b, a
+	ld a, [WeinerDirection]
+	and a
+	jr z, .right
+	dec a
+	jr z, .down
+	dec a
+	jr z, .left
+.up
+	call SubtractWeinerDistanceFromY
+	jp AddSixteenToWeinerX
+.right
+	call AddWeinerDistanceToX
+	jp AddSixteenToWeinerY
+.down
+	call AddWeinerDistanceToY
+	jp SubtractSixteenFromWeinerX
+.left
+	call SubtractWeinerDistanceFromX
+	jp SubtractSixteenFromWeinerY
+
+AddWeinerDistanceToX:
+	ld hl, WeinerX
+	ld a, [hl]
+	add a, b
+	ld [hl+], a
+	ret nc
+	inc [hl]
+	ret
+
+SubtractWeinerDistanceFromX:
+	ld hl, WeinerX
+	ld a, [hl]
+	sub a, b
+	ld [hl+], a
+	ret nc
+	dec [hl]
+	ret
+
+AddWeinerDistanceToY:
+	ld hl, WeinerY
+	ld a, [hl]
+	add a, b
+	ld [hl], a
+	ret
+
+SubtractWeinerDistanceFromY:
+	ld hl, WeinerY
+	ld a, [hl]
+	sub a, b
+	ld [hl], a
+	ret
+
+AddSixteenToWeinerX:
+	ld hl, WeinerX
+	ld a, [hl]
+	add a, 16
+	ld [hl+], a
+	ret nc
+	inc [hl]
+	ret
+
+SubtractSixteenFromWeinerX:
+	ld hl, WeinerX
+	ld a, [hl]
+	sub a, 16
+	ld [hl+], a
+	ret nc
+	dec [hl]
+	ret
+
+AddSixteenToWeinerY:
+	ld hl, WeinerY
+	ld a, [hl]
+	add a, 16
+	ld [hl], a
+	ret
+
+SubtractSixteenFromWeinerY:
+	ld hl, WeinerY
+	ld a, [hl]
+	sub a, 16
+	ld [hl], a
+	ret
+
+MeasureWeinerSupportRun:
+	xor a
+	ld [WeinerCornerDistance], a
+.probe
+	ld a, [WeinerCornerDistance]
+	cp a, 16
 	ret z
-
-	call LoadWeinerXRightEdge
+	ld b, a
+	ld a, [WeinerDirection]
+	and a
+	jr z, .right
+	dec a
+	jr z, .down
+	dec a
+	jr z, .left
+.up
+	ld b, 16
+	call LoadWeinerXOffset
+	ld a, [WeinerCornerDistance]
+	ld b, a
+	ld a, 15
+	sub a, b
+	ld b, a
 	ld a, [WeinerY]
-	sub a, 8
-	ld d, a
-	call IsWall
-	ret z
-
-	call LoadWeinerXRightEdge
+	add a, b
+	jr .test
+.right
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	add a, 16
+	jr .test
+.down
+	call LoadWeinerXMinusOne
+	ld a, [WeinerY]
+	add a, b
+	jr .test
+.left
+	ld a, 15
+	sub a, b
+	ld b, a
+	call LoadWeinerXOffset
 	ld a, [WeinerY]
 	dec a
+.test
 	ld d, a
 	call IsWall
-	ret z
-
-	call LoadWeinerXRightEdge
-	ld a, [WeinerY]
-	ld d, a
-	call IsSupport
 	ret nz
+	ld hl, WeinerCornerDistance
+	inc [hl]
+	jr .probe
 
+IncrementWeinerX:
 	ld hl, WeinerX
 	inc [hl]
 	ret nz
@@ -1613,12 +2037,150 @@ TryAdvanceWeinerRight:
 	inc [hl]
 	ret
 
-LoadWeinerXRightEdge:
+DecrementWeinerX:
+	ld hl, WeinerX
+	ld a, [hl]
+	dec a
+	ld [hl+], a
+	inc a
+	ret nz
+	dec [hl]
+	ret
+
+IncrementWeinerY:
+	ld hl, WeinerY
+	inc [hl]
+	ret
+
+DecrementWeinerY:
+	ld hl, WeinerY
+	dec [hl]
+	ret
+
+WeinerForwardBlocked:
+	ld a, [WeinerDirection]
+	and a
+	jr z, .right
+	dec a
+	jr z, .down
+	dec a
+	jr z, .left
+.up
+	ld b, 1
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	dec a
+	ld d, a
+	call IsWall
+	jr z, .blocked
+	ld b, 14
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	dec a
+	ld d, a
+	jr .secondProbe
+.right
+	ld b, 16
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	inc a
+	ld d, a
+	call IsWall
+	jr z, .blocked
+	ld b, 16
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	add a, 14
+	ld d, a
+	jr .secondProbe
+.down
+	ld b, 1
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	add a, 16
+	ld d, a
+	call IsWall
+	jr z, .blocked
+	ld b, 14
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	add a, 16
+	ld d, a
+	jr .secondProbe
+.left
+	call LoadWeinerXMinusOne
+	ld a, [WeinerY]
+	inc a
+	ld d, a
+	call IsWall
+	jr z, .blocked
+	call LoadWeinerXMinusOne
+	ld a, [WeinerY]
+	add a, 14
+	ld d, a
+.secondProbe
+	call IsWall
+	jr z, .blocked
+	and a
+	ret
+.blocked
+	scf
+	ret
+
+WeinerHasForwardSupport:
+	ld a, [WeinerDirection]
+	and a
+	jr z, .right
+	dec a
+	jr z, .down
+	dec a
+	jr z, .left
+.up
+	ld b, 16
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	dec a
+	jr .probe
+.right
+	ld b, 16
+	call LoadWeinerXOffset
+	ld a, [WeinerY]
+	add a, 16
+	jr .probe
+.down
+	call LoadWeinerXMinusOne
+	ld a, [WeinerY]
+	add a, 16
+	jr .probe
+.left
+	call LoadWeinerXMinusOne
+	ld a, [WeinerY]
+	dec a
+.probe
+	ld d, a
+	call IsWall
+	jr z, .supported
+	and a
+	ret
+.supported
+	scf
+	ret
+
+LoadWeinerXOffset:
 	ld a, [WeinerX]
-	add a, WEINER_HITBOX_RIGHT + 2
+	add a, b
 	ld e, a
 	ld a, [WeinerX + 1]
 	adc a, 0
+	ld c, a
+	ret
+
+LoadWeinerXMinusOne:
+	ld a, [WeinerX]
+	sub a, 1
+	ld e, a
+	ld a, [WeinerX + 1]
+	sbc a, 0
 	ld c, a
 	ret
 
@@ -1654,8 +2216,10 @@ CheckWeinerAttackX:
 	and a
 	jr nz, .left
 	ld a, [WeinerX]
+	add a, 8
 	ld l, a
 	ld a, [WeinerX + 1]
+	adc a, 0
 	ld h, a
 	ld a, [PlayerX]
 	ld e, a
@@ -1674,8 +2238,10 @@ CheckWeinerAttackX:
 	ld a, [PlayerX + 1]
 	ld h, a
 	ld a, [WeinerX]
+	add a, 8
 	ld e, a
 	ld a, [WeinerX + 1]
+	adc a, 0
 	ld d, a
 	ld a, l
 	sub a, e
@@ -1698,8 +2264,10 @@ CheckWeinerAttackX:
 
 CheckWeinerCloseX:
 	ld a, [WeinerX]
+	add a, 8
 	ld l, a
 	ld a, [WeinerX + 1]
+	adc a, 0
 	ld h, a
 	ld a, [PlayerX]
 	ld e, a
@@ -1760,12 +2328,11 @@ CheckWeinerAttackY:
 	ld b, a
 .attackBoundsReady
 	ld a, [WeinerY]
-	dec a
+	add a, 14
 	cp a, b
 	jr c, .miss
-	call LoadWeinerHitboxTop
 	ld a, [WeinerY]
-	sub a, d
+	inc a
 	ld d, a
 	ld a, c
 	cp a, d
@@ -1774,20 +2341,6 @@ CheckWeinerAttackY:
 	ret
 .miss
 	and a
-	ret
-
-LoadWeinerHitboxTop:
-	ld a, [WeinerTileBase]
-	ld d, WEINER_FLAT_HITBOX_TOP
-	cp a, WEINER_FIRST_TILE + 4
-	ret c
-	ld d, WEINER_PULL_HITBOX_TOP
-	cp a, WEINER_FIRST_TILE + 8
-	ret c
-	ld d, WEINER_ARCH_HITBOX_TOP
-	cp a, WEINER_FIRST_TILE + 12
-	ret c
-	ld d, WEINER_EXTEND_HITBOX_TOP
 	ret
 
 TryWeinerContact:
@@ -1802,9 +2355,8 @@ TryWeinerContact:
 	ld a, [PlayerY]
 	dec a
 	ld b, a
-	call LoadWeinerHitboxTop
 	ld a, [WeinerY]
-	sub a, d
+	inc a
 	ld c, a
 	ld a, b
 	cp a, c
@@ -1813,7 +2365,7 @@ TryWeinerContact:
 	sub a, PLAYER_HITBOX_TOP
 	ld b, a
 	ld a, [WeinerY]
-	dec a
+	add a, 14
 	cp a, b
 	jr c, .miss
 	ld a, [CurrentHealth]
@@ -1821,6 +2373,8 @@ TryWeinerContact:
 	ret z
 	dec a
 	ld [CurrentHealth], a
+	and a
+	jp z, StartPlayerDeath
 	ld a, 60
 	ld [PlayerInvulnerabilityTimer], a
 	ld a, 4
@@ -1830,8 +2384,10 @@ TryWeinerContact:
 	ld a, [PlayerX + 1]
 	ld h, a
 	ld a, [WeinerX]
+	add a, 8
 	ld e, a
 	ld a, [WeinerX + 1]
+	adc a, 0
 	ld d, a
 	ld a, l
 	sub a, e
@@ -1876,18 +2432,19 @@ UpdateWeinerSprite:
 	ld b, a
 	ld a, [CameraX]
 	ld c, a
+	xor a
+	ld d, a
+	ld a, [WeinerTurnKind]
+	and a
+	jr nz, .orientationReady
+	ld a, [WeinerDirection]
+	cp a, WEINER_DIRECTION_LEFT
+	jr c, .orientationReady
+	ld d, $60
+.orientationReady
 	ld hl, ShadowOAM + $2c
 	ld a, [WeinerY]
-	sub a, b
-	ld [hl+], a
-	ld a, [WeinerX]
-	sub a, c
-	ld [hl+], a
-	ld a, [WeinerTileBase]
-	ld [hl+], a
-	xor a
-	ld [hl+], a
-	ld a, [WeinerY]
+	add a, 16
 	sub a, b
 	ld [hl+], a
 	ld a, [WeinerX]
@@ -1895,37 +2452,156 @@ UpdateWeinerSprite:
 	sub a, c
 	ld [hl+], a
 	ld a, [WeinerTileBase]
-	inc a
-	ld [hl+], a
-	xor a
-	ld [hl+], a
-	ld a, [WeinerY]
-	add a, 8
-	sub a, b
-	ld [hl+], a
-	ld a, [WeinerX]
-	sub a, c
-	ld [hl+], a
-	ld a, [WeinerTileBase]
-	add a, 2
-	ld [hl+], a
-	xor a
-	ld [hl+], a
-	ld a, [WeinerY]
-	add a, 8
-	sub a, b
-	ld [hl+], a
-	ld a, [WeinerX]
-	add a, 8
-	sub a, c
-	ld [hl+], a
-	ld a, [WeinerTileBase]
+	ld e, a
+	ld a, d
+	and a
+	ld a, e
+	jr z, .firstTileReady
 	add a, 3
+.firstTileReady
 	ld [hl+], a
-	xor a
+	ld a, d
+	ld [hl+], a
+	ld a, [WeinerY]
+	add a, 16
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	add a, 16
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	ld e, a
+	ld a, d
+	and a
+	ld a, e
+	jr z, .secondNormal
+	add a, 2
+	jr .secondTileReady
+.secondNormal
+	inc a
+.secondTileReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, [WeinerY]
+	add a, 24
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	ld e, a
+	ld a, d
+	and a
+	ld a, e
+	jr z, .thirdNormal
+	inc a
+	jr .thirdTileReady
+.thirdNormal
+	add a, 2
+.thirdTileReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, [WeinerY]
+	add a, 24
+	sub a, b
+	ld [hl+], a
+	ld a, [WeinerX]
+	add a, 16
+	sub a, c
+	ld [hl+], a
+	ld a, [WeinerTileBase]
+	ld e, a
+	ld a, d
+	and a
+	ld a, e
+	jr z, .fourthNormal
+	jr .fourthTileReady
+.fourthNormal
+	add a, 3
+.fourthTileReady
+	ld [hl+], a
+	ld a, d
 	ld [hl], a
 	ret
 ENDC
+
+StartPlayerDeath:
+	ld a, DEATH_STATE_ACTIVE
+	ld [DeathState], a
+	ld a, [PlayerY]
+	ld b, a
+	ld a, [CameraY]
+	ld c, a
+	ld a, b
+	sub a, c
+	ld [DeathScreenY], a
+	xor a
+	ld [DeathScreenY + 1], a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [PlayerInvulnerabilityTimer], a
+	ld [PlayerKnockbackRemaining], a
+	ld [PlayerSpriteAttributes], a
+	ld a, PLAYER_DEATH_TILE
+	ld [PlayerTileBase], a
+	ld a, DEATH_HOLD_FRAMES
+	ld [DeathHoldTimer], a
+	ld a, DEATH_LAUNCH_VELOCITY
+	ld [DeathVelocity], a
+	ret
+
+AdvancePlayerDeath:
+	ld hl, DeathHoldTimer
+	ld a, [hl]
+	and a
+	jr z, .advance
+	dec [hl]
+	jp MainLoop
+.advance
+	ld a, [DeathVelocity]
+	ld e, a
+	ld d, 0
+	bit 7, e
+	jr z, .velocityReady
+	dec d
+.velocityReady
+	ld hl, DeathScreenY
+	ld a, [hl]
+	add a, e
+	ld [hl+], a
+	ld a, [hl]
+	adc a, d
+	ld [hl], a
+	ld a, [DeathVelocity]
+	bit 7, a
+	jr nz, .accelerate
+	cp a, DEATH_TERMINAL_VELOCITY
+	jr nc, .positionReady
+.accelerate
+	inc a
+	ld [DeathVelocity], a
+.positionReady
+	ld a, [DeathScreenY + 1]
+	and a
+	jr z, .checkBottom
+	bit 7, a
+	jp nz, MainLoop
+	jr .gameOver
+.checkBottom
+	ld a, [DeathScreenY]
+	cp a, 160
+	jp c, MainLoop
+.gameOver
+	ld a, DEATH_STATE_GAME_OVER
+	ld [DeathState], a
+	call LoadGameOverScreen
+	jp GameOverLoop
 
 ; --- Facing left (flipped): swap left/right tiles within each row, set flip bit ---
 UpdateSpritesFlipped:
@@ -2373,6 +3049,15 @@ TitlePromptTiles:
 	db TITLE_P_TILE, TITLE_R_TILE, TITLE_E_TILE, TITLE_S_TILE, TITLE_S_TILE
 	db TITLE_BLANK_TILE, TITLE_S_TILE, TITLE_T_TILE, TITLE_A_TILE, TITLE_R_TILE, TITLE_T_TILE
 
+GameOverTiles:
+	db GAME_OVER_G_TILE, TITLE_A_TILE, GAME_OVER_M_TILE, TITLE_E_TILE, TITLE_BLANK_TILE
+	db TITLE_O_TILE, GAME_OVER_V_TILE, TITLE_E_TILE, TITLE_R_TILE
+
+GameOverFontTiles:
+	db $ff, $3c, $ff, $40, $ff, $40, $ff, $5c, $ff, $44, $ff, $44, $ff, $38, $ff, $00
+	db $ff, $44, $ff, $6c, $ff, $54, $ff, $54, $ff, $44, $ff, $44, $ff, $44, $ff, $00
+	db $ff, $44, $ff, $44, $ff, $44, $ff, $44, $ff, $44, $ff, $28, $ff, $10, $ff, $00
+
 RoomTemplateData:
 	INCBIN "build/room_templates.bin"
 RoomTemplateDataEnd:
@@ -2422,7 +3107,15 @@ ChefFrames:
 HUDTiles:
 	INCBIN "build/hud_hearts.2bpp"
 
-WeinerTiles:
+DeathTiles:
+	INCBIN "build/chef_death.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
+SECTION "Combat Playtest Assets", ROMX
+WeinerTiles:
 	INCBIN "build/weiner_motion.2bpp"
+CombatPlaytestMap:
+	INCBIN "build/combat_playtest.tilemap"
+CombatPlaytestMapEnd:
+ASSERT CombatPlaytestMapEnd - CombatPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC

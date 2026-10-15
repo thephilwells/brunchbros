@@ -47,11 +47,9 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | `$8000–$800F` | Sprite index 0, reserved | 1 | 16 |
 | `$8010–$848F` | Chef and frying pan, sprite indices 1–72 | 72 | 1,152 |
 | `$8490–$84BF` | HUD hearts, sprite indices 73–75 | 3 | 48 |
-| `$84C0–$85BF` | WEINER horizontal animation, indices 76–91 | 16 | 256 |
-| `$85C0–$87FF` | Remaining sprite capacity, indices 92–127 | 36 | 576 |
-| `$8800–$8BFF` | Environment expansion, BG IDs 128–191 | 64 | 1,024 |
-| `$8C00–$8DFF` | Future BG/Window HUD expansion, IDs 192–223 | 32 | 512 |
-| `$8E00–$8FFF` | Unassigned BG/Window capacity, IDs 224–255 | 32 | 512 |
+| `$84C0–$8ABF` | Combat-only WEINER surface-crawl set, indices 76–171 | 96 | 1,536 |
+| `$8AC0–$8AFF` | Chef death frame, indices 172–175 | 4 | 64 |
+| `$8B00–$8FFF` | Remaining OBJ capacity, indices 176–255 | 80 | 1,280 |
 | `$9000–$91FF` | Shared vocabulary, BG IDs 0–31 | 32 | 512 |
 | `$9200–$97FF` | Current biome allocation, BG IDs 32–127 | 96 | 1,536 |
 | `$9800–$9BFF` | Current scrolling background map | — | 1,024 |

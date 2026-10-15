@@ -8,7 +8,8 @@ before.
 ## Source layout
 
 The runtime is split between `src/main.asm` and the included
-`src/level_generation.asm`. Everything remains in ROM0 without banking:
+`src/level_generation.asm`. Runtime code and shared assets remain in ROM0;
+combat-only WEINER art and its fixture map live in fixed ROM bank 1:
 
 - **WRAM0 state** — see Memory map below.
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
@@ -16,7 +17,7 @@ The runtime is split between `src/main.asm` and the included
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000`, all 18 Chef/pan animation
   composites at `$8010`, and three HUD heart tiles at `$8490`. Combat playtest
-  builds also load the 16-tile WEINER horizontal cycle at `$84C0`. It then draws
+  builds also load the 96-tile WEINER surface-crawl set at `$84C0`. It then draws
   a BG-only title screen and waits for a fresh Start press while counting
   frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
@@ -66,14 +67,18 @@ The runtime is split between `src/main.asm` and the included
   tiles and remain independent of the scrolling camera. New runs start at six;
   level transitions preserve the value. In the combat fixture, WEINER contact
   removes one unit, applies four solid-aware knockback steps, and starts 60
-  frames of four-frame-block flicker. Healing does not exist yet.
-- **Combat fixture** — defining `COMBAT_PLAYTEST` adds a 16×16 WEINER to the
-  fixed seed-0 spawn room. Its four OAM entries project the same world-centered
-  X and feet-line Y convention as the Chef. The four-pose cycle crawls right by
-  two pixels every 32 frames and stops before a full-solid wall or missing
-  support. Each pose has a calibrated contact height. One pan overlap marks the
-  WEINER inactive, stops its updates, and hides its four shadow-OAM entries.
-  Surface turns and contact damage are not implemented yet.
+  frames of four-frame-block flicker. Zero health freezes gameplay and runs a
+  60-frame wide-eyed hold and screen-space death arc before loading Game Over.
+  Healing does not exist yet.
+- **Combat fixture** — defining `COMBAT_PLAYTEST` loads a compact closed-loop
+  chamber and adds a 16×16 WEINER. Its world coordinates identify the
+  composite's top-left pixel. Full-solid forward and support probes select
+  straight motion, an inward turn, or an exposed-edge wrap while keeping the
+  attached surface on the WEINER's right. Exposed-edge wraps measure the
+  remaining supported depth and re-anchor once after an eight-frame turn beat,
+  including consecutive wraps around one-tile-thick ledges. One pan overlap
+  marks the WEINER inactive, stops its updates, and hides its four shadow-OAM
+  entries.
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
@@ -151,9 +156,11 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `CurrentHealth` | Health in half-heart units from zero through six |
 | `PlayerInvulnerabilityTimer` | Remaining contact-damage immunity frames; also drives four-frame flicker blocks |
 | `PlayerKnockbackRemaining` / `PlayerKnockbackDirection` | Remaining one-pixel solid-aware push steps and signed horizontal direction |
-| `WeinerY` / `WeinerX` | Combat-fixture WEINER feet line and 16-bit horizontal center in world coordinates |
+| `DeathState` / `DeathHoldTimer` / `DeathScreenY` / `DeathVelocity` | Death/Game Over phase, stare hold, and collision-free 16-bit screen-space death arc |
+| `WeinerY` / `WeinerX` | Combat-fixture WEINER top-left position in world coordinates |
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion cadence and the active four-tile WEINER pose |
 | `WeinerActive` / `WeinerHitThisSwing` | Fixture lifetime and per-swing repeat-hit latch |
+| `WeinerDirection` / `WeinerTurnKind` / `WeinerTurnTimer` / `WeinerCornerDistance` | Surface heading, active corner transition, and measured exposed-edge support depth |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |
@@ -167,8 +174,9 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`$9000` up).
 
 The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`; HUD
-hearts use sprite indices 73–75 in `$8490–$84BF`; the WEINER horizontal cycle
-uses indices 76–91 in `$84C0–$85BF`. Signed background
+hearts use sprite indices 73–75 in `$8490–$84BF`; combat builds load the
+WEINER surface-crawl set at indices 76–171 in `$84C0–$8ABF`; the death frame
+uses indices 172–175 in `$8AC0–$8AFF`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in
