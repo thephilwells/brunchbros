@@ -1,8 +1,8 @@
 # Dining-room composition
 
-Status: **host/runtime floor furniture and background placement accepted after
-gallery, fixed-seed parity, and SameBoy review (2026-10-05); wallpaper gallery
-accepted and runtime placement implemented, awaiting production-ROM review**.
+Status: **host/runtime floor furniture, background placement, and wallpaper
+accepted; host-side WEINER population and gallery overlays implemented for
+review**.
 
 ## Purpose
 
@@ -21,8 +21,8 @@ connectivity or the selected domino matching.
 4. Place passable rear-wall fixtures.
 5. Place floor-anchored furniture outside reservations.
 6. Place sparse wallpaper motifs in remaining plain rear cells.
-7. Revalidate the finished tile map. Encounter and loot placement remain later
-   passes and inherit the same reservations.
+7. Select encounter spawns from the remaining safe full-solid surfaces.
+8. Revalidate the finished tile map. Loot placement remains a later pass.
 
 Furniture is optional traversal. Removing every furniture tile must leave the
 structural route valid. Furniture may create shortcuts, extra landing choices,
@@ -164,5 +164,26 @@ its timing-derived seed and does not embed the parity oracle.
 The runtime parity target includes wallpaper. A 160-byte footprint bitset keeps
 transparent cells inside fixtures unavailable without duplicating the complete
 tilemap. Fixed-seed parity covers seeds 0, 1, 77, `$1234`, and `$FFFF` across all
-1,280 cells. Encounters, loot eggs, and movable objects remain later composition
-passes.
+1,280 cells. Loot eggs and movable objects remain later composition passes.
+
+## WEINER population prototype
+
+`data/dining-room-mobs.json` gives WEINER the accepted common frequency weight
+of eight and requests two through four encounter slots per level. Until another
+mob is eligible, every filled slot is a WEINER. Frequency is retained in the
+placement export for later weighted selection; it does not choose the total
+population.
+
+Candidates are 2×2 empty structural cells directly above two full-solid cells.
+They cannot overlap furniture, standard-port approaches, wide seams, endpoint
+envelopes, or ledge-catch reservations. Spawn and exit rooms and the selected
+ledge-catch room are excluded entirely. The blanket critical-room flag remains
+a furniture restriction; it does not by itself reject an encounter candidate.
+This permits ordinary required-route rooms to contain enemies while preserving
+their exact transition clearances.
+
+At most one WEINER is selected per room. A seed-local ordering selects eligible
+rooms and a separate room-local mix selects the floor anchor, without advancing
+the structural PRNG. Sparse topologies may fill fewer than the requested two to
+four slots. JSON records candidate counts, the target, and placements; TMX adds
+a visible `Mob Spawns` layer; gallery thumbnails draw orange capsules.

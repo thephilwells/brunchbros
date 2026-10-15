@@ -22,6 +22,10 @@ let levelsWithWallpaper = 0;
 let minimumWallpaperPlacements = 32;
 let maximumWallpaperPlacements = 0;
 let totalWallpaperPlacements = 0;
+let levelsWithMobs = 0;
+let minimumMobPlacements = 16;
+let maximumMobPlacements = 0;
+let totalMobPlacements = 0;
 const backgroundComponentCounts = new Map();
 const componentCounts = new Map();
 const chairOrientationCounts = new Map();
@@ -30,6 +34,7 @@ let backgroundExample;
 let chairExample;
 let sconceExample;
 let wallpaperExample;
+let mobExample;
 const seedCount = 0x10000;
 
 for (let seed = 0; seed < seedCount; seed++) {
@@ -46,6 +51,9 @@ for (let seed = 0; seed < seedCount; seed++) {
   assert.deepEqual(first.wallpaperSourceTiles, second.wallpaperSourceTiles);
   assert.deepEqual(first.roomWallpaperCandidateCounts, second.roomWallpaperCandidateCounts);
   assert.deepEqual(first.wallpaperPlacements, second.wallpaperPlacements);
+  assert.deepEqual(first.roomMobCandidateCounts, second.roomMobCandidateCounts);
+  assert.deepEqual(first.mobPlacements, second.mobPlacements);
+  assert.equal(first.mobPopulationTarget, second.mobPopulationTarget);
   assert.deepEqual(first.tiles, second.tiles);
   assert.deepEqual(first.structuralTiles, generated.tiles);
   assert.equal(first.compositionValidation.valid, true, `Seed ${seed}: ${first.compositionValidation.errors.join(', ')}`);
@@ -77,6 +85,15 @@ for (let seed = 0; seed < seedCount; seed++) {
     wallpaperExample ??= first;
   }
 
+  const mobPlacements = first.mobPlacements.length;
+  minimumMobPlacements = Math.min(minimumMobPlacements, mobPlacements);
+  maximumMobPlacements = Math.max(maximumMobPlacements, mobPlacements);
+  totalMobPlacements += mobPlacements;
+  if (mobPlacements) {
+    levelsWithMobs++;
+    mobExample ??= first;
+  }
+
   const placements = first.furniturePlacements.length;
   minimumPlacements = Math.min(minimumPlacements, placements);
   maximumPlacements = Math.max(maximumPlacements, placements);
@@ -98,6 +115,7 @@ assert(levelsWithAvailableCells > 0);
 assert(levelsWithBackground > seedCount * .99);
 assert(levelsWithFurniture > 0);
 assert(levelsWithWallpaper > seedCount * .99);
+assert(levelsWithMobs > seedCount * .99);
 assert(minimumReservedCells > 0);
 assert.equal(maximumReservedCells, 1280);
 assert.deepEqual([...backgroundComponentCounts.keys()].sort(), ['menu_board', 'serving_hatch', 'wall_clock', 'wall_mirror', 'wall_sconce']);
@@ -162,12 +180,22 @@ const chair = wrongChairOrientation.furniturePlacements.find(candidate => candid
 chair.orientation = chair.orientation === 'back_left' ? 'back_right' : 'back_left';
 assert.equal(validateDiningRoomComposition(wrongChairOrientation).valid, false);
 
+const missingMob = structuredClone(mobExample);
+missingMob.mobPlacements.shift();
+assert.equal(validateDiningRoomComposition(missingMob).valid, false);
+
+const protectedMob = structuredClone(mobExample);
+const mob = protectedMob.mobPlacements[0];
+protectedMob.placementReservationMask[mob.y * 40 + mob.x] |= 2;
+assert.equal(validateDiningRoomComposition(protectedMob).valid, false);
+
 const svg = levelToSvg(furnishedExample);
 const tmx = levelToTmx(furnishedExample, 'dining_room.tsx');
 assert.match(svg, /fill-opacity="\.34"/);
 assert.match(svg, /fill-opacity="\.7"/);
 assert.match(svg, /fill-opacity="\.82"/);
 assert.match(svg, /r="\.25"/);
+assert.match(svg, /#ef7048/);
 assert.match(tmx, /name="Placement Reservations" visible="0"/);
 assert.match(tmx, /name="Background Placements"/);
 assert.match(tmx, /type="background_placement"/);
@@ -177,8 +205,11 @@ assert.match(tmx, /type="furniture_placement"/);
 assert.match(tmx, /name="orientation"/);
 assert.match(tmx, /name="Wallpaper Placements"/);
 assert.match(tmx, /type="wallpaper_placement"/);
+assert.match(tmx, /name="Mob Spawns"/);
+assert.match(tmx, /type="mob_spawn"/);
 
 const averagePlacements = (totalPlacements / seedCount).toFixed(2);
 const averageBackgroundPlacements = (totalBackgroundPlacements / seedCount).toFixed(2);
 const averageWallpaperPlacements = (totalWallpaperPlacements / seedCount).toFixed(2);
-console.log(`Dining-room composition verified across all 65,536 seeds; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels).`);
+const averageMobPlacements = (totalMobPlacements / seedCount).toFixed(2);
+console.log(`Dining-room composition verified across all 65,536 seeds; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} WEINER spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels).`);

@@ -16,6 +16,8 @@ const FURNITURE_BY_ID = new Map(FURNITURE_MANIFEST.components.map(component => [
 const BACKGROUND_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-background.json', import.meta.url), 'utf8'));
 const BACKGROUND_BY_ID = new Map(BACKGROUND_MANIFEST.components.map(component => [component.id, component]));
 const WALLPAPER_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-wallpaper.json', import.meta.url), 'utf8'));
+const MOB_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-mobs.json', import.meta.url), 'utf8'));
+const MOB_BY_ID = new Map(MOB_MANIFEST.mobs.map(mob => [mob.id, mob]));
 
 function componentLayouts(component) {
   return component.orientations ?? [{ id: 'default', tiles: component.tiles }];
@@ -48,6 +50,7 @@ export const RESERVATION_SPAWN = 0x08;
 export const RESERVATION_EXIT = 0x10;
 export const RESERVATION_LEDGE_CATCH = 0x20;
 const BACKGROUND_BLOCKING_RESERVATIONS = RESERVATION_PORT | RESERVATION_WIDE_SEAM | RESERVATION_SPAWN | RESERVATION_EXIT | RESERVATION_LEDGE_CATCH;
+const ENCOUNTER_BLOCKING_RESERVATIONS = RESERVATION_PORT | RESERVATION_WIDE_SEAM | RESERVATION_SPAWN | RESERVATION_EXIT | RESERVATION_LEDGE_CATCH;
 
 function mixSelection(seed, room, salt) {
   let state = ((seed || 0xace1) ^ ((room + 1) * 0x9e37) ^ salt) & 0xffff;
@@ -356,12 +359,82 @@ export function addDiningRoomWallpaper(level) {
   };
 }
 
+function furnitureCells(level) {
+  const cells = new Set();
+  for (const placement of level.furniturePlacements ?? []) {
+    for (let y = placement.y; y < placement.y + placement.height; y++) {
+      for (let x = placement.x; x < placement.x + placement.width; x++) cells.add(y * LEVEL_WIDTH + x);
+    }
+  }
+  return cells;
+}
+
+function mobCandidates(level, room, mob, occupiedFurniture) {
+  if (room === level.spawnRoom || room === level.exitRoom || level.roomTraversalClasses[room] === TRAVERSAL_LEDGE_CATCH) return [];
+  const roomX = room % 4 * ROOM_WIDTH;
+  const roomY = Math.floor(room / 4) * ROOM_HEIGHT;
+  const candidates = [];
+  for (let y = roomY; y + mob.height < roomY + ROOM_HEIGHT; y++) {
+    for (let x = roomX; x + mob.width <= roomX + ROOM_WIDTH; x++) {
+      let valid = true;
+      for (let bodyY = y; bodyY < y + mob.height; bodyY++) {
+        for (let bodyX = x; bodyX < x + mob.width; bodyX++) {
+          const index = bodyY * LEVEL_WIDTH + bodyX;
+          if (level.structuralTiles[index] !== 17 || level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS || occupiedFurniture.has(index)) valid = false;
+        }
+      }
+      for (let supportX = x; supportX < x + mob.width; supportX++) {
+        const index = (y + mob.height) * LEVEL_WIDTH + supportX;
+        const tile = level.structuralTiles[index];
+        if (tile < 1 || tile > 16 || level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) valid = false;
+      }
+      if (valid) candidates.push({ room, x, y });
+    }
+  }
+  return candidates;
+}
+
+function mobSelections(level) {
+  const mob = MOB_BY_ID.get('weiner');
+  const occupiedFurniture = furnitureCells(level);
+  const candidatesByRoom = Array.from({ length: 16 }, (_, room) => mobCandidates(level, room, mob, occupiedFurniture));
+  const eligibleRooms = candidatesByRoom.flatMap((candidates, room) => candidates.length ? [room] : []);
+  eligibleRooms.sort((left, right) => mixSelection(level.seed, left, MOB_MANIFEST.population.selectionSalt) - mixSelection(level.seed, right, MOB_MANIFEST.population.selectionSalt) || left - right);
+  const range = MOB_MANIFEST.population.maximum - MOB_MANIFEST.population.minimum + 1;
+  const target = MOB_MANIFEST.population.minimum + mixSelection(level.seed, 16, MOB_MANIFEST.population.selectionSalt) % range;
+  const placements = eligibleRooms.slice(0, target).map(room => {
+    const candidates = candidatesByRoom[room];
+    const position = candidates[mixSelection(level.seed, room, MOB_MANIFEST.population.positionSalt) % candidates.length];
+    return {
+      room,
+      mob: mob.id,
+      frequency: mob.frequency,
+      direction: mob.direction,
+      x: position.x,
+      y: position.y,
+      width: mob.width,
+      height: mob.height,
+    };
+  });
+  return { candidatesByRoom, placements, target };
+}
+
+export function addDiningRoomMobs(level) {
+  const selection = mobSelections(level);
+  return {
+    ...level,
+    roomMobCandidateCounts: selection.candidatesByRoom.map(candidates => candidates.length),
+    mobPopulationTarget: selection.target,
+    mobPlacements: selection.placements,
+  };
+}
+
 export function composeDiningRoomFixtures(level) {
   return addDiningRoomFurniture(addDiningRoomBackground(addDiningRoomPlacementReservations(level)));
 }
 
 export function composeDiningRoom(level) {
-  const composed = addDiningRoomWallpaper(composeDiningRoomFixtures(level));
+  const composed = addDiningRoomMobs(addDiningRoomWallpaper(composeDiningRoomFixtures(level)));
   composed.compositionValidation = validateDiningRoomComposition(composed);
   return composed;
 }
@@ -373,6 +446,7 @@ export function validateDiningRoomComposition(level) {
   if (!Array.isArray(level.roomFurnitureCandidateCounts) || level.roomFurnitureCandidateCounts.length !== 16) errors.push('room furniture candidate counts must contain 16 entries');
   if (!Array.isArray(level.wallpaperSourceTiles) || level.wallpaperSourceTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('wallpaper source tile snapshot must contain 1,280 cells');
   if (!Array.isArray(level.roomWallpaperCandidateCounts) || level.roomWallpaperCandidateCounts.length !== 16) errors.push('room wallpaper candidate counts must contain 16 entries');
+  if (!Array.isArray(level.roomMobCandidateCounts) || level.roomMobCandidateCounts.length !== 16) errors.push('room mob candidate counts must contain 16 entries');
   if (errors.length) return { valid: false, errors };
 
   const occupied = new Set();
@@ -509,6 +583,40 @@ export function validateDiningRoomComposition(level) {
     if (placements.some((placement, index) => placement.x !== expected[index]?.x || placement.y !== expected[index]?.y || placement.room !== expected[index]?.room)) errors.push(`chamber ${chamber.anchor} has incorrect wallpaper motif positions`);
   }
   if (level.roomWallpaperCandidateCounts.some((count, room) => count !== expectedWallpaperCandidateCounts[room])) errors.push('room wallpaper candidate counts are inconsistent');
+
+  const expectedMobs = mobSelections(level);
+  if (level.mobPopulationTarget !== expectedMobs.target) errors.push('mob population target is inconsistent');
+  if (level.roomMobCandidateCounts.some((count, room) => count !== expectedMobs.candidatesByRoom[room].length)) errors.push('room mob candidate counts are inconsistent');
+  if (JSON.stringify(level.mobPlacements) !== JSON.stringify(expectedMobs.placements)) errors.push('mob placements are inconsistent');
+  const mobRooms = new Set();
+  const occupiedFurnitureCells = furnitureCells(level);
+  for (const placement of level.mobPlacements ?? []) {
+    const mob = MOB_BY_ID.get(placement.mob);
+    if (!mob) {
+      errors.push(`room ${placement.room} uses unknown mob ${placement.mob}`);
+      continue;
+    }
+    if (mobRooms.has(placement.room)) errors.push(`room ${placement.room} contains multiple mobs`);
+    mobRooms.add(placement.room);
+    if (placement.room === level.spawnRoom || placement.room === level.exitRoom) errors.push(`protected endpoint room ${placement.room} contains a mob`);
+    if (level.roomTraversalClasses[placement.room] === TRAVERSAL_LEDGE_CATCH) errors.push(`ledge-catch room ${placement.room} contains a mob`);
+    if (placement.width !== mob.width || placement.height !== mob.height || placement.frequency !== mob.frequency || placement.direction !== mob.direction) errors.push(`${placement.mob} metadata is inconsistent in room ${placement.room}`);
+    for (let y = placement.y; y < placement.y + placement.height; y++) {
+      for (let x = placement.x; x < placement.x + placement.width; x++) {
+        const index = y * LEVEL_WIDTH + x;
+        if (level.structuralTiles[index] !== 17) errors.push(`${placement.mob} body is obstructed at ${x},${y}`);
+        if (level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) errors.push(`${placement.mob} occupies protected encounter cell ${x},${y}`);
+        if (occupiedFurnitureCells.has(index)) errors.push(`${placement.mob} overlaps furniture at ${x},${y}`);
+      }
+    }
+    for (let x = placement.x; x < placement.x + placement.width; x++) {
+      const y = placement.y + placement.height;
+      const index = y * LEVEL_WIDTH + x;
+      const tile = level.structuralTiles[index];
+      if (tile < 1 || tile > 16) errors.push(`${placement.mob} lacks full-solid support at ${x},${y}`);
+      if (level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) errors.push(`${placement.mob} support occupies protected encounter cell ${x},${y}`);
+    }
+  }
 
   for (let index = 0; index < level.tiles.length; index++) {
     if (!occupied.has(index) && level.tiles[index] !== level.structuralTiles[index]) errors.push(`composition changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);

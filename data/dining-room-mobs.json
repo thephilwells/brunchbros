@@ -1,0 +1,17 @@
+{
+  "population": {
+    "minimum": 2,
+    "maximum": 4,
+    "selectionSalt": 44257,
+    "positionSalt": 57671
+  },
+  "mobs": [
+    {
+      "id": "weiner",
+      "frequency": 8,
+      "width": 2,
+      "height": 2,
+      "direction": "right"
+    }
+  ]
+}

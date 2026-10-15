@@ -6182,5 +6182,56 @@
       "y": 25,
       "tile": 80
     }
+  ],
+  "roomMobCandidateCounts": [
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    3,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0
+  ],
+  "mobPopulationTarget": 3,
+  "mobPlacements": [
+    {
+      "room": 9,
+      "mob": "weiner",
+      "frequency": 8,
+      "direction": "right",
+      "x": 15,
+      "y": 21,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "room": 14,
+      "mob": "weiner",
+      "frequency": 8,
+      "direction": "right",
+      "x": 23,
+      "y": 29,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "room": 12,
+      "mob": "weiner",
+      "frequency": 8,
+      "direction": "right",
+      "x": 3,
+      "y": 29,
+      "width": 2,
+      "height": 2
+    }
   ]
 }
