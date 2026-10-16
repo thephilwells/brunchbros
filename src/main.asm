@@ -31,6 +31,10 @@ DEF WEINER_DIRECTION_LEFT EQU 2
 DEF WEINER_DIRECTION_UP EQU 3
 DEF WEINER_TURN_CONCAVE EQU 1
 DEF WEINER_TURN_CONVEX EQU 2
+DEF WEINER_MAX_COUNT EQU 4
+DEF WEINER_RECORD_SIZE EQU 11
+DEF WEINER_RECORD_ACTIVE EQU 5
+DEF WEINER_RECORD_HIT_LATCH EQU 6
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -90,7 +94,6 @@ DeathState: db
 DeathScreenY: dw
 DeathVelocity: db
 DeathHoldTimer: db
-IF DEF(COMBAT_PLAYTEST)
 WeinerY: db
 WeinerX: dw
 WeinerAnimTimer: db
@@ -101,7 +104,10 @@ WeinerDirection: db
 WeinerTurnKind: db
 WeinerTurnTimer: db
 WeinerCornerDistance: db
-ENDC
+WeinerRecords: ds WEINER_MAX_COUNT * WEINER_RECORD_SIZE
+WeinerCount: db
+WeinerLoopIndex: db
+WeinerOAMPointer: dw
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -204,7 +210,6 @@ Start:
 	dec b
 	jr nz, .copyHUDTiles
 
-IF DEF(COMBAT_PLAYTEST)
 	ld de, WeinerTiles
 	ld hl, $84c0
 	ld b, 96
@@ -218,7 +223,6 @@ IF DEF(COMBAT_PLAYTEST)
 	jr nz, .copyWeinerTilesInner
 	dec b
 	jr nz, .copyWeinerTilesOuter
-ENDC
 	ld de, DeathTiles
 	ld hl, $8ac0
 	ld c, 64
@@ -305,6 +309,7 @@ StartGame:
 
 LoadCurrentLevel:
 	call DisableLCD
+	call ClearWeinerRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -374,24 +379,7 @@ ENDC
 	ld [DeathVelocity], a
 	ld [DeathHoldTimer], a
 IF DEF(COMBAT_PLAYTEST)
-	ld a, COMBAT_PLAYTEST_WEINER_Y
-	ld [WeinerY], a
-	ld a, LOW(COMBAT_PLAYTEST_WEINER_X)
-	ld [WeinerX], a
-	ld a, HIGH(COMBAT_PLAYTEST_WEINER_X)
-	ld [WeinerX + 1], a
-	xor a
-	ld [WeinerAnimTimer], a
-	ld a, WEINER_FIRST_TILE
-	ld [WeinerTileBase], a
-	ld a, 1
-	ld [WeinerActive], a
-	xor a
-	ld [WeinerHitThisSwing], a
-	ld [WeinerDirection], a
-	ld [WeinerTurnKind], a
-	ld [WeinerTurnTimer], a
-	ld [WeinerCornerDistance], a
+	call InitializeCombatWeiner
 ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
@@ -400,9 +388,7 @@ IF DEF(EXIT_ANIMATION_PLAYTEST)
 ENDC
 	call UpdateHUDSprites
 	call UpdateSprites
-IF DEF(COMBAT_PLAYTEST)
-	call UpdateWeinerSprite
-ENDC
+	call UpdateWeinerSprites
 	call hOAMDMA
 
 	ld a, %10000011
@@ -653,20 +639,14 @@ PrepareSpriteBuffer:
 	jr nz, .gameplay
 	call UpdateHUDSprites
 	call UpdateDeathSprite
-IF DEF(COMBAT_PLAYTEST)
-	call UpdateWeinerSprite
-ENDC
+	call UpdateWeinerSprites
 	ret
 .gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
-IF DEF(COMBAT_PLAYTEST)
-	call AdvanceWeinerAnimation
-ENDC
+	call AdvanceWeiners
 	call UpdateSprites
-IF DEF(COMBAT_PLAYTEST)
-	call UpdateWeinerSprite
-ENDC
+	call UpdateWeinerSprites
 	ret
 
 UpdateCameraState:
@@ -855,10 +835,11 @@ MainLoop:
 	jr z, .attackInputDone
 	ld a, ATTACK_DURATION
 	ld [AttackTimer], a
-IF DEF(COMBAT_PLAYTEST)
-	xor a
-	ld [WeinerHitThisSwing], a
-ENDC
+	push bc
+	push de
+	call ResetWeinerHitLatches
+	pop de
+	pop bc
 .attackInputDone
 
 ; Determine walking vs idle from the D-pad reading, advance animation accordingly
@@ -1294,10 +1275,8 @@ ENDC
 	ld a, PAN_ATTACK_WINDUP_TILE
 	ld [AttackPanTileBase], a
 .attackPoseDone
-IF DEF(COMBAT_PLAYTEST)
-	call TryPanHitWeiner
-	call TryWeinerContact
-ENDC
+	call TryPanHitWeiners
+	call TryWeinerContacts
 
 	jp MainLoop
 
@@ -1747,7 +1726,200 @@ UpdateAttackPanVisible:
 	ld [hl+], a
 	ret
 
+SECTION "WEINER Runtime", ROMX
+ClearWeinerRecords:
+	ld hl, WeinerRecords
+	ld b, WEINER_MAX_COUNT * WEINER_RECORD_SIZE
+	xor a
+.clear
+	ld [hl+], a
+	dec b
+	jr nz, .clear
+	ld [WeinerCount], a
+	ret
+
+GetWeinerRecordPointer:
+	ld hl, WeinerRecords
+	and a
+	ret z
+	ld de, WEINER_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadWeinerRecord:
+	call GetWeinerRecordPointer
+	ld de, WeinerY
+	ld b, WEINER_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StoreWeinerRecord:
+	call GetWeinerRecordPointer
+	ld de, WeinerY
+	ld b, WEINER_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+InitializeWeinerScratch:
+	xor a
+	ld [WeinerAnimTimer], a
+	ld [WeinerHitThisSwing], a
+	ld [WeinerDirection], a
+	ld [WeinerTurnKind], a
+	ld [WeinerTurnTimer], a
+	ld [WeinerCornerDistance], a
+	ld a, WEINER_FIRST_TILE
+	ld [WeinerTileBase], a
+	ld a, 1
+	ld [WeinerActive], a
+	ret
+
+CreateWeinerAtTile:
+	ld a, c
+	add a, a
+	add a, a
+	add a, a
+	ld [WeinerY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [WeinerX], a
+	ld a, h
+	ld [WeinerX + 1], a
+	call InitializeWeinerScratch
+	ld a, [WeinerCount]
+	push af
+	call StoreWeinerRecord
+	pop af
+	inc a
+	ld [WeinerCount], a
+	ret
+
 IF DEF(COMBAT_PLAYTEST)
+InitializeCombatWeiner:
+	call ClearWeinerRecords
+	ld a, COMBAT_PLAYTEST_WEINER_Y
+	ld [WeinerY], a
+	ld a, LOW(COMBAT_PLAYTEST_WEINER_X)
+	ld [WeinerX], a
+	ld a, HIGH(COMBAT_PLAYTEST_WEINER_X)
+	ld [WeinerX + 1], a
+	call InitializeWeinerScratch
+	xor a
+	call StoreWeinerRecord
+	ld a, 1
+	ld [WeinerCount], a
+	ret
+ENDC
+
+AdvanceWeiners:
+	xor a
+	ld [WeinerLoopIndex], a
+.loop
+	ld a, [WeinerLoopIndex]
+	cp a, WEINER_MAX_COUNT
+	ret z
+	push af
+	call LoadWeinerRecord
+	call AdvanceWeinerAnimation
+	pop af
+	push af
+	call StoreWeinerRecord
+	pop af
+	inc a
+	ld [WeinerLoopIndex], a
+	jr .loop
+
+ResetWeinerHitLatches:
+	ld hl, WeinerRecords + WEINER_RECORD_HIT_LATCH
+	ld de, WEINER_RECORD_SIZE
+	ld b, WEINER_MAX_COUNT
+	xor a
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
+	ret
+
+TryPanHitWeiners:
+	xor a
+	ld [WeinerLoopIndex], a
+.loop
+	ld a, [WeinerLoopIndex]
+	cp a, WEINER_MAX_COUNT
+	ret z
+	push af
+	call LoadWeinerRecord
+	call TryPanHitWeiner
+	pop af
+	push af
+	call StoreWeinerRecord
+	pop af
+	inc a
+	ld [WeinerLoopIndex], a
+	jr .loop
+
+TryWeinerContacts:
+	xor a
+	ld [WeinerLoopIndex], a
+.loop
+	ld a, [WeinerLoopIndex]
+	cp a, WEINER_MAX_COUNT
+	ret z
+	push af
+	call LoadWeinerRecord
+	call TryWeinerContact
+	pop af
+	push af
+	call StoreWeinerRecord
+	pop af
+	inc a
+	ld [WeinerLoopIndex], a
+	jr .loop
+
+UpdateWeinerSprites:
+	ld hl, ShadowOAM + $2c
+	ld a, l
+	ld [WeinerOAMPointer], a
+	ld a, h
+	ld [WeinerOAMPointer + 1], a
+	xor a
+	ld [WeinerLoopIndex], a
+.loop
+	ld a, [WeinerLoopIndex]
+	cp a, WEINER_MAX_COUNT
+	ret z
+	push af
+	call LoadWeinerRecord
+	call UpdateWeinerSprite
+	pop af
+	inc a
+	ld [WeinerLoopIndex], a
+	ld a, [WeinerOAMPointer]
+	add a, 16
+	ld [WeinerOAMPointer], a
+	jr nc, .loop
+	ld hl, WeinerOAMPointer + 1
+	inc [hl]
+	jr .loop
+
 AdvanceWeinerAnimation:
 	ld a, [WeinerActive]
 	and a
@@ -2418,14 +2590,67 @@ TryWeinerContact:
 	ret
 
 UpdateWeinerSprite:
+	ld a, [WeinerOAMPointer]
+	ld l, a
+	ld a, [WeinerOAMPointer + 1]
+	ld h, a
 	ld a, [WeinerActive]
 	and a
-	jr nz, .visible
+	jr z, .hidden
+	ld a, [WeinerX]
+	add a, 16
+	ld e, a
+	ld a, [WeinerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .rightEdge
+	jr nz, .hidden
+	ld a, [CameraX]
+	cp a, e
+	jr nc, .hidden
+.rightEdge
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [WeinerX + 1]
+	cp a, d
+	jr c, .vertical
+	jr nz, .hidden
+	ld a, [WeinerX]
+	cp a, e
+	jr nc, .hidden
+.vertical
+	ld a, [WeinerY]
+	add a, 16
+	jr c, .bottomEdge
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	jr nc, .hidden
+.bottomEdge
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [WeinerY]
+	cp a, e
+	jr nc, .hidden
+	jr .visible
+.hidden
 	xor a
-	ld [ShadowOAM + $2c], a
-	ld [ShadowOAM + $30], a
-	ld [ShadowOAM + $34], a
-	ld [ShadowOAM + $38], a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
 	ret
 .visible
 	ld a, [CameraY]
@@ -2442,7 +2667,10 @@ UpdateWeinerSprite:
 	jr c, .orientationReady
 	ld d, $60
 .orientationReady
-	ld hl, ShadowOAM + $2c
+	ld a, [WeinerOAMPointer]
+	ld l, a
+	ld a, [WeinerOAMPointer + 1]
+	ld h, a
 	ld a, [WeinerY]
 	add a, 16
 	sub a, b
@@ -2528,7 +2756,8 @@ UpdateWeinerSprite:
 	ld a, d
 	ld [hl], a
 	ret
-ENDC
+
+SECTION "Main Continued", ROM0
 
 StartPlayerDeath:
 	ld a, DEATH_STATE_ACTIVE
@@ -3110,10 +3339,11 @@ HUDTiles:
 DeathTiles:
 	INCBIN "build/chef_death.2bpp"
 
-IF DEF(COMBAT_PLAYTEST)
-SECTION "Combat Playtest Assets", ROMX
+SECTION "WEINER Assets", ROMX
 WeinerTiles:
 	INCBIN "build/weiner_motion.2bpp"
+
+IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
 CombatPlaytestMapEnd:

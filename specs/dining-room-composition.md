@@ -1,8 +1,8 @@
 # Dining-room composition
 
 Status: **host/runtime floor furniture, background placement, and wallpaper
-accepted; host-side WEINER population and gallery overlays implemented for
-review**.
+accepted; host-side WEINER population and gallery overlays provisionally
+accepted on 2026-10-15**.
 
 ## Purpose
 
@@ -172,7 +172,8 @@ tilemap. Fixed-seed parity covers seeds 0, 1, 77, `$1234`, and `$FFFF` across al
 of eight and requests two through four encounter slots per level. Until another
 mob is eligible, every filled slot is a WEINER. Frequency is retained in the
 placement export for later weighted selection; it does not choose the total
-population.
+population. The initial two-through-four density is provisionally accepted for
+runtime playtesting and remains independently tunable as more mobs are added.
 
 Candidates are 2×2 empty structural cells directly above two full-solid cells.
 They cannot overlap furniture, standard-port approaches, wide seams, endpoint

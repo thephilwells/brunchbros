@@ -68,6 +68,7 @@ FurnitureWorldY: db
 FurnitureLeftDistance: db
 FurnitureRightDistance: db
 WallpaperBlockedTiles: ds 160
+FurnitureOccupiedTiles: ds 160
 WallpaperCandidateCount: db
 WallpaperTargetCount: db
 WallpaperSelectionIndex: db
@@ -80,6 +81,19 @@ WallpaperHeight: db
 WallpaperPlacementRoom: db
 WallpaperRoomX: db
 WallpaperRoomY: db
+MobCandidateCounts: ds 16
+MobCandidateCount: db
+MobLocalX: db
+MobLocalY: db
+MobCandidateOrdinal: db
+MobTargetOrdinal: db
+MobTargetCount: db
+MobSelectedCount: db
+MobBestRoom: db
+MobBestFound: db
+MobBestScore: dw
+MobMixResult: dw
+MobSavedRandomState: dw
 
 SECTION "Level Generation", ROM0
 GenerateLevel:
@@ -113,11 +127,14 @@ ENDC
 	call ConvertSemanticMap
 	call PlaceExitDoor
 	call ClearWallpaperBlockedTiles
+	call ClearFurnitureOccupiedTiles
 	call PlaceDiningRoomBackground
 	call PlaceDiningRoomFurniture
 	call PlaceDiningRoomWallpaper
+	call PlaceDiningRoomMobs
 IF DEF(FURNITURE_PARITY_TEST)
 	call VerifyFurnitureParity
+	call VerifyMobParity
 ENDC
 	ret
 
@@ -2334,6 +2351,7 @@ GetFurnitureTopPointer:
 	ret
 
 PlaceFurnitureComponent:
+	call MarkFurnitureOccupiedFootprint
 	call MarkFurnitureWallpaperFootprint
 	call GetFurnitureTopPointer
 	push hl
@@ -2541,6 +2559,76 @@ ClearWallpaperBlockedTiles:
 	ld [hl+], a
 	dec b
 	jr nz, .loop
+	ret
+
+ClearFurnitureOccupiedTiles:
+	ld hl, FurnitureOccupiedTiles
+	ld b, 160
+	xor a
+.loop
+	ld [hl+], a
+	dec b
+	jr nz, .loop
+	ret
+
+MarkFurnitureOccupiedFootprint:
+	call GetFurnitureTopPointer
+	ld a, [FurnitureHeight]
+	ld b, a
+.rowLoop
+	push bc
+	ld a, [FurnitureWidth]
+	ld c, a
+.cellLoop
+	push bc
+	push hl
+	call MarkFurnitureCellOccupied
+	pop hl
+	pop bc
+	inc hl
+	dec c
+	jr nz, .cellLoop
+	ld a, 40
+	ld c, a
+	ld a, [FurnitureWidth]
+	ld b, a
+	ld a, c
+	sub a, b
+	ld e, a
+	ld d, 0
+	add hl, de
+	pop bc
+	dec b
+	jr nz, .rowLoop
+	ret
+
+MarkFurnitureCellOccupied:
+	ld de, LevelMap
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, l
+	and a, 7
+	ld e, a
+	ld d, 0
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	ld bc, FurnitureOccupiedTiles
+	add hl, bc
+	push hl
+	ld hl, BitMasks
+	add hl, de
+	ld a, [hl]
+	pop hl
+	or a, [hl]
+	ld [hl], a
 	ret
 
 MarkBackgroundWallpaperFootprint:
@@ -2978,6 +3066,504 @@ WallpaperSelectionRandomModulo:
 	ld de, DINING_WALLPAPER_SELECTION_SALT
 	jp BackgroundSelectionModulo
 
+SECTION "Dining Room Mob Generation", ROMX
+PlaceDiningRoomMobs:
+	xor a
+	ld [GenerationRoom], a
+.countRooms
+	call IsMobRoomEligible
+	jr nc, .storeEmpty
+	call CountMobCandidates
+	jr .storeCount
+.storeEmpty
+	xor a
+.storeCount
+	ld b, a
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld [hl], b
+	ld a, [GenerationRoom]
+	inc a
+	ld [GenerationRoom], a
+	cp a, 16
+	jr c, .countRooms
+
+	ld a, 16
+	ld de, DINING_MOB_SELECTION_SALT
+	call MobSelectionMix
+	ld c, DINING_MOB_MAXIMUM - DINING_MOB_MINIMUM + 1
+	call MobResultModulo
+	add a, DINING_MOB_MINIMUM
+	ld [MobTargetCount], a
+	xor a
+	ld [MobSelectedCount], a
+.select
+	ld a, [MobSelectedCount]
+	ld b, a
+	ld a, [MobTargetCount]
+	cp a, b
+	ret z
+	call FindBestMobRoom
+	ld a, [MobBestFound]
+	and a
+	ret z
+	ld a, [MobBestRoom]
+	ld [GenerationRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld a, [hl]
+	ld c, a
+	or a, $80
+	ld [hl], a
+	ld a, [GenerationRoom]
+	ld de, DINING_MOB_POSITION_SALT
+	call MobSelectionMix
+	ld a, [MobBestRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld a, [hl]
+	and a, $7f
+	ld c, a
+	call MobResultModulo
+	ld [MobTargetOrdinal], a
+	call FindMobCandidate
+	call CreateSelectedWeiner
+	ld hl, MobSelectedCount
+	inc [hl]
+	jr .select
+
+FindBestMobRoom:
+	xor a
+	ld [MobBestFound], a
+	ld [GenerationRoom], a
+.roomLoop
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld a, [hl]
+	bit 7, a
+	jr nz, .nextRoom
+	and a, $7f
+	jr z, .nextRoom
+	ld a, [GenerationRoom]
+	ld de, DINING_MOB_SELECTION_SALT
+	call MobSelectionMix
+	ld a, [MobBestFound]
+	and a
+	jr z, .choose
+	ld a, [MobMixResult + 1]
+	ld b, a
+	ld a, [MobBestScore + 1]
+	cp a, b
+	jr c, .nextRoom
+	jr nz, .choose
+	ld a, [MobMixResult]
+	ld b, a
+	ld a, [MobBestScore]
+	cp a, b
+	jr c, .nextRoom
+	jr z, .nextRoom
+.choose
+	ld a, [MobMixResult]
+	ld [MobBestScore], a
+	ld a, [MobMixResult + 1]
+	ld [MobBestScore + 1], a
+	ld a, [GenerationRoom]
+	ld [MobBestRoom], a
+	ld a, 1
+	ld [MobBestFound], a
+.nextRoom
+	ld a, [GenerationRoom]
+	inc a
+	ld [GenerationRoom], a
+	cp a, 16
+	jr c, .roomLoop
+	ret
+
+IsMobRoomEligible:
+	ld a, [GenerationRoom]
+	ld b, a
+	ld a, [CriticalRoute]
+	cp a, b
+	jr z, .invalid
+	ld a, [CriticalRouteLength]
+	dec a
+	ld e, a
+	ld d, 0
+	ld hl, CriticalRoute
+	add hl, de
+	ld a, [hl]
+	cp a, b
+	jr z, .invalid
+	ld e, b
+	ld d, 0
+	ld hl, RoomTraversalClasses
+	add hl, de
+	ld a, [hl]
+	and a
+	jr nz, .invalid
+	scf
+	ret
+.invalid
+	and a
+	ret
+
+CountMobCandidates:
+	xor a
+	ld [MobCandidateCount], a
+	ld [MobLocalY], a
+.row
+	xor a
+	ld [MobLocalX], a
+.column
+	call IsMobCandidate
+	jr nc, .next
+	ld hl, MobCandidateCount
+	inc [hl]
+.next
+	ld hl, MobLocalX
+	inc [hl]
+	ld a, [hl]
+	cp a, 9
+	jr c, .column
+	ld hl, MobLocalY
+	inc [hl]
+	ld a, [hl]
+	cp a, 6
+	jr c, .row
+	ld a, [MobCandidateCount]
+	ret
+
+FindMobCandidate:
+	xor a
+	ld [MobCandidateOrdinal], a
+	ld [MobLocalY], a
+.row
+	xor a
+	ld [MobLocalX], a
+.column
+	call IsMobCandidate
+	jr nc, .next
+	ld a, [MobCandidateOrdinal]
+	ld b, a
+	ld a, [MobTargetOrdinal]
+	cp a, b
+	ret z
+	ld hl, MobCandidateOrdinal
+	inc [hl]
+.next
+	ld hl, MobLocalX
+	inc [hl]
+	ld a, [hl]
+	cp a, 9
+	jr c, .column
+	ld hl, MobLocalY
+	inc [hl]
+	ld a, [hl]
+	cp a, 6
+	jr c, .row
+	ret
+
+IsMobCandidate:
+	call IsMobFootprintReserved
+	jr c, .invalid
+	call GetMobCandidatePointer
+	ld b, 2
+.bodyRow
+	ld c, 2
+.bodyCell
+	push bc
+	push hl
+	ld a, [hl]
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	pop hl
+	and a
+	jr nz, .invalidPop
+	push hl
+	call IsFurnitureCellOpen
+	pop hl
+	jr nc, .invalidPop
+	pop bc
+	inc hl
+	dec c
+	jr nz, .bodyCell
+	ld de, 38
+	add hl, de
+	dec b
+	jr nz, .bodyRow
+	call GetMobCandidatePointer
+	ld de, 80
+	add hl, de
+	ld b, 2
+.support
+	ld a, [hl+]
+	cp a, 1
+	jr c, .invalid
+	cp a, 17
+	jr nc, .invalid
+	dec b
+	jr nz, .support
+	scf
+	ret
+.invalidPop
+	pop bc
+.invalid
+	and a
+	ret
+
+GetMobCandidatePointer:
+	ld a, [GenerationRoom]
+	call GetRoomDestination
+	ld a, [MobLocalY]
+	ld b, a
+	ld de, 40
+.row
+	ld a, b
+	and a
+	jr z, .rowsReady
+	add hl, de
+	dec b
+	jr .row
+.rowsReady
+	ld a, [MobLocalX]
+	ld e, a
+	ld d, 0
+	add hl, de
+	ret
+
+IsFurnitureCellOpen:
+	ld de, LevelMap
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, l
+	and a, 7
+	ld e, a
+	ld d, 0
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	ld bc, FurnitureOccupiedTiles
+	add hl, bc
+	ld a, [hl]
+	ld hl, BitMasks
+	add hl, de
+	and a, [hl]
+	jr nz, .occupied
+	scf
+	ret
+.occupied
+	and a
+	ret
+
+IsMobFootprintReserved:
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, RoomPorts
+	add hl, de
+	ld b, [hl]
+	ld hl, RoomWidePorts
+	add hl, de
+	ld c, [hl]
+	bit 0, b
+	jr z, .east
+	ld a, [MobLocalX]
+	cp a, 3
+	jr nc, .east
+	bit 0, c
+	jr nz, .reserved
+	ld a, [MobLocalY]
+	and a
+	jr nz, .reserved
+.east
+	bit 1, b
+	jr z, .north
+	ld a, [MobLocalX]
+	cp a, 6
+	jr c, .north
+	bit 1, c
+	jr nz, .reserved
+	ld a, [MobLocalY]
+	and a
+	jr nz, .reserved
+.north
+	bit 2, b
+	jr z, .south
+	ld a, [MobLocalY]
+	cp a, 4
+	jr nc, .south
+	bit 2, c
+	jr nz, .reserved
+	ld a, [MobLocalX]
+	cp a, 2
+	jr c, .south
+	cp a, 8
+	jr c, .reserved
+.south
+	bit 3, b
+	jr z, .clear
+	ld a, [MobLocalY]
+	cp a, 2
+	jr c, .clear
+	bit 3, c
+	jr nz, .reserved
+	ld a, [MobLocalX]
+	cp a, 2
+	jr c, .clear
+	cp a, 8
+	jr c, .reserved
+.clear
+	and a
+	ret
+.reserved
+	scf
+	ret
+
+CreateSelectedWeiner:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	add a, c
+	ld c, a
+	jp CreateWeinerAtTile
+
+MobSelectionMix:
+	ld [GenerationIndex], a
+	ld a, [GenerationRandomState]
+	ld [MobSavedRandomState], a
+	ld a, [GenerationRandomState + 1]
+	ld [MobSavedRandomState + 1], a
+	ld a, [SelectedSeed]
+	ld b, a
+	ld a, [SelectedSeed + 1]
+	ld c, a
+	ld a, b
+	or a, c
+	jr nz, .seedReady
+	ld b, $e1
+	ld c, $ac
+.seedReady
+	push de
+	ld a, [GenerationIndex]
+	add a, a
+	ld e, a
+	ld d, 0
+	ld hl, FurnitureRoomMix
+	add hl, de
+	pop de
+	ld a, [hl+]
+	xor a, b
+	xor a, e
+	ld [GenerationRandomState], a
+	ld a, [hl]
+	xor a, c
+	xor a, d
+	ld [GenerationRandomState + 1], a
+	call NextGenerationRandom
+	ld a, [GenerationRandomState]
+	ld [MobMixResult], a
+	ld a, [GenerationRandomState + 1]
+	ld [MobMixResult + 1], a
+	ld a, [MobSavedRandomState]
+	ld [GenerationRandomState], a
+	ld a, [MobSavedRandomState + 1]
+	ld [GenerationRandomState + 1], a
+	ret
+
+MobResultModulo:
+	ld a, [MobMixResult]
+	ld e, a
+	ld a, [MobMixResult + 1]
+	ld d, a
+	xor a
+	ld b, 16
+.loop
+	sla e
+	rl d
+	rla
+	cp a, c
+	jr c, .next
+	sub a, c
+.next
+	dec b
+	jr nz, .loop
+	ret
+
+IF DEF(FURNITURE_PARITY_TEST)
+VerifyMobParity:
+	ld a, [WeinerCount]
+	ld hl, MobParityData
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld de, WeinerRecords
+	ld b, WEINER_MAX_COUNT
+.record
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld a, WEINER_RECORD_SIZE - 2
+.skip
+	inc de
+	dec a
+	jr nz, .skip
+	dec b
+	jr nz, .record
+	ret
+.failed
+	jr .failed
+ENDC
+
+SECTION "Level Generation Continued", ROM0
+
 IF DEF(FURNITURE_PARITY_TEST)
 VerifyFurnitureParity:
 	ld hl, LevelMap
@@ -3034,13 +3620,16 @@ RoomTemplatePointers:
 
 FurnitureRoomMix:
 	dw $9e37, $3c6e, $daa5, $78dc, $1713, $b54a, $5381, $f1b8
-	dw $8fef, $2e26, $cc5d, $6a94, $08cb, $a702, $4539, $e370
+	dw $8fef, $2e26, $cc5d, $6a94, $08cb, $a702, $4539, $e370, $81a7
 
 INCLUDE "build/dining_room_background.inc"
 INCLUDE "build/dining_room_furniture.inc"
 INCLUDE "build/dining_room_wallpaper.inc"
+INCLUDE "build/dining_room_mobs.inc"
 
 IF DEF(FURNITURE_PARITY_TEST)
 FurnitureParityMap:
 	INCBIN "build/runtime_level_parity.tilemap"
+MobParityData:
+	INCBIN "build/runtime_mob_parity.bin"
 ENDC
