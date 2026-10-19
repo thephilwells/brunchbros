@@ -30,7 +30,8 @@ not consume the restricted OAM-access portion of VBlank.
 | 4–7 | Frying pan | 4 |
 | 8–10 | Health HUD | 3 |
 | 11–26 | Up to four WEINERs or their cloudbursts | 16 |
-| 27–39 | Unassigned | 13 |
+| 27–30 | BURGER fixture or its cloudburst | 4 |
+| 31–39 | Unassigned | 9 |
 
 An inactive composite hides its entries by setting their Y bytes to zero.
 Unused slots remain zero after startup. The established ordering preserves
@@ -45,4 +46,5 @@ needs both a tile-storage budget and an OAM/per-scanline budget.
 
 The 24-pose WEINER sheet occupies 96 tiles in ROM bank 1, but each live WEINER
 or cloudburst uses four OAM entries. Pose count does not increase scanline
-cost; population does.
+cost; population does. The BURGER normally uses two entries and temporarily
+uses four while showing the generic cloudburst.

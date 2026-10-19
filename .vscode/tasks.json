@@ -44,10 +44,24 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate BURGER",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-burger.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Combat Playtest",
       "type": "shell",
       "command": "node",
       "args": ["tools/generate-combat-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate BURGER Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-burger-playtest.mjs"],
       "problemMatcher": []
     },
     {
@@ -104,6 +118,13 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/enemy_cloudburst.2bpp", "gfx/enemy_cloudburst.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert BURGER",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/burger_motion.2bpp", "gfx/burger_motion.png"],
       "problemMatcher": []
     },
     {
@@ -230,7 +251,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -481,6 +502,66 @@
         "${workspaceFolder}/build/brunchbros-combat-playtest.gb"
       ],
       "dependsOn": "Build Combat Playtest ROM",
+      "problemMatcher": []
+    },
+    {
+      "label": "Assemble BURGER Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DFURNITURE_PARITY_TEST=1",
+        "-DCOMBAT_PLAYTEST=1",
+        "-DBURGER_PLAYTEST=1",
+        "-o",
+        "build/burger_playtest_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link BURGER Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-burger-playtest.gb",
+        "-m",
+        "build/burger_playtest_main.map",
+        "-n",
+        "build/burger_playtest_main.sym",
+        "build/burger_playtest_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix BURGER Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-burger-playtest.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build BURGER Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Generate BURGER Playtest", "Assemble BURGER Playtest", "Link BURGER Playtest", "Fix BURGER Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run BURGER Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-burger-playtest.gb"
+      ],
+      "dependsOn": "Build BURGER Playtest ROM",
       "problemMatcher": []
     }
   ]

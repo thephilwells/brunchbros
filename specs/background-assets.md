@@ -50,7 +50,8 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | `$84C0–$8ABF` | Combat-only WEINER surface-crawl set, indices 76–171 | 96 | 1,536 |
 | `$8AC0–$8AFF` | Chef death frame, indices 172–175 | 4 | 64 |
 | `$8B00–$8BBF` | Generic enemy cloudburst, indices 176–187 | 12 | 192 |
-| `$8BC0–$8FFF` | Remaining OBJ capacity, indices 188–255 | 68 | 1,088 |
+| `$8BC0–$8C3F` | BURGER motion set, indices 188–195 | 8 | 128 |
+| `$8C40–$8FFF` | Remaining OBJ capacity, indices 196–255 | 60 | 960 |
 | `$9000–$91FF` | Shared vocabulary, BG IDs 0–31 | 32 | 512 |
 | `$9200–$97FF` | Current biome allocation, BG IDs 32–127 | 96 | 1,536 |
 | `$9800–$9BFF` | Current scrolling background map | — | 1,024 |

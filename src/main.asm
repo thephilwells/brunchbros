@@ -40,6 +40,22 @@ DEF WEINER_RECORD_HIT_LATCH EQU 6
 DEF ENEMY_BURST_FIRST_TILE EQU 176
 DEF ENEMY_BURST_FRAME_DURATION EQU 4
 DEF ENEMY_BURST_DURATION EQU 12
+DEF BURGER_FIRST_TILE EQU 188
+DEF BURGER_IDLE_TILE EQU BURGER_FIRST_TILE
+DEF BURGER_WINDUP_TILE EQU BURGER_FIRST_TILE + 2
+DEF BURGER_AIRBORNE_TILE EQU BURGER_FIRST_TILE + 4
+DEF BURGER_LANDING_TILE EQU BURGER_FIRST_TILE + 6
+DEF BURGER_STATE_IDLE EQU 1
+DEF BURGER_STATE_WINDUP EQU 2
+DEF BURGER_STATE_AIRBORNE EQU 3
+DEF BURGER_STATE_LANDING EQU 4
+DEF BURGER_STATE_BURST EQU 5
+DEF BURGER_IDLE_DURATION EQU 120
+DEF BURGER_IDLE_BEAT_DURATION EQU 8
+DEF BURGER_WINDUP_DURATION EQU 20
+DEF BURGER_LANDING_DURATION EQU 10
+DEF BURGER_LAUNCH_VELOCITY EQU -8
+DEF BURGER_TERMINAL_VELOCITY EQU 8
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -54,6 +70,9 @@ INCLUDE "build/room_variant_playtest.inc"
 ENDC
 IF DEF(COMBAT_PLAYTEST)
 INCLUDE "build/combat_playtest.inc"
+ENDC
+IF DEF(BURGER_PLAYTEST)
+INCLUDE "build/burger_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -113,6 +132,16 @@ WeinerRecords: ds WEINER_MAX_COUNT * WEINER_RECORD_SIZE
 WeinerCount: db
 WeinerLoopIndex: db
 WeinerOAMPointer: dw
+BurgerY: db
+BurgerX: dw
+BurgerVelY: db
+BurgerVelX: db
+BurgerState: db
+BurgerTimer: db
+BurgerTileBase: db
+BurgerHealth: db
+BurgerHitThisSwing: db
+BurgerHitFlashTimer: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -246,6 +275,15 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyEnemyBurstTiles
+	ld de, BurgerTiles
+	ld hl, $8bc0
+	ld c, 8 * 16
+.copyBurgerTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyBurgerTiles
 
 	call LoadTitleScreen
 	xor a
@@ -324,13 +362,18 @@ StartGame:
 LoadCurrentLevel:
 	call DisableLCD
 	call ClearWeinerRecords
+	call ClearBurger
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
 	call GenerateLevel
 ENDC
+IF DEF(BURGER_PLAYTEST)
+	call LoadBurgerPlaytest
+ELSE
 IF DEF(COMBAT_PLAYTEST)
 	call LoadCombatPlaytest
+ENDC
 ENDC
 
 	ld de, LevelMap
@@ -393,7 +436,11 @@ ENDC
 	ld [DeathVelocity], a
 	ld [DeathHoldTimer], a
 IF DEF(COMBAT_PLAYTEST)
+	IF DEF(BURGER_PLAYTEST)
+	call InitializeCombatBurger
+	ELSE
 	call InitializeCombatWeiner
+	ENDC
 ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
@@ -403,6 +450,7 @@ ENDC
 	call UpdateHUDSprites
 	call UpdateSprites
 	call UpdateWeinerSprites
+	call UpdateBurgerSprite
 	call hOAMDMA
 
 	ld a, %10000011
@@ -442,6 +490,31 @@ LoadCombatPlaytest:
 	ld [GeneratedPlayerX + 1], a
 	ld a, COMBAT_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
+	ret
+ENDC
+
+IF DEF(BURGER_PLAYTEST)
+LoadBurgerPlaytest:
+	ld de, BurgerPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(BURGER_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(BURGER_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, BURGER_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	call ClearWeinerRecords
 	ret
 ENDC
 
@@ -654,13 +727,16 @@ PrepareSpriteBuffer:
 	call UpdateHUDSprites
 	call UpdateDeathSprite
 	call UpdateWeinerSprites
+	call UpdateBurgerSprite
 	ret
 .gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
 	call AdvanceWeiners
+	call AdvanceBurger
 	call UpdateSprites
 	call UpdateWeinerSprites
+	call UpdateBurgerSprite
 	ret
 
 UpdateCameraState:
@@ -852,6 +928,7 @@ MainLoop:
 	push bc
 	push de
 	call ResetWeinerHitLatches
+	call ResetBurgerHitLatch
 	pop de
 	pop bc
 .attackInputDone
@@ -1290,7 +1367,9 @@ MainLoop:
 	ld [AttackPanTileBase], a
 .attackPoseDone
 	call TryPanHitWeiners
+	call TryPanHitBurger
 	call TryWeinerContacts
+	call TryBurgerContact
 
 	jp MainLoop
 
@@ -2802,6 +2881,756 @@ UpdateWeinerSprite:
 	ld [hl], a
 	ret
 
+SECTION "BURGER Runtime", ROMX
+ClearBurger:
+	ld hl, BurgerY
+	ld b, 11
+	xor a
+.clear
+	ld [hl+], a
+	dec b
+	jr nz, .clear
+	ret
+
+IF DEF(BURGER_PLAYTEST)
+InitializeCombatBurger:
+	ld a, BURGER_PLAYTEST_BURGER_Y
+	ld [BurgerY], a
+	ld a, LOW(BURGER_PLAYTEST_BURGER_X)
+	ld [BurgerX], a
+	ld a, HIGH(BURGER_PLAYTEST_BURGER_X)
+	ld [BurgerX + 1], a
+	ld a, 1
+	ld [BurgerVelX], a
+	ld a, BURGER_STATE_IDLE
+	ld [BurgerState], a
+	ld a, BURGER_IDLE_TILE
+	ld [BurgerTileBase], a
+	ld a, 2
+	ld [BurgerHealth], a
+	ret
+ENDC
+
+ResetBurgerHitLatch:
+	xor a
+	ld [BurgerHitThisSwing], a
+	ret
+
+AdvanceBurger:
+	ld a, [BurgerState]
+	and a
+	ret z
+	ld hl, BurgerHitFlashTimer
+	ld a, [hl]
+	and a
+	jr z, .state
+	dec [hl]
+.state
+	ld a, [BurgerState]
+	cp a, BURGER_STATE_BURST
+	jp z, AdvanceBurgerBurst
+	cp a, BURGER_STATE_IDLE
+	jr z, AdvanceBurgerIdle
+	cp a, BURGER_STATE_WINDUP
+	jr z, AdvanceBurgerWindup
+	cp a, BURGER_STATE_AIRBORNE
+	jp z, AdvanceBurgerAirborne
+	jp AdvanceBurgerLanding
+
+AdvanceBurgerIdle:
+	ld hl, BurgerTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, BURGER_IDLE_DURATION
+	jr nc, StartBurgerWindup
+	and a, BURGER_IDLE_BEAT_DURATION * 4 - 1
+	cp a, BURGER_IDLE_BEAT_DURATION * 3
+	ld a, BURGER_IDLE_TILE
+	jr c, .storeTile
+	ld a, BURGER_AIRBORNE_TILE
+.storeTile
+	ld [BurgerTileBase], a
+	ret
+
+StartBurgerWindup:
+	xor a
+	ld [BurgerTimer], a
+	ld a, BURGER_STATE_WINDUP
+	ld [BurgerState], a
+	ld a, BURGER_WINDUP_TILE
+	ld [BurgerTileBase], a
+	ld a, [PlayerX + 1]
+	ld b, a
+	ld a, [BurgerX + 1]
+	cp a, b
+	jr c, .right
+	jr nz, .left
+	ld a, [PlayerX]
+	ld b, a
+	ld a, [BurgerX]
+	add a, 8
+	cp a, b
+	jr c, .right
+.left
+	ld a, -1
+	ld [BurgerVelX], a
+	ret
+.right
+	ld a, 1
+	ld [BurgerVelX], a
+	ret
+
+AdvanceBurgerWindup:
+	ld hl, BurgerTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, BURGER_WINDUP_DURATION
+	ret c
+	xor a
+	ld [BurgerTimer], a
+	ld a, BURGER_LAUNCH_VELOCITY
+	ld [BurgerVelY], a
+	ld a, BURGER_STATE_AIRBORNE
+	ld [BurgerState], a
+	ld a, BURGER_AIRBORNE_TILE
+	ld [BurgerTileBase], a
+	ret
+
+AdvanceBurgerAirborne:
+	call AdvanceBurgerHorizontal
+	ld hl, BurgerVelY
+	ld a, [hl]
+	inc a
+	bit 7, a
+	jr nz, .storeVelocity
+	cp a, BURGER_TERMINAL_VELOCITY + 1
+	jr c, .storeVelocity
+	ld a, BURGER_TERMINAL_VELOCITY
+.storeVelocity
+	ld [hl], a
+	and a
+	ret z
+	bit 7, a
+	jr nz, .rising
+	ld b, a
+.fallStep
+	call BurgerSupportBelow
+	jr z, StartBurgerLanding
+	ld hl, BurgerY
+	inc [hl]
+	dec b
+	jr nz, .fallStep
+	ret
+.rising
+	cpl
+	inc a
+	ld b, a
+.riseStep
+	call BurgerCeilingAbove
+	jr z, .headBump
+	ld hl, BurgerY
+	dec [hl]
+	dec b
+	jr nz, .riseStep
+	ret
+.headBump
+	xor a
+	ld [BurgerVelY], a
+	ret
+
+StartBurgerLanding:
+	xor a
+	ld [BurgerVelY], a
+	ld [BurgerTimer], a
+	ld a, BURGER_STATE_LANDING
+	ld [BurgerState], a
+	ld a, BURGER_LANDING_TILE
+	ld [BurgerTileBase], a
+	ret
+
+AdvanceBurgerLanding:
+	ld hl, BurgerTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, BURGER_LANDING_DURATION
+	ret c
+	xor a
+	ld [BurgerTimer], a
+	ld a, BURGER_STATE_IDLE
+	ld [BurgerState], a
+	ld a, BURGER_IDLE_TILE
+	ld [BurgerTileBase], a
+	ret
+
+AdvanceBurgerBurst:
+	ld hl, BurgerTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	jr nc, .finished
+	and a, ENEMY_BURST_FRAME_DURATION - 1
+	ret nz
+	ld hl, BurgerTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+.finished
+	xor a
+	ld [BurgerState], a
+	ret
+
+AdvanceBurgerHorizontal:
+	ld a, [BurgerVelX]
+	bit 7, a
+	jr nz, .left
+	call BurgerWallRight
+	jr z, ReverseBurgerDirection
+	ld hl, BurgerX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.left
+	call BurgerWallLeft
+	jr z, ReverseBurgerDirection
+	ld hl, BurgerX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+	ret
+
+ReverseBurgerDirection:
+	ld a, [BurgerVelX]
+	cpl
+	inc a
+	ld [BurgerVelX], a
+	ret
+
+BurgerWallRight:
+	ld a, [BurgerX]
+	add a, 16
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	sub a, 7
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [BurgerX]
+	add a, 16
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	dec a
+	ld d, a
+	jp IsWall
+
+BurgerWallLeft:
+	ld a, [BurgerX]
+	sub a, 1
+	ld e, a
+	ld a, [BurgerX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	sub a, 7
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [BurgerX]
+	sub a, 1
+	ld e, a
+	ld a, [BurgerX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	dec a
+	ld d, a
+	jp IsWall
+
+BurgerCeilingAbove:
+	ld a, [BurgerX]
+	inc a
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	sub a, 9
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [BurgerX]
+	add a, 14
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	sub a, 9
+	ld d, a
+	jp IsWall
+
+BurgerSupportBelow:
+	ld a, [BurgerX]
+	inc a
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	inc a
+	ld d, a
+	call IsSupport
+	ret z
+	ld a, [BurgerX]
+	add a, 14
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [BurgerY]
+	inc a
+	ld d, a
+	jp IsSupport
+
+TryPanHitBurger:
+	ld a, [BurgerState]
+	and a
+	ret z
+	cp a, BURGER_STATE_BURST
+	ret z
+	ld a, [BurgerHitThisSwing]
+	and a
+	ret nz
+	ld a, [AttackTimer]
+	and a
+	ret z
+	ld a, [AttackPanTileBase]
+	and a
+	ret z
+	call CheckBurgerAttackX
+	ret nc
+	call CheckBurgerAttackY
+	ret nc
+	ld a, 1
+	ld [BurgerHitThisSwing], a
+	ld hl, BurgerHealth
+	dec [hl]
+	jr z, StartBurgerBurst
+	ld a, 12
+	ld [BurgerHitFlashTimer], a
+	ret
+
+StartBurgerBurst:
+	xor a
+	ld [BurgerTimer], a
+	ld [BurgerHitFlashTimer], a
+	ld a, ENEMY_BURST_FIRST_TILE
+	ld [BurgerTileBase], a
+	ld a, BURGER_STATE_BURST
+	ld [BurgerState], a
+	ret
+
+CheckBurgerAttackX:
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jp z, CheckBurgerCloseX
+	ld a, [FacingFlip]
+	and a
+	jr nz, .left
+	ld a, [BurgerX]
+	add a, 8
+	ld l, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	jr .compare
+.left
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [BurgerX]
+	add a, 8
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+.compare
+	bit 7, h
+	jr nz, .miss
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 21
+	ret
+.miss
+	and a
+	ret
+
+CheckBurgerCloseX:
+	ld a, [BurgerX]
+	add a, 8
+	ld l, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .compare
+	ld a, l
+	cpl
+	inc a
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.compare
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.miss
+	and a
+	ret
+
+CheckBurgerAttackY:
+	ld a, [PlayerY]
+	ld b, a
+	ld c, a
+	dec c
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .checkStrike
+	ld a, b
+	sub a, 24
+	ld b, a
+	ld a, c
+	sub a, 16
+	ld c, a
+	jr .boundsReady
+.checkStrike
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .recovery
+	ld a, b
+	sub a, 16
+	ld b, a
+	jr .boundsReady
+.recovery
+	ld a, b
+	sub a, 8
+	ld b, a
+.boundsReady
+	ld a, [BurgerY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [BurgerY]
+	sub a, 8
+	ld d, a
+	ld a, c
+	cp a, d
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
+TryBurgerContact:
+	ld a, [BurgerState]
+	and a
+	ret z
+	cp a, BURGER_STATE_BURST
+	ret z
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	ret nz
+	call CheckBurgerCloseX
+	ret nc
+	ld a, [PlayerY]
+	dec a
+	ld b, a
+	ld a, [BurgerY]
+	sub a, 8
+	ld c, a
+	ld a, b
+	cp a, c
+	jr c, .miss
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, [BurgerY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [CurrentHealth]
+	and a
+	ret z
+	dec a
+	ld [CurrentHealth], a
+	and a
+	jp z, StartPlayerDeath
+	ld a, 60
+	ld [PlayerInvulnerabilityTimer], a
+	ld a, 4
+	ld [PlayerKnockbackRemaining], a
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [BurgerX]
+	add a, 8
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, h
+	or a, l
+	jr z, .knockLeft
+	bit 7, h
+	jr nz, .knockLeft
+	ld a, 1
+	jr .storeKnockback
+.knockLeft
+	ld a, -1
+.storeKnockback
+	ld [PlayerKnockbackDirection], a
+	xor a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	ret
+.miss
+	ret
+
+UpdateBurgerSprite:
+	ld hl, ShadowOAM + $6c
+	ld a, [BurgerState]
+	and a
+	jp z, HideBurgerSprite
+	ld a, [BurgerHitFlashTimer]
+	bit 1, a
+	jp nz, HideBurgerSprite
+	ld a, [BurgerX]
+	add a, 16
+	ld e, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .rightEdge
+	jp nz, HideBurgerSprite
+	ld a, [CameraX]
+	cp a, e
+	jp nc, HideBurgerSprite
+.rightEdge
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [BurgerX + 1]
+	cp a, d
+	jr c, .vertical
+	jp nz, HideBurgerSprite
+	ld a, [BurgerX]
+	cp a, e
+	jp nc, HideBurgerSprite
+.vertical
+	ld a, [BurgerY]
+	add a, 8
+	jr c, .bottomEdge
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	jp nc, HideBurgerSprite
+.bottomEdge
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [BurgerY]
+	sub a, 8
+	cp a, e
+	jp nc, HideBurgerSprite
+.visible
+	ld a, [BurgerState]
+	cp a, BURGER_STATE_BURST
+	jp z, UpdateBurgerBurstSprite
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [BurgerVelX]
+	bit 7, a
+	ld d, 0
+	jr z, .attributesReady
+	ld d, $20
+.attributesReady
+	ld a, [BurgerY]
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, [BurgerX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [BurgerTileBase]
+	ld e, a
+	ld a, d
+	and a
+	ld a, e
+	jr z, .firstTileReady
+	inc a
+.firstTileReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, [BurgerY]
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, [BurgerX]
+	add a, 16
+	sub a, c
+	ld [hl+], a
+	ld a, [BurgerTileBase]
+	ld e, a
+	ld a, d
+	and a
+	ld a, e
+	jr nz, .secondTileReady
+	inc a
+.secondTileReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	ret
+
+UpdateBurgerBurstSprite:
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [BurgerY]
+	add a, 4
+	sub a, b
+	ld d, a
+	ld a, [BurgerX]
+	add a, 8
+	sub a, c
+	ld e, a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, [BurgerTileBase]
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, [BurgerTileBase]
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	add a, 8
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, [BurgerTileBase]
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	add a, 8
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, [BurgerTileBase]
+	add a, 3
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+
+HideBurgerSprite:
+	xor a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	ret
+
 SECTION "Main Continued", ROM0
 
 StartPlayerDeath:
@@ -3391,9 +4220,19 @@ WeinerTiles:
 EnemyBurstTiles:
 	INCBIN "build/enemy_cloudburst.2bpp"
 
+BurgerTiles:
+	INCBIN "build/burger_motion.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
 CombatPlaytestMapEnd:
 ASSERT CombatPlaytestMapEnd - CombatPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(BURGER_PLAYTEST)
+BurgerPlaytestMap:
+	INCBIN "build/burger_playtest.tilemap"
+BurgerPlaytestMapEnd:
+ASSERT BurgerPlaytestMapEnd - BurgerPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC

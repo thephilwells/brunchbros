@@ -5,7 +5,8 @@ defeat, contact damage, knockback, and invulnerability accepted**. Death and
 Game Over were implemented for review on 2026-10-14. Surface-relative wall,
 ceiling, concave-corner, and convex-corner locomotion is implemented in the
 focused fixture. A generic three-frame enemy cloudburst is implemented for
-hands-on review.
+hands-on review. A focused BURGER fixture implements its initial idle, leap,
+wall-bounce, platform-landing, two-hit, and contact-damage rules for review.
 
 ## Calibration fixture
 
@@ -38,6 +39,16 @@ detached between two consecutive wraps.
 The fixture sheet therefore contains 24 poses and 96 OBJ tiles. It does not
 follow one-way platforms. Its four entries are composed in shadow OAM and
 transferred with the complete sprite frame.
+
+The BURGER fixture is a separate chamber with full-solid side walls and divider
+plus two one-way shelves. Its 16×8 composite uses two OAM entries and four
+two-tile poses: idle, wind-up, shared twitch/airborne, and landing. It rests for
+120 frames, shows its airborne pose on every fourth eight-frame idle beat,
+winds up for 20 frames, then launches toward the Chef at one horizontal pixel
+per frame with an initial vertical velocity of −8. Only full-solid side contact
+reverses its airborne horizontal direction. Downward motion lands on both solid
+and one-way surfaces; upward motion ignores one-way surfaces. The first pan hit
+briefly flickers the BURGER, and the second starts the shared cloudburst.
 
 ## Accepted initial rules
 

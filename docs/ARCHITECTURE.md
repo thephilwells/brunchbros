@@ -9,8 +9,8 @@ before.
 
 The runtime is split between `src/main.asm` and the included
 `src/level_generation.asm`. Runtime code and shared assets remain in ROM0;
-WEINER art, the generic enemy cloudburst, and the combat fixture map live in
-fixed ROM bank 1:
+WEINER and BURGER art, the generic enemy cloudburst, and the combat fixture
+maps live in fixed ROM bank 1:
 
 - **WRAM0 state** — see Memory map below.
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
@@ -18,7 +18,8 @@ fixed ROM bank 1:
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000`, all 18 Chef/pan animation
   composites at `$8010`, three HUD heart tiles at `$8490`, the 96-tile WEINER
-  surface-crawl set at `$84C0`, and the 12-tile cloudburst at `$8B00`. It then draws
+  surface-crawl set at `$84C0`, the 12-tile cloudburst at `$8B00`, and the
+  eight-tile BURGER set at `$8BC0`. It then draws
   a BG-only title screen and waits for a fresh Start press while counting
   frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
@@ -163,6 +164,9 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion or four-frame cloudburst cadence and the active four-tile pose |
 | `WeinerActive` / `WeinerHitThisSwing` | Inactive, live, or bursting state and per-swing repeat-hit latch |
 | `WeinerDirection` / `WeinerTurnKind` / `WeinerTurnTimer` / `WeinerCornerDistance` | Surface heading, active corner transition, and measured exposed-edge support depth |
+| `BurgerY` / `BurgerX` / `BurgerVelY` / `BurgerVelX` | Focused-fixture BURGER world position and signed airborne velocity |
+| `BurgerState` / `BurgerTimer` / `BurgerTileBase` | Idle, wind-up, airborne, landing, or burst phase and its timing/art state |
+| `BurgerHealth` / `BurgerHitThisSwing` / `BurgerHitFlashTimer` | Two-hit health, per-swing repeat-hit latch, and first-hit feedback |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |
@@ -178,7 +182,8 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`; HUD
 hearts use sprite indices 73–75 in `$8490–$84BF`; the WEINER surface-crawl set
 uses indices 76–171 in `$84C0–$8ABF`; the death frame uses indices 172–175 in
-`$8AC0–$8AFF`; and the cloudburst uses indices 176–187 in `$8B00–$8BBF`. Signed background
+`$8AC0–$8AFF`; the cloudburst uses indices 176–187 in `$8B00–$8BBF`; and the
+BURGER uses indices 188–195 in `$8BC0–$8C3F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in
