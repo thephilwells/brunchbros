@@ -3134,7 +3134,7 @@ PlaceDiningRoomMobs:
 	call MobResultModulo
 	ld [MobTargetOrdinal], a
 	call FindMobCandidate
-	call CreateSelectedWeiner
+	call CreateSelectedMob
 	ld hl, MobSelectedCount
 	inc [hl]
 	jr .select
@@ -3439,6 +3439,16 @@ IsMobFootprintReserved:
 	scf
 	ret
 
+CreateSelectedMob:
+	ld a, [GenerationRoom]
+	ld de, DINING_MOB_TYPE_SALT
+	call MobSelectionMix
+	ld c, DINING_MOB_TOTAL_FREQUENCY
+	call MobResultModulo
+	cp a, DINING_WEINER_FREQUENCY
+	jr c, CreateSelectedWeiner
+	jr CreateSelectedBurger
+
 CreateSelectedWeiner:
 	ld a, [GenerationRoom]
 	and a, 3
@@ -3463,6 +3473,32 @@ CreateSelectedWeiner:
 	add a, c
 	ld c, a
 	jp CreateWeinerAtTile
+
+CreateSelectedBurger:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	inc a
+	add a, c
+	ld c, a
+	jp CreateBurgerAtTile
 
 MobSelectionMix:
 	ld [GenerationIndex], a
@@ -3557,6 +3593,34 @@ VerifyMobParity:
 	jr nz, .skip
 	dec b
 	jr nz, .record
+	ld a, [BurgerCount]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld de, BurgerRecords
+	ld b, BURGER_MAX_COUNT
+.burgerRecord
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld a, BURGER_RECORD_SIZE - 2
+.skipBurger
+	inc de
+	dec a
+	jr nz, .skipBurger
+	dec b
+	jr nz, .burgerRecord
 	ret
 .failed
 	jr .failed

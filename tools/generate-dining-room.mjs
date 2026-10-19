@@ -470,6 +470,10 @@ writeFileSync('build/dining_room_mobs.inc', [
   `DEF DINING_MOB_MAXIMUM EQU ${mobManifest.population.maximum}`,
   `DEF DINING_MOB_SELECTION_SALT EQU $${mobManifest.population.selectionSalt.toString(16).padStart(4, '0')}`,
   `DEF DINING_MOB_POSITION_SALT EQU $${mobManifest.population.positionSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_MOB_TYPE_SALT EQU $${mobManifest.population.typeSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_WEINER_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'weiner').frequency}`,
+  `DEF DINING_BURGER_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'burger').frequency}`,
+  `DEF DINING_MOB_TOTAL_FREQUENCY EQU ${mobManifest.mobs.reduce((total, mob) => total + mob.frequency, 0)}`,
   '',
 ].join('\n'));
 

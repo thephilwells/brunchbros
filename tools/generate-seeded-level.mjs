@@ -19,11 +19,19 @@ const runtimeTemplates = templateSet.templates.flatMap(template => template.rows
 
 writeFileSync('build/seeded_level.tilemap', Buffer.from(level.tiles));
 writeFileSync('build/runtime_level_parity.tilemap', Buffer.from(level.tiles));
-const mobParity = [level.mobPlacements.length];
+const weiners = level.mobPlacements.filter(placement => placement.mob === 'weiner');
+const burgers = level.mobPlacements.filter(placement => placement.mob === 'burger');
+const mobParity = [weiners.length];
 for (let index = 0; index < 4; index++) {
-  const placement = level.mobPlacements[index];
+  const placement = weiners[index];
   const x = placement ? placement.x * 8 : 0;
   mobParity.push(placement ? placement.y * 8 : 0, x & 0xff, x >> 8);
+}
+mobParity.push(burgers.length);
+for (let index = 0; index < 4; index++) {
+  const placement = burgers[index];
+  const x = placement ? placement.x * 8 : 0;
+  mobParity.push(placement ? (placement.y + 1) * 8 : 0, x & 0xff, x >> 8);
 }
 writeFileSync('build/runtime_mob_parity.bin', Buffer.from(mobParity));
 writeFileSync('build/room_templates.bin', Buffer.from(runtimeTemplates));

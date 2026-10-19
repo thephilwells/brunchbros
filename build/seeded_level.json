@@ -6215,13 +6215,13 @@
     },
     {
       "room": 14,
-      "mob": "weiner",
-      "frequency": 8,
+      "mob": "burger",
+      "frequency": 4,
       "direction": "right",
       "x": 23,
-      "y": 29,
+      "y": 30,
       "width": 2,
-      "height": 2
+      "height": 1
     },
     {
       "room": 12,

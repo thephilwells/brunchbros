@@ -50,6 +50,9 @@ DEF BURGER_STATE_WINDUP EQU 2
 DEF BURGER_STATE_AIRBORNE EQU 3
 DEF BURGER_STATE_LANDING EQU 4
 DEF BURGER_STATE_BURST EQU 5
+DEF BURGER_MAX_COUNT EQU 4
+DEF BURGER_RECORD_SIZE EQU 11
+DEF BURGER_RECORD_HIT_LATCH EQU 9
 DEF BURGER_IDLE_DURATION EQU 120
 DEF BURGER_IDLE_BEAT_DURATION EQU 8
 DEF BURGER_WINDUP_DURATION EQU 20
@@ -142,6 +145,10 @@ BurgerTileBase: db
 BurgerHealth: db
 BurgerHitThisSwing: db
 BurgerHitFlashTimer: db
+BurgerRecords: ds BURGER_MAX_COUNT * BURGER_RECORD_SIZE
+BurgerCount: db
+BurgerLoopIndex: db
+BurgerOAMPointer: dw
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -362,7 +369,7 @@ StartGame:
 LoadCurrentLevel:
 	call DisableLCD
 	call ClearWeinerRecords
-	call ClearBurger
+	call ClearBurgerRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -450,7 +457,7 @@ ENDC
 	call UpdateHUDSprites
 	call UpdateSprites
 	call UpdateWeinerSprites
-	call UpdateBurgerSprite
+	call UpdateBurgerSprites
 	call hOAMDMA
 
 	ld a, %10000011
@@ -727,16 +734,16 @@ PrepareSpriteBuffer:
 	call UpdateHUDSprites
 	call UpdateDeathSprite
 	call UpdateWeinerSprites
-	call UpdateBurgerSprite
+	call UpdateBurgerSprites
 	ret
 .gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
 	call AdvanceWeiners
-	call AdvanceBurger
+	call AdvanceBurgers
 	call UpdateSprites
 	call UpdateWeinerSprites
-	call UpdateBurgerSprite
+	call UpdateBurgerSprites
 	ret
 
 UpdateCameraState:
@@ -928,7 +935,7 @@ MainLoop:
 	push bc
 	push de
 	call ResetWeinerHitLatches
-	call ResetBurgerHitLatch
+	call ResetBurgerHitLatches
 	pop de
 	pop bc
 .attackInputDone
@@ -1367,9 +1374,9 @@ MainLoop:
 	ld [AttackPanTileBase], a
 .attackPoseDone
 	call TryPanHitWeiners
-	call TryPanHitBurger
+	call TryPanHitBurgers
 	call TryWeinerContacts
-	call TryBurgerContact
+	call TryBurgerContacts
 
 	jp MainLoop
 
@@ -1907,6 +1914,7 @@ CreateWeinerAtTile:
 IF DEF(COMBAT_PLAYTEST)
 InitializeCombatWeiner:
 	call ClearWeinerRecords
+	call ClearBurgerRecords
 	ld a, COMBAT_PLAYTEST_WEINER_Y
 	ld [WeinerY], a
 	ld a, LOW(COMBAT_PLAYTEST_WEINER_X)
@@ -1926,8 +1934,11 @@ AdvanceWeiners:
 	ld [WeinerLoopIndex], a
 .loop
 	ld a, [WeinerLoopIndex]
-	cp a, WEINER_MAX_COUNT
+	ld b, a
+	ld a, [WeinerCount]
+	cp a, b
 	ret z
+	ld a, b
 	push af
 	call LoadWeinerRecord
 	call AdvanceWeinerAnimation
@@ -1956,8 +1967,11 @@ TryPanHitWeiners:
 	ld [WeinerLoopIndex], a
 .loop
 	ld a, [WeinerLoopIndex]
-	cp a, WEINER_MAX_COUNT
+	ld b, a
+	ld a, [WeinerCount]
+	cp a, b
 	ret z
+	ld a, b
 	push af
 	call LoadWeinerRecord
 	call TryPanHitWeiner
@@ -1974,8 +1988,11 @@ TryWeinerContacts:
 	ld [WeinerLoopIndex], a
 .loop
 	ld a, [WeinerLoopIndex]
-	cp a, WEINER_MAX_COUNT
+	ld b, a
+	ld a, [WeinerCount]
+	cp a, b
 	ret z
+	ld a, b
 	push af
 	call LoadWeinerRecord
 	call TryWeinerContact
@@ -1997,8 +2014,11 @@ UpdateWeinerSprites:
 	ld [WeinerLoopIndex], a
 .loop
 	ld a, [WeinerLoopIndex]
-	cp a, WEINER_MAX_COUNT
+	ld b, a
+	ld a, [WeinerCount]
+	cp a, b
 	ret z
+	ld a, b
 	push af
 	call LoadWeinerRecord
 	call UpdateWeinerSprite
@@ -2882,24 +2902,64 @@ UpdateWeinerSprite:
 	ret
 
 SECTION "BURGER Runtime", ROMX
-ClearBurger:
+ClearBurgerRecords:
 	ld hl, BurgerY
 	ld b, 11
 	xor a
-.clear
+.clearScratch
 	ld [hl+], a
 	dec b
-	jr nz, .clear
+	jr nz, .clearScratch
+	ld hl, BurgerRecords
+	ld b, BURGER_MAX_COUNT * BURGER_RECORD_SIZE
+.clearRecords
+	ld [hl+], a
+	dec b
+	jr nz, .clearRecords
+	ld [BurgerCount], a
 	ret
 
-IF DEF(BURGER_PLAYTEST)
-InitializeCombatBurger:
-	ld a, BURGER_PLAYTEST_BURGER_Y
-	ld [BurgerY], a
-	ld a, LOW(BURGER_PLAYTEST_BURGER_X)
-	ld [BurgerX], a
-	ld a, HIGH(BURGER_PLAYTEST_BURGER_X)
-	ld [BurgerX + 1], a
+GetBurgerRecordPointer:
+	ld hl, BurgerRecords
+	and a
+	ret z
+	ld de, BURGER_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadBurgerRecord:
+	call GetBurgerRecordPointer
+	ld de, BurgerY
+	ld b, BURGER_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StoreBurgerRecord:
+	call GetBurgerRecordPointer
+	ld de, BurgerY
+	ld b, BURGER_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+InitializeBurgerScratch:
+	xor a
+	ld [BurgerVelY], a
+	ld [BurgerTimer], a
+	ld [BurgerHitThisSwing], a
+	ld [BurgerHitFlashTimer], a
 	ld a, 1
 	ld [BurgerVelX], a
 	ld a, BURGER_STATE_IDLE
@@ -2909,12 +2969,81 @@ InitializeCombatBurger:
 	ld a, 2
 	ld [BurgerHealth], a
 	ret
+
+CreateBurgerAtTile:
+	ld a, c
+	inc a
+	add a, a
+	add a, a
+	add a, a
+	ld [BurgerY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [BurgerX], a
+	ld a, h
+	ld [BurgerX + 1], a
+	call InitializeBurgerScratch
+	ld a, [BurgerCount]
+	push af
+	call StoreBurgerRecord
+	pop af
+	inc a
+	ld [BurgerCount], a
+	ret
+
+IF DEF(BURGER_PLAYTEST)
+InitializeCombatBurger:
+	call ClearBurgerRecords
+	ld a, BURGER_PLAYTEST_BURGER_Y
+	ld [BurgerY], a
+	ld a, LOW(BURGER_PLAYTEST_BURGER_X)
+	ld [BurgerX], a
+	ld a, HIGH(BURGER_PLAYTEST_BURGER_X)
+	ld [BurgerX + 1], a
+	call InitializeBurgerScratch
+	xor a
+	call StoreBurgerRecord
+	ld a, 1
+	ld [BurgerCount], a
+	ret
 ENDC
 
-ResetBurgerHitLatch:
+ResetBurgerHitLatches:
+	ld hl, BurgerRecords + BURGER_RECORD_HIT_LATCH
+	ld de, BURGER_RECORD_SIZE
+	ld b, BURGER_MAX_COUNT
 	xor a
-	ld [BurgerHitThisSwing], a
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
 	ret
+
+AdvanceBurgers:
+	xor a
+	ld [BurgerLoopIndex], a
+.loop
+	ld a, [BurgerLoopIndex]
+	ld b, a
+	ld a, [BurgerCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadBurgerRecord
+	call AdvanceBurger
+	pop af
+	push af
+	call StoreBurgerRecord
+	pop af
+	inc a
+	ld [BurgerLoopIndex], a
+	jr .loop
 
 AdvanceBurger:
 	ld a, [BurgerState]
@@ -3205,6 +3334,27 @@ BurgerSupportBelow:
 	ld d, a
 	jp IsSupport
 
+TryPanHitBurgers:
+	xor a
+	ld [BurgerLoopIndex], a
+.loop
+	ld a, [BurgerLoopIndex]
+	ld b, a
+	ld a, [BurgerCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadBurgerRecord
+	call TryPanHitBurger
+	pop af
+	push af
+	call StoreBurgerRecord
+	pop af
+	inc a
+	ld [BurgerLoopIndex], a
+	jr .loop
+
 TryPanHitBurger:
 	ld a, [BurgerState]
 	and a
@@ -3378,6 +3528,27 @@ CheckBurgerAttackY:
 	and a
 	ret
 
+TryBurgerContacts:
+	xor a
+	ld [BurgerLoopIndex], a
+.loop
+	ld a, [BurgerLoopIndex]
+	ld b, a
+	ld a, [BurgerCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadBurgerRecord
+	call TryBurgerContact
+	pop af
+	push af
+	call StoreBurgerRecord
+	pop af
+	inc a
+	ld [BurgerLoopIndex], a
+	jr .loop
+
 TryBurgerContact:
 	ld a, [BurgerState]
 	and a
@@ -3454,8 +3625,68 @@ TryBurgerContact:
 .miss
 	ret
 
+UpdateBurgerSprites:
+	ld a, [WeinerOAMPointer]
+	ld [BurgerOAMPointer], a
+	ld a, [WeinerOAMPointer + 1]
+	ld [BurgerOAMPointer + 1], a
+	xor a
+	ld [BurgerLoopIndex], a
+.loop
+	ld a, [BurgerLoopIndex]
+	ld b, a
+	ld a, [BurgerCount]
+	cp a, b
+	jr z, HideUnusedEnemySprites
+	ld a, b
+	push af
+	call LoadBurgerRecord
+	call UpdateBurgerSprite
+	pop af
+	inc a
+	ld [BurgerLoopIndex], a
+	ld a, [BurgerOAMPointer]
+	add a, 16
+	ld [BurgerOAMPointer], a
+	jr nc, .loop
+	ld hl, BurgerOAMPointer + 1
+	inc [hl]
+	jr .loop
+
+HideUnusedEnemySprites:
+	ld a, [WeinerCount]
+	ld b, a
+	ld a, [BurgerCount]
+	add a, b
+	ld b, a
+	ld a, WEINER_MAX_COUNT
+	sub a, b
+	ret z
+	ld b, a
+	ld a, [BurgerOAMPointer]
+	ld l, a
+	ld a, [BurgerOAMPointer + 1]
+	ld h, a
+	xor a
+.block
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .block
+	ret
+
 UpdateBurgerSprite:
-	ld hl, ShadowOAM + $6c
+	ld a, [BurgerOAMPointer]
+	ld l, a
+	ld a, [BurgerOAMPointer + 1]
+	ld h, a
 	ld a, [BurgerState]
 	and a
 	jp z, HideBurgerSprite
@@ -3521,7 +3752,7 @@ UpdateBurgerSprite:
 	ld d, $20
 .attributesReady
 	ld a, [BurgerY]
-	add a, 8
+	add a, 9
 	sub a, b
 	ld [hl+], a
 	ld a, [BurgerX]
@@ -3540,7 +3771,7 @@ UpdateBurgerSprite:
 	ld a, d
 	ld [hl+], a
 	ld a, [BurgerY]
-	add a, 8
+	add a, 9
 	sub a, b
 	ld [hl+], a
 	ld a, [BurgerX]

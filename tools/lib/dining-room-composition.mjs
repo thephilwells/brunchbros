@@ -395,9 +395,9 @@ function mobCandidates(level, room, mob, occupiedFurniture) {
 }
 
 function mobSelections(level) {
-  const mob = MOB_BY_ID.get('weiner');
+  const envelope = MOB_BY_ID.get('weiner');
   const occupiedFurniture = furnitureCells(level);
-  const candidatesByRoom = Array.from({ length: 16 }, (_, room) => mobCandidates(level, room, mob, occupiedFurniture));
+  const candidatesByRoom = Array.from({ length: 16 }, (_, room) => mobCandidates(level, room, envelope, occupiedFurniture));
   const eligibleRooms = candidatesByRoom.flatMap((candidates, room) => candidates.length ? [room] : []);
   eligibleRooms.sort((left, right) => mixSelection(level.seed, left, MOB_MANIFEST.population.selectionSalt) - mixSelection(level.seed, right, MOB_MANIFEST.population.selectionSalt) || left - right);
   const range = MOB_MANIFEST.population.maximum - MOB_MANIFEST.population.minimum + 1;
@@ -405,13 +405,20 @@ function mobSelections(level) {
   const placements = eligibleRooms.slice(0, target).map(room => {
     const candidates = candidatesByRoom[room];
     const position = candidates[mixSelection(level.seed, room, MOB_MANIFEST.population.positionSalt) % candidates.length];
+    const totalFrequency = MOB_MANIFEST.mobs.reduce((total, mob) => total + mob.frequency, 0);
+    let typeRoll = mixSelection(level.seed, room, MOB_MANIFEST.population.typeSalt) % totalFrequency;
+    const mob = MOB_MANIFEST.mobs.find(candidate => {
+      if (typeRoll < candidate.frequency) return true;
+      typeRoll -= candidate.frequency;
+      return false;
+    });
     return {
       room,
       mob: mob.id,
       frequency: mob.frequency,
       direction: mob.direction,
       x: position.x,
-      y: position.y,
+      y: position.y + envelope.height - mob.height,
       width: mob.width,
       height: mob.height,
     };

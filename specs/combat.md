@@ -4,9 +4,10 @@ Status: **WEINER horizontal animation, crawl, contact bounds, one-hit pan
 defeat, contact damage, knockback, and invulnerability accepted**. Death and
 Game Over were implemented for review on 2026-10-14. Surface-relative wall,
 ceiling, concave-corner, and convex-corner locomotion is implemented in the
-focused fixture. A generic three-frame enemy cloudburst is implemented for
-hands-on review. A focused BURGER fixture implements its initial idle, leap,
-wall-bounce, platform-landing, two-hit, and contact-damage rules for review.
+focused fixture. A generic three-frame enemy cloudburst is implemented.
+BURGER's accepted idle, leap, wall-bounce, platform-landing, two-hit, and
+contact-damage rules run in both its focused fixture and seeded production
+levels.
 
 ## Calibration fixture
 
@@ -49,6 +50,12 @@ per frame with an initial vertical velocity of −8. Only full-solid side contac
 reverses its airborne horizontal direction. Downward motion lands on both solid
 and one-way surfaces; upward motion ignores one-way surfaces. The first pan hit
 briefly flickers the BURGER, and the second starts the shared cloudburst.
+
+Production levels retain the accepted two-through-four encounter budget.
+Each selected room independently chooses WEINER or BURGER with frequency
+weights eight and four. Both types share a conservative 2×2 reserved envelope;
+BURGER occupies its lower row. The four-enemy total cap lets every actor reserve
+four shadow-OAM entries, including its cloudburst.
 
 ## Accepted initial rules
 

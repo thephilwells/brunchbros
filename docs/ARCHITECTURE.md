@@ -34,7 +34,7 @@ maps live in fixed ROM bank 1:
   ledge-catch room, copies semantic room templates into WRAM, applies variants
   and protected endpoints, converts semantic solids to connectivity tile IDs,
   places the exit doorway, then composes wall fixtures, furniture, wallpaper,
-  and two through four deterministic WEINER encounters.
+  and two through four deterministic mixed WEINER/BURGER encounters.
   It consumes the xorshift state selected on the title screen.
 - **`MainLoop`** — runs once per frame. Before its two-phase VBlank wait it
   derives the next camera state and composes every sprite into shadow OAM. At
@@ -160,13 +160,15 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerInvulnerabilityTimer` | Remaining contact-damage immunity frames; also drives four-frame flicker blocks |
 | `PlayerKnockbackRemaining` / `PlayerKnockbackDirection` | Remaining one-pixel solid-aware push steps and signed horizontal direction |
 | `DeathState` / `DeathHoldTimer` / `DeathScreenY` / `DeathVelocity` | Death/Game Over phase, stare hold, and collision-free 16-bit screen-space death arc |
-| `WeinerY` / `WeinerX` | Combat-fixture WEINER top-left position in world coordinates |
+| `WeinerY` / `WeinerX` | Active-record WEINER top-left position in world coordinates |
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion or four-frame cloudburst cadence and the active four-tile pose |
 | `WeinerActive` / `WeinerHitThisSwing` | Inactive, live, or bursting state and per-swing repeat-hit latch |
 | `WeinerDirection` / `WeinerTurnKind` / `WeinerTurnTimer` / `WeinerCornerDistance` | Surface heading, active corner transition, and measured exposed-edge support depth |
-| `BurgerY` / `BurgerX` / `BurgerVelY` / `BurgerVelX` | Focused-fixture BURGER world position and signed airborne velocity |
+| `WeinerRecords` / `WeinerCount` | Up to four live WEINER state records and their active count |
+| `BurgerY` / `BurgerX` / `BurgerVelY` / `BurgerVelX` | Active-record BURGER world position and signed airborne velocity |
 | `BurgerState` / `BurgerTimer` / `BurgerTileBase` | Idle, wind-up, airborne, landing, or burst phase and its timing/art state |
 | `BurgerHealth` / `BurgerHitThisSwing` / `BurgerHitFlashTimer` | Two-hit health, per-swing repeat-hit latch, and first-hit feedback |
+| `BurgerRecords` / `BurgerCount` | Up to four live BURGER state records and their active count |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |
@@ -210,5 +212,4 @@ pixels.
 - No ROM banking (everything fits in `ROM0`/bank 0 so far).
 - External runtime dumps for multiple golden seeds remain pending. Kitchen,
   patio, and deep-freezer art remain unstarted.
-- No enemy behavior, hazards, damage, audio, or menu/game-over flow beyond the
-  minimal Press Start screen.
+- Audio, collectible items, and non-dining biomes remain unimplemented.

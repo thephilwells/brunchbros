@@ -29,9 +29,8 @@ not consume the restricted OAM-access portion of VBlank.
 | 0–3 | Chef | 4 |
 | 4–7 | Frying pan | 4 |
 | 8–10 | Health HUD | 3 |
-| 11–26 | Up to four WEINERs or their cloudbursts | 16 |
-| 27–30 | BURGER fixture or its cloudburst | 4 |
-| 31–39 | Unassigned | 9 |
+| 11–26 | Up to four WEINERs/BURGERs or their cloudbursts | 16 |
+| 27–39 | Unassigned | 13 |
 
 An inactive composite hides its entries by setting their Y bytes to zero.
 Unused slots remain zero after startup. The established ordering preserves

@@ -3,7 +3,8 @@
     "minimum": 2,
     "maximum": 4,
     "selectionSalt": 44257,
-    "positionSalt": 57671
+    "positionSalt": 57671,
+    "typeSalt": 61937
   },
   "mobs": [
     {
@@ -11,6 +12,13 @@
       "frequency": 8,
       "width": 2,
       "height": 2,
+      "direction": "right"
+    },
+    {
+      "id": "burger",
+      "frequency": 4,
+      "width": 2,
+      "height": 1,
       "direction": "right"
     }
   ]
