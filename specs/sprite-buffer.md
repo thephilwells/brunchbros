@@ -29,8 +29,8 @@ not consume the restricted OAM-access portion of VBlank.
 | 0–3 | Chef | 4 |
 | 4–7 | Frying pan | 4 |
 | 8–10 | Health HUD | 3 |
-| 11–14 | WEINER combat fixture | 4 |
-| 15–39 | Unassigned | 25 |
+| 11–26 | Up to four WEINERs or their cloudbursts | 16 |
+| 27–39 | Unassigned | 13 |
 
 An inactive composite hides its entries by setting their Y bytes to zero.
 Unused slots remain zero after startup. The established ordering preserves
@@ -43,6 +43,6 @@ increase DMG rendering capacity. At most 40 entries exist, and only the first
 10 entries encountered on a scanline are rendered. Every new actor therefore
 needs both a tile-storage budget and an OAM/per-scanline budget.
 
-The combat fixture's 24-pose WEINER sheet occupies 96 tiles in ROM bank 1 but
-still uses only four OAM entries at runtime. Pose count does not increase the
-scanline cost.
+The 24-pose WEINER sheet occupies 96 tiles in ROM bank 1, but each live WEINER
+or cloudburst uses four OAM entries. Pose count does not increase scanline
+cost; population does.

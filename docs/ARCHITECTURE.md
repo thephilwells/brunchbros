@@ -9,15 +9,16 @@ before.
 
 The runtime is split between `src/main.asm` and the included
 `src/level_generation.asm`. Runtime code and shared assets remain in ROM0;
-combat-only WEINER art and its fixture map live in fixed ROM bank 1:
+WEINER art, the generic enemy cloudburst, and the combat fixture map live in
+fixed ROM bank 1:
 
 - **WRAM0 state** — see Memory map below.
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
   ROM needs.
 - **`Start`** — one-time boot setup: waits for VBlank, disables the LCD,
   loads the 128-slot dining-room atlas at `$9000`, all 18 Chef/pan animation
-  composites at `$8010`, and three HUD heart tiles at `$8490`. Combat playtest
-  builds also load the 96-tile WEINER surface-crawl set at `$84C0`. It then draws
+  composites at `$8010`, three HUD heart tiles at `$8490`, the 96-tile WEINER
+  surface-crawl set at `$84C0`, and the 12-tile cloudburst at `$8B00`. It then draws
   a BG-only title screen and waits for a fresh Start press while counting
   frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
@@ -31,7 +32,8 @@ combat-only WEINER art and its fixture map live in fixed ROM bank 1:
   compatible horizontal and vertical domino seams, selects an eligible
   ledge-catch room, copies semantic room templates into WRAM, applies variants
   and protected endpoints, converts semantic solids to connectivity tile IDs,
-  places the exit doorway, then composes wall fixtures, furniture, and wallpaper.
+  places the exit doorway, then composes wall fixtures, furniture, wallpaper,
+  and two through four deterministic WEINER encounters.
   It consumes the xorshift state selected on the title screen.
 - **`MainLoop`** — runs once per frame. Before its two-phase VBlank wait it
   derives the next camera state and composes every sprite into shadow OAM. At
@@ -77,8 +79,8 @@ combat-only WEINER art and its fixture map live in fixed ROM bank 1:
   attached surface on the WEINER's right. Exposed-edge wraps measure the
   remaining supported depth and re-anchor once after an eight-frame turn beat,
   including consecutive wraps around one-tile-thick ledges. One pan overlap
-  marks the WEINER inactive, stops its updates, and hides its four shadow-OAM
-  entries.
+  immediately stops the WEINER's movement and collision and starts a 12-frame
+  cloudburst in its four shadow-OAM entries before hiding them.
 - **Exit descent** — Down while grounded at the closed exit takes priority over
   crouch and Down+A. The runtime swaps the 2×3 doorway to its open tiles,
   centers the Chef at the threshold, and advances the existing right-facing
@@ -158,8 +160,8 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerKnockbackRemaining` / `PlayerKnockbackDirection` | Remaining one-pixel solid-aware push steps and signed horizontal direction |
 | `DeathState` / `DeathHoldTimer` / `DeathScreenY` / `DeathVelocity` | Death/Game Over phase, stare hold, and collision-free 16-bit screen-space death arc |
 | `WeinerY` / `WeinerX` | Combat-fixture WEINER top-left position in world coordinates |
-| `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion cadence and the active four-tile WEINER pose |
-| `WeinerActive` / `WeinerHitThisSwing` | Fixture lifetime and per-swing repeat-hit latch |
+| `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion or four-frame cloudburst cadence and the active four-tile pose |
+| `WeinerActive` / `WeinerHitThisSwing` | Inactive, live, or bursting state and per-swing repeat-hit latch |
 | `WeinerDirection` / `WeinerTurnKind` / `WeinerTurnTimer` / `WeinerCornerDistance` | Surface heading, active corner transition, and measured exposed-edge support depth |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
@@ -174,9 +176,9 @@ Hardware registers in active use: `$FF40` (`LCDC`), `$FF42`/`$FF43`
 (`$9000` up).
 
 The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`; HUD
-hearts use sprite indices 73–75 in `$8490–$84BF`; combat builds load the
-WEINER surface-crawl set at indices 76–171 in `$84C0–$8ABF`; the death frame
-uses indices 172–175 in `$8AC0–$8AFF`. Signed background
+hearts use sprite indices 73–75 in `$8490–$84BF`; the WEINER surface-crawl set
+uses indices 76–171 in `$84C0–$8ABF`; the death frame uses indices 172–175 in
+`$8AC0–$8AFF`; and the cloudburst uses indices 176–187 in `$8B00–$8BBF`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in

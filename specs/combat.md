@@ -4,7 +4,8 @@ Status: **WEINER horizontal animation, crawl, contact bounds, one-hit pan
 defeat, contact damage, knockback, and invulnerability accepted**. Death and
 Game Over were implemented for review on 2026-10-14. Surface-relative wall,
 ceiling, concave-corner, and convex-corner locomotion is implemented in the
-focused fixture for hands-on review.
+focused fixture. A generic three-frame enemy cloudburst is implemented for
+hands-on review.
 
 ## Calibration fixture
 
@@ -52,6 +53,8 @@ transferred with the complete sprite frame.
   damage again until invulnerability ends.
 - Pan damage resolves before contact damage. Killing an enemy on the contact
   frame prevents that enemy from damaging the Chef.
+- A lethal hit immediately disables enemy movement, contact damage, and further
+  pan hits. It starts the destruction cloud without a pre-destruction pause.
 - Each enemy can take damage at most once per swing. Ordinary damage cancels an
   active attack or ledge grab.
 - At zero health, gameplay and the camera freeze. The Chef uses the wide-eyed
@@ -67,8 +70,9 @@ box. The strike checks a full-height eight-pixel band immediately in front of
 that box. Recovery checks the lower eight pixels of the same forward band.
 These world-space bands overlap the WEINER's pose-specific contact bounds; they
 do not use center distance. A per-enemy swing latch prevents repeat hits. The
-fixture WEINER has one health, stops updating when struck, and clears its four
-shadow-OAM entries on the following composition pass.
+fixture WEINER has one health. A strike immediately replaces it with a
+three-frame 16×16 cloudburst for 12 frames, reusing its four shadow-OAM entries,
+then clears those entries.
 
 ## Chef damage response
 

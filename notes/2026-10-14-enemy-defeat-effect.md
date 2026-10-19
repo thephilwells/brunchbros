@@ -1,6 +1,6 @@
 # Enemy defeat effect
 
-Consider one short generic explosion or poof animation shared by ordinary
-enemies. Budget its OBJ tiles and OAM occupancy before replacing the WEINER's
-current immediate despawn. Its art, duration, sound, and interaction timing are
-not yet decided.
+Implemented for review on 2026-10-19 as a three-frame, 12-tile cloudburst.
+A lethal hit disables the enemy immediately, reuses its four OAM entries for
+12 frames, and then clears them. There is no pre-destruction pause. Sound
+remains undecided.

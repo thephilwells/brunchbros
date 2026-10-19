@@ -31,10 +31,15 @@ DEF WEINER_DIRECTION_LEFT EQU 2
 DEF WEINER_DIRECTION_UP EQU 3
 DEF WEINER_TURN_CONCAVE EQU 1
 DEF WEINER_TURN_CONVEX EQU 2
+DEF WEINER_STATE_ACTIVE EQU 1
+DEF WEINER_STATE_BURST EQU 2
 DEF WEINER_MAX_COUNT EQU 4
 DEF WEINER_RECORD_SIZE EQU 11
 DEF WEINER_RECORD_ACTIVE EQU 5
 DEF WEINER_RECORD_HIT_LATCH EQU 6
+DEF ENEMY_BURST_FIRST_TILE EQU 176
+DEF ENEMY_BURST_FRAME_DURATION EQU 4
+DEF ENEMY_BURST_DURATION EQU 12
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -232,6 +237,15 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyDeathTiles
+	ld de, EnemyBurstTiles
+	ld hl, $8b00
+	ld c, 12 * 16
+.copyEnemyBurstTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyEnemyBurstTiles
 
 	call LoadTitleScreen
 	xor a
@@ -1783,7 +1797,7 @@ InitializeWeinerScratch:
 	ld [WeinerCornerDistance], a
 	ld a, WEINER_FIRST_TILE
 	ld [WeinerTileBase], a
-	ld a, 1
+	ld a, WEINER_STATE_ACTIVE
 	ld [WeinerActive], a
 	ret
 
@@ -1922,8 +1936,10 @@ UpdateWeinerSprites:
 
 AdvanceWeinerAnimation:
 	ld a, [WeinerActive]
-	and a
-	ret z
+	cp a, WEINER_STATE_BURST
+	jr z, AdvanceEnemyBurst
+	cp a, WEINER_STATE_ACTIVE
+	ret nz
 	ld a, [WeinerTurnKind]
 	and a
 	jp nz, AdvanceWeinerTurn
@@ -1965,6 +1981,24 @@ AdvanceWeinerAnimation:
 	call WeinerHasForwardSupport
 	jr nc, StartWeinerConvexTurn
 	jp MoveWeinerForward
+
+AdvanceEnemyBurst:
+	ld hl, WeinerAnimTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	jr nc, .finished
+	and a, ENEMY_BURST_FRAME_DURATION - 1
+	ret nz
+	ld hl, WeinerTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+.finished
+	xor a
+	ld [WeinerActive], a
+	ret
 
 StartWeinerConcaveTurn:
 	ld a, WEINER_TURN_CONCAVE
@@ -2358,8 +2392,8 @@ LoadWeinerXMinusOne:
 
 TryPanHitWeiner:
 	ld a, [WeinerActive]
-	and a
-	ret z
+	cp a, WEINER_STATE_ACTIVE
+	ret nz
 	ld a, [WeinerHitThisSwing]
 	and a
 	ret nz
@@ -2375,7 +2409,15 @@ TryPanHitWeiner:
 	ret nc
 	ld a, 1
 	ld [WeinerHitThisSwing], a
+	call StartEnemyBurst
+	ret
+
+StartEnemyBurst:
 	xor a
+	ld [WeinerAnimTimer], a
+	ld a, ENEMY_BURST_FIRST_TILE
+	ld [WeinerTileBase], a
+	ld a, WEINER_STATE_BURST
 	ld [WeinerActive], a
 	ret
 
@@ -2517,8 +2559,8 @@ CheckWeinerAttackY:
 
 TryWeinerContact:
 	ld a, [WeinerActive]
-	and a
-	ret z
+	cp a, WEINER_STATE_ACTIVE
+	ret nz
 	ld a, [PlayerInvulnerabilityTimer]
 	and a
 	ret nz
@@ -2659,6 +2701,9 @@ UpdateWeinerSprite:
 	ld c, a
 	xor a
 	ld d, a
+	ld a, [WeinerActive]
+	cp a, WEINER_STATE_BURST
+	jr z, .orientationReady
 	ld a, [WeinerTurnKind]
 	and a
 	jr nz, .orientationReady
@@ -3342,6 +3387,9 @@ DeathTiles:
 SECTION "WEINER Assets", ROMX
 WeinerTiles:
 	INCBIN "build/weiner_motion.2bpp"
+
+EnemyBurstTiles:
+	INCBIN "build/enemy_cloudburst.2bpp"
 
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:

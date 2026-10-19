@@ -48,6 +48,7 @@ node tools/generate-dining-room.mjs
 node tools/generate-chef-attack.mjs
 node tools/generate-hud.mjs
 node tools/generate-weiner.mjs
+node tools/generate-enemy-destruction.mjs
 node tools/generate-combat-playtest.mjs
 node tools/generate-room-template-fixture.mjs
 node tools/generate-room-template-playtest.mjs
@@ -56,6 +57,7 @@ node tools/generate-room-variant-playtest.mjs
 rgbgfx -c dmg=E4 -o build/dining_room.2bpp gfx/dining_room.png
 rgbgfx -c dmg=E4 -o build/hud_hearts.2bpp gfx/hud_hearts.png
 rgbgfx -c dmg=E4 -o build/weiner_motion.2bpp gfx/weiner_motion.png
+rgbgfx -c dmg=E4 -o build/enemy_cloudburst.2bpp gfx/enemy_cloudburst.png
 node tools/verify-dining-room.mjs
 node tools/verify-dining-room-furniture.mjs
 node tools/verify-dining-room-background.mjs
