@@ -15,7 +15,7 @@ BIOMES: [ PATIO_2, DINING_ROOM_2, KITCHEN_1, KITCHEN_2, FREEZER ]
 FREQUENCY: 4 (UNCOMMON)
 DAMAGE: .5 heart
 DIES TO: 2 hits
-DESCRIPTION: A hamburger, half chef's height. It propels itself by jumping, like the blobs in the game Terraria. It sits still where it is for a few seconds, then winds up and leaps in chef's direction. If possible it lands on one-way platforms, having no way to get back down through them unless its next leap propels it over the side. 
+DESCRIPTION: A hamburger, half chef's height. It propels itself by jumping, like the blobs in the game Terraria. It sits still where it is for a few seconds, briefly twitching on every fourth idle animation beat, then winds up and leaps in chef's direction. Its twitch pose is reused while airborne. If possible it lands on one-way platforms, having no way to get back down through them unless its next leap propels it over the side. In mid-air it reverses horizontal direction when it hits opaque tile terrain. Chef, other enemies, and one-way obstacles do not make it bounce.
 
 # PANCAKE
 BIOMES: [ DINING_ROOM_1, DINING_ROOM_2, FREEZER ]
