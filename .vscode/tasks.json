@@ -51,6 +51,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate PANCAKE",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-pancake.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Combat Playtest",
       "type": "shell",
       "command": "node",
@@ -62,6 +69,13 @@
       "type": "shell",
       "command": "node",
       "args": ["tools/generate-burger-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate PANCAKE Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-pancake-playtest.mjs"],
       "problemMatcher": []
     },
     {
@@ -125,6 +139,13 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/burger_motion.2bpp", "gfx/burger_motion.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert PANCAKE",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/pancake_motion.2bpp", "gfx/pancake_motion.png"],
       "problemMatcher": []
     },
     {
@@ -258,7 +279,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -569,6 +590,65 @@
         "${workspaceFolder}/build/brunchbros-burger-playtest.gb"
       ],
       "dependsOn": "Build BURGER Playtest ROM",
+      "problemMatcher": []
+    },
+    {
+      "label": "Assemble PANCAKE Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DFURNITURE_PARITY_TEST=1",
+        "-DPANCAKE_PLAYTEST=1",
+        "-o",
+        "build/pancake_playtest_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link PANCAKE Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-pancake-playtest.gb",
+        "-m",
+        "build/pancake_playtest_main.map",
+        "-n",
+        "build/pancake_playtest_main.sym",
+        "build/pancake_playtest_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix PANCAKE Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-pancake-playtest.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build PANCAKE Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Generate PANCAKE Playtest", "Assemble PANCAKE Playtest", "Link PANCAKE Playtest", "Fix PANCAKE Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run PANCAKE Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-pancake-playtest.gb"
+      ],
+      "dependsOn": "Build PANCAKE Playtest ROM",
       "problemMatcher": []
     }
   ]

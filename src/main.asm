@@ -59,6 +59,12 @@ DEF BURGER_WINDUP_DURATION EQU 20
 DEF BURGER_LANDING_DURATION EQU 10
 DEF BURGER_LAUNCH_VELOCITY EQU -8
 DEF BURGER_TERMINAL_VELOCITY EQU 8
+DEF PANCAKE_FIRST_TILE EQU 196
+DEF PANCAKE_FRAME_DURATION EQU 8
+DEF PANCAKE_STATE_ACTIVE EQU 1
+DEF PANCAKE_OSCILLATION_SPAN EQU 24
+DEF PANCAKE_TARGET_RADIUS EQU PANCAKE_OSCILLATION_SPAN / 2
+DEF PANCAKE_WALL_RETREAT_STEPS EQU PANCAKE_OSCILLATION_SPAN
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -76,6 +82,9 @@ INCLUDE "build/combat_playtest.inc"
 ENDC
 IF DEF(BURGER_PLAYTEST)
 INCLUDE "build/burger_playtest.inc"
+ENDC
+IF DEF(PANCAKE_PLAYTEST)
+INCLUDE "build/pancake_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -149,6 +158,14 @@ BurgerRecords: ds BURGER_MAX_COUNT * BURGER_RECORD_SIZE
 BurgerCount: db
 BurgerLoopIndex: db
 BurgerOAMPointer: dw
+PancakeY: db
+PancakeX: dw
+PancakeDirection: db
+PancakeState: db
+PancakeMoveTimer: db
+PancakeAnimTimer: db
+PancakeTileBase: db
+PancakeRetreatTimer: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -291,6 +308,15 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyBurgerTiles
+	ld de, PancakeTiles
+	ld hl, $8c40
+	ld c, 8 * 16
+.copyPancakeTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyPancakeTiles
 
 	call LoadTitleScreen
 	xor a
@@ -370,16 +396,23 @@ LoadCurrentLevel:
 	call DisableLCD
 	call ClearWeinerRecords
 	call ClearBurgerRecords
+	call ClearPancake
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
 	call GenerateLevel
 ENDC
+IF DEF(PANCAKE_PLAYTEST)
+	call LoadPancakePlaytest
+	call ClearWeinerRecords
+	call ClearBurgerRecords
+ELSE
 IF DEF(BURGER_PLAYTEST)
 	call LoadBurgerPlaytest
 ELSE
 IF DEF(COMBAT_PLAYTEST)
 	call LoadCombatPlaytest
+ENDC
 ENDC
 ENDC
 
@@ -449,6 +482,9 @@ IF DEF(COMBAT_PLAYTEST)
 	call InitializeCombatWeiner
 	ENDC
 ENDC
+IF DEF(PANCAKE_PLAYTEST)
+	call InitializePlaytestPancake
+ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
@@ -458,6 +494,7 @@ ENDC
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
+	call UpdatePancakeSprite
 	call hOAMDMA
 
 	ld a, %10000011
@@ -522,6 +559,30 @@ LoadBurgerPlaytest:
 	ld a, BURGER_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
 	call ClearWeinerRecords
+	ret
+ENDC
+
+IF DEF(PANCAKE_PLAYTEST)
+LoadPancakePlaytest:
+	ld de, PancakePlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(PANCAKE_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(PANCAKE_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, PANCAKE_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
 	ret
 ENDC
 
@@ -735,15 +796,18 @@ PrepareSpriteBuffer:
 	call UpdateDeathSprite
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
+	call UpdatePancakeSprite
 	ret
 .gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
 	call AdvanceWeiners
 	call AdvanceBurgers
+	call AdvancePancake
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
+	call UpdatePancakeSprite
 	ret
 
 UpdateCameraState:
@@ -3874,6 +3938,364 @@ HideBurgerSprite:
 	ld [hl], a
 	ret
 
+SECTION "PANCAKE Runtime", ROMX
+ClearPancake:
+	ld hl, PancakeY
+	ld b, 9
+	xor a
+.clear
+	ld [hl+], a
+	dec b
+	jr nz, .clear
+	ret
+
+IF DEF(PANCAKE_PLAYTEST)
+InitializePlaytestPancake:
+	ld a, PANCAKE_PLAYTEST_PANCAKE_Y
+	ld [PancakeY], a
+	ld a, LOW(PANCAKE_PLAYTEST_PANCAKE_X)
+	ld [PancakeX], a
+	ld a, HIGH(PANCAKE_PLAYTEST_PANCAKE_X)
+	ld [PancakeX + 1], a
+	ld a, -1
+	ld [PancakeDirection], a
+	ld a, PANCAKE_STATE_ACTIVE
+	ld [PancakeState], a
+	ld a, PANCAKE_FIRST_TILE
+	ld [PancakeTileBase], a
+	ret
+ENDC
+
+AdvancePancake:
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_ACTIVE
+	ret nz
+	ld hl, PancakeAnimTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, PANCAKE_FRAME_DURATION
+	jr c, .movement
+	xor a
+	ld [hl], a
+	ld a, [PancakeTileBase]
+	add a, 2
+	cp a, PANCAKE_FIRST_TILE + 8
+	jr c, .storeTile
+	ld a, PANCAKE_FIRST_TILE
+.storeTile
+	ld [PancakeTileBase], a
+.movement
+	ld hl, PancakeMoveTimer
+	ld a, [hl]
+	and a
+	jr z, .readyToMove
+	dec [hl]
+	ret
+.readyToMove
+	ld a, [PancakeRetreatTimer]
+	and a
+	jr z, .aim
+	call SetPancakeRetreatCooldown
+	ld a, [PancakeRetreatTimer]
+	dec a
+	ld [PancakeRetreatTimer], a
+	jr .move
+.aim
+	call SetPancakeTargetCooldown
+	call AimPancakeAtPlayer
+.move
+	ld a, [PancakeDirection]
+	bit 7, a
+	jr nz, .left
+	call PancakeWallRight
+	jr z, .reverseLeft
+	ld hl, PancakeX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.reverseLeft
+	ld a, -1
+	ld [PancakeDirection], a
+	ld a, PANCAKE_WALL_RETREAT_STEPS
+	ld [PancakeRetreatTimer], a
+	ret
+.left
+	call PancakeWallLeft
+	jr z, .reverseRight
+	ld hl, PancakeX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+	ret
+.reverseRight
+	ld a, 1
+	ld [PancakeDirection], a
+	ld a, PANCAKE_WALL_RETREAT_STEPS
+	ld [PancakeRetreatTimer], a
+	ret
+
+AimPancakeAtPlayer:
+	ld a, [PancakeX]
+	add a, 8
+	ld l, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, e
+	sub a, PANCAKE_TARGET_RADIUS
+	ld e, a
+	ld a, d
+	sbc a, 0
+	ld d, a
+	ld a, h
+	cp a, d
+	jr c, .right
+	jr nz, .upperBound
+	ld a, l
+	cp a, e
+	jr c, .right
+.upperBound
+	ld a, [PlayerX]
+	add a, 6 + PANCAKE_TARGET_RADIUS
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, h
+	cp a, d
+	jr c, .keepDirection
+	jr nz, .left
+	ld a, l
+	cp a, e
+	jr c, .keepDirection
+	ret z
+.left
+	ld a, -1
+	ld [PancakeDirection], a
+	ret
+.right
+	ld a, 1
+	ld [PancakeDirection], a
+.keepDirection
+	ret
+
+SetPancakeTargetCooldown:
+	ld a, [PancakeX]
+	add a, 8
+	ld l, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .magnitudeReady
+	ld a, l
+	cpl
+	ld l, a
+	ld a, h
+	cpl
+	ld h, a
+	inc hl
+.magnitudeReady
+	ld a, h
+	and a
+	jr nz, .medium
+	ld a, l
+	cp a, 5
+	jr c, .fast
+	cp a, 9
+	jr c, .medium
+	cp a, 13
+	jr c, .slow
+.medium
+	ld a, 1
+	ld [PancakeMoveTimer], a
+	ret
+.slow
+	ld a, 3
+	ld [PancakeMoveTimer], a
+	ret
+.fast
+	xor a
+	ld [PancakeMoveTimer], a
+	ret
+
+SetPancakeRetreatCooldown:
+	ld a, [PancakeRetreatTimer]
+	cp a, 21
+	jr nc, .slow
+	cp a, 17
+	jr nc, .medium
+	cp a, 9
+	jr nc, .fast
+	cp a, 5
+	jr nc, .medium
+.slow
+	ld a, 3
+	ld [PancakeMoveTimer], a
+	ret
+.medium
+	ld a, 1
+	ld [PancakeMoveTimer], a
+	ret
+.fast
+	xor a
+	ld [PancakeMoveTimer], a
+	ret
+
+PancakeWallRight:
+	ld a, [PancakeX]
+	add a, 16
+	ld e, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [PancakeY]
+	inc a
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [PancakeY]
+	add a, 6
+	ld d, a
+	jp IsWall
+
+PancakeWallLeft:
+	ld a, [PancakeX]
+	sub a, 1
+	ld e, a
+	ld a, [PancakeX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [PancakeY]
+	inc a
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [PancakeY]
+	add a, 6
+	ld d, a
+	jp IsWall
+
+UpdatePancakeSprite:
+	ld a, [BurgerOAMPointer]
+	ld l, a
+	ld a, [BurgerOAMPointer + 1]
+	ld h, a
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_ACTIVE
+	jp nz, HidePancakeSprite
+	ld a, [PancakeX + 1]
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .leftEdgeClear
+	jp nz, HidePancakeSprite
+	ld a, [PancakeX]
+	ld e, a
+	ld a, [CameraX]
+	cp a, e
+	jr z, .leftEdgeClear
+	jp nc, HidePancakeSprite
+.leftEdgeClear
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [PancakeX]
+	add a, 16
+	ld c, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	cp a, d
+	jr c, .vertical
+	jp nz, HidePancakeSprite
+	ld a, c
+	cp a, e
+	jr c, .vertical
+	jp nz, HidePancakeSprite
+.vertical
+	ld a, [PancakeY]
+	add a, 8
+	jr c, .bottomEdge
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	jp nc, HidePancakeSprite
+.bottomEdge
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [PancakeY]
+	cp a, e
+	jp nc, HidePancakeSprite
+.visible
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [PancakeY]
+	add a, 16
+	sub a, b
+	ld [hl+], a
+	ld a, [PancakeX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [PancakeTileBase]
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, [PancakeY]
+	add a, 16
+	sub a, b
+	ld [hl+], a
+	ld a, [PancakeX]
+	add a, 16
+	sub a, c
+	ld [hl+], a
+	ld a, [PancakeTileBase]
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+
+HidePancakeSprite:
+	xor a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	ret
+
 SECTION "Main Continued", ROM0
 
 StartPlayerDeath:
@@ -4466,6 +4888,9 @@ EnemyBurstTiles:
 BurgerTiles:
 	INCBIN "build/burger_motion.2bpp"
 
+PancakeTiles:
+	INCBIN "build/pancake_motion.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
@@ -4478,4 +4903,11 @@ BurgerPlaytestMap:
 	INCBIN "build/burger_playtest.tilemap"
 BurgerPlaytestMapEnd:
 ASSERT BurgerPlaytestMapEnd - BurgerPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(PANCAKE_PLAYTEST)
+PancakePlaytestMap:
+	INCBIN "build/pancake_playtest.tilemap"
+PancakePlaytestMapEnd:
+ASSERT PancakePlaytestMapEnd - PancakePlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC
