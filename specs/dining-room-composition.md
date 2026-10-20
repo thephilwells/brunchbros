@@ -168,15 +168,17 @@ tilemap. Fixed-seed parity covers seeds 0, 1, 77, `$1234`, and `$FFFF` across al
 
 ## Initial encounter population
 
-`data/dining-room-mobs.json` requests two through four encounter slots per
-level. Selected rooms choose WEINER and BURGER at their accepted frequency
-weights of eight and four. Frequency chooses the mob type inside the fixed
-population budget; it does not increase the total population. The initial
-two-through-four density remains independently tunable as more mobs are added.
+`data/dining-room-mobs.json` guarantees two instances of every mob eligible for
+the biome. The current dining-room roster therefore produces two WEINERs and
+two BURGERs. Additional weighted slots are independently tunable and currently
+disabled; their future type selection will use the accepted frequency weights
+of eight and four without weakening the per-type minimum.
 
-Candidates reserve a 2×2 empty structural envelope directly above two
-full-solid cells. WEINER occupies the full envelope; BURGER occupies its lower
-row.
+WEINER candidates reserve a 2×2 empty structural envelope against a full-solid
+floor or ceiling and record the matching crawl direction. BURGER
+candidates reserve a 2×1 empty envelope above two supporting cells; both solid
+and one-way support are valid. Both types require a full empty tile beside each
+side of their body at spawn; WEINERs reach walls through ordinary crawling.
 They cannot overlap furniture, standard-port approaches, wide seams, endpoint
 envelopes, or ledge-catch reservations. Spawn and exit rooms and the selected
 ledge-catch room are excluded entirely. The blanket critical-room flag remains
@@ -184,8 +186,10 @@ a furniture restriction; it does not by itself reject an encounter candidate.
 This permits ordinary required-route rooms to contain enemies while preserving
 their exact transition clearances.
 
-At most one mob is selected per room. Seed-local mixes independently select the
-eligible rooms, floor anchors, and mob types without advancing the structural
-PRNG. Sparse topologies may fill fewer than the requested two to four slots.
-JSON records candidate counts, the target, and placements; TMX adds a visible
-`Mob Spawns` layer; gallery thumbnails distinguish WEINER and BURGER.
+BURGERs are placed before WEINERs because their legal support is scarcer.
+Seed-local mixes independently select eligible rooms and anchors without
+advancing the structural PRNG. Multiple mobs may occupy one room when their
+footprints do not overlap. JSON records candidate counts, the target, and
+placements; TMX adds a visible `Mob Spawns` layer; gallery thumbnails
+distinguish WEINER and BURGER. Exhaustive host validation guarantees both
+per-type minimums across all 65,536 seeds.

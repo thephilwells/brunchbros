@@ -26,6 +26,8 @@ let levelsWithMobs = 0;
 let minimumMobPlacements = 16;
 let maximumMobPlacements = 0;
 let totalMobPlacements = 0;
+const minimumMobTypeCounts = new Map([['weiner', 16], ['burger', 16]]);
+const maximumMobTypeCounts = new Map([['weiner', 0], ['burger', 0]]);
 const backgroundComponentCounts = new Map();
 const componentCounts = new Map();
 const chairOrientationCounts = new Map();
@@ -93,6 +95,11 @@ for (let seed = 0; seed < seedCount; seed++) {
     levelsWithMobs++;
     mobExample ??= first;
   }
+  for (const mobType of minimumMobTypeCounts.keys()) {
+    const count = first.mobPlacements.filter(placement => placement.mob === mobType).length;
+    minimumMobTypeCounts.set(mobType, Math.min(minimumMobTypeCounts.get(mobType), count));
+    maximumMobTypeCounts.set(mobType, Math.max(maximumMobTypeCounts.get(mobType), count));
+  }
 
   const placements = first.furniturePlacements.length;
   minimumPlacements = Math.min(minimumPlacements, placements);
@@ -116,6 +123,8 @@ assert(levelsWithBackground > seedCount * .99);
 assert(levelsWithFurniture > 0);
 assert(levelsWithWallpaper > seedCount * .99);
 assert(levelsWithMobs > seedCount * .99);
+assert.deepEqual(Object.fromEntries(minimumMobTypeCounts), { weiner: 2, burger: 2 });
+assert.deepEqual(Object.fromEntries(maximumMobTypeCounts), { weiner: 2, burger: 2 });
 assert(minimumReservedCells > 0);
 assert.equal(maximumReservedCells, 1280);
 assert.deepEqual([...backgroundComponentCounts.keys()].sort(), ['menu_board', 'serving_hatch', 'wall_clock', 'wall_mirror', 'wall_sconce']);
@@ -212,4 +221,4 @@ const averagePlacements = (totalPlacements / seedCount).toFixed(2);
 const averageBackgroundPlacements = (totalBackgroundPlacements / seedCount).toFixed(2);
 const averageWallpaperPlacements = (totalWallpaperPlacements / seedCount).toFixed(2);
 const averageMobPlacements = (totalMobPlacements / seedCount).toFixed(2);
-console.log(`Dining-room composition verified across all 65,536 seeds; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} WEINER spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels).`);
+console.log(`Dining-room composition verified across all 65,536 seeds; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} mob spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels; two WEINERs and two BURGERs per level).`);

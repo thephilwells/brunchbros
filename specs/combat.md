@@ -48,14 +48,18 @@ two-tile poses: idle, wind-up, shared twitch/airborne, and landing. It rests for
 winds up for 20 frames, then launches toward the Chef at one horizontal pixel
 per frame with an initial vertical velocity of −8. Only full-solid side contact
 reverses its airborne horizontal direction. Downward motion lands on both solid
-and one-way surfaces; upward motion ignores one-way surfaces. The first pan hit
+and one-way surfaces; upward motion ignores one-way surfaces. Vertical motion
+resolves before the horizontal step so the side probe uses the BURGER's
+resulting height at solid corners. The first pan hit
 briefly flickers the BURGER, and the second starts the shared cloudburst.
 
-Production levels retain the accepted two-through-four encounter budget.
-Each selected room independently chooses WEINER or BURGER with frequency
-weights eight and four. Both types share a conservative 2×2 reserved envelope;
-BURGER occupies its lower row. The four-enemy total cap lets every actor reserve
-four shadow-OAM entries, including its cloudburst.
+Production levels guarantee two instances of every biome-eligible mob. The
+current dining-room roster produces two WEINERs and two BURGERs. WEINERs may
+begin on full-solid floors or ceilings; BURGERs begin on solid or one-way
+support. Both require one empty tile of lateral clearance on each side.
+Frequency weights eight and four remain available for later
+additional slots. The current four-enemy total lets every actor reserve four
+shadow-OAM entries, including its cloudburst.
 
 ## Accepted initial rules
 

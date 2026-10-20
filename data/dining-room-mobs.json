@@ -1,7 +1,7 @@
 {
   "population": {
-    "minimum": 2,
-    "maximum": 4,
+    "additionalMinimum": 0,
+    "additionalMaximum": 0,
     "selectionSalt": 44257,
     "positionSalt": 57671,
     "typeSalt": 61937
@@ -9,6 +9,7 @@
   "mobs": [
     {
       "id": "weiner",
+      "minimum": 2,
       "frequency": 8,
       "width": 2,
       "height": 2,
@@ -16,6 +17,7 @@
     },
     {
       "id": "burger",
+      "minimum": 2,
       "frequency": 4,
       "width": 2,
       "height": 1,

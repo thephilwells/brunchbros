@@ -2738,33 +2738,37 @@ UpdateWeinerSprite:
 	ld a, [WeinerActive]
 	and a
 	jr z, .hidden
-	ld a, [WeinerX]
-	add a, 16
-	ld e, a
 	ld a, [WeinerX + 1]
-	adc a, 0
 	ld d, a
 	ld a, [CameraX + 1]
 	cp a, d
-	jr c, .rightEdge
+	jr c, .leftEdgeClear
 	jr nz, .hidden
+	ld a, [WeinerX]
+	ld e, a
 	ld a, [CameraX]
 	cp a, e
+	jr z, .leftEdgeClear
 	jr nc, .hidden
-.rightEdge
+.leftEdgeClear
 	ld a, [CameraX]
 	add a, 160
 	ld e, a
 	ld a, [CameraX + 1]
 	adc a, 0
 	ld d, a
+	ld a, [WeinerX]
+	add a, 16
+	ld c, a
 	ld a, [WeinerX + 1]
+	adc a, 0
 	cp a, d
 	jr c, .vertical
 	jr nz, .hidden
-	ld a, [WeinerX]
+	ld a, c
 	cp a, e
-	jr nc, .hidden
+	jr c, .vertical
+	jr nz, .hidden
 .vertical
 	ld a, [WeinerY]
 	add a, 16
@@ -3126,7 +3130,6 @@ AdvanceBurgerWindup:
 	ret
 
 AdvanceBurgerAirborne:
-	call AdvanceBurgerHorizontal
 	ld hl, BurgerVelY
 	ld a, [hl]
 	inc a
@@ -3138,18 +3141,23 @@ AdvanceBurgerAirborne:
 .storeVelocity
 	ld [hl], a
 	and a
-	ret z
+	jp z, AdvanceBurgerHorizontal
 	bit 7, a
 	jr nz, .rising
 	ld b, a
 .fallStep
 	call BurgerSupportBelow
-	jr z, StartBurgerLanding
+	jr z, .landing
 	ld hl, BurgerY
 	inc [hl]
 	dec b
 	jr nz, .fallStep
-	ret
+	jp AdvanceBurgerHorizontal
+.landing
+	call AdvanceBurgerHorizontal
+	call BurgerSupportBelow
+	ret nz
+	jp StartBurgerLanding
 .rising
 	cpl
 	inc a
@@ -3161,11 +3169,11 @@ AdvanceBurgerAirborne:
 	dec [hl]
 	dec b
 	jr nz, .riseStep
-	ret
+	jp AdvanceBurgerHorizontal
 .headBump
 	xor a
 	ld [BurgerVelY], a
-	ret
+	jp AdvanceBurgerHorizontal
 
 StartBurgerLanding:
 	xor a
@@ -3290,7 +3298,7 @@ BurgerWallLeft:
 
 BurgerCeilingAbove:
 	ld a, [BurgerX]
-	inc a
+	add a, 1
 	ld e, a
 	ld a, [BurgerX + 1]
 	adc a, 0
@@ -3313,7 +3321,7 @@ BurgerCeilingAbove:
 
 BurgerSupportBelow:
 	ld a, [BurgerX]
-	inc a
+	add a, 1
 	ld e, a
 	ld a, [BurgerX + 1]
 	adc a, 0
@@ -3693,33 +3701,37 @@ UpdateBurgerSprite:
 	ld a, [BurgerHitFlashTimer]
 	bit 1, a
 	jp nz, HideBurgerSprite
-	ld a, [BurgerX]
-	add a, 16
-	ld e, a
 	ld a, [BurgerX + 1]
-	adc a, 0
 	ld d, a
 	ld a, [CameraX + 1]
 	cp a, d
-	jr c, .rightEdge
+	jr c, .leftEdgeClear
 	jp nz, HideBurgerSprite
+	ld a, [BurgerX]
+	ld e, a
 	ld a, [CameraX]
 	cp a, e
+	jr z, .leftEdgeClear
 	jp nc, HideBurgerSprite
-.rightEdge
+.leftEdgeClear
 	ld a, [CameraX]
 	add a, 160
 	ld e, a
 	ld a, [CameraX + 1]
 	adc a, 0
 	ld d, a
+	ld a, [BurgerX]
+	add a, 16
+	ld c, a
 	ld a, [BurgerX + 1]
+	adc a, 0
 	cp a, d
 	jr c, .vertical
 	jp nz, HideBurgerSprite
-	ld a, [BurgerX]
+	ld a, c
 	cp a, e
-	jp nc, HideBurgerSprite
+	jr c, .vertical
+	jp nz, HideBurgerSprite
 .vertical
 	ld a, [BurgerY]
 	add a, 8

@@ -6184,52 +6184,62 @@
     }
   ],
   "roomMobCandidateCounts": [
-    0,
-    1,
-    0,
-    0,
-    1,
+    5,
+    4,
+    4,
     0,
     0,
     0,
-    1,
     3,
+    5,
     0,
+    10,
+    4,
+    2,
+    2,
     0,
     1,
-    0,
-    1,
-    0
+    9
   ],
-  "mobPopulationTarget": 3,
+  "mobPopulationTarget": 4,
   "mobPlacements": [
     {
       "room": 9,
-      "mob": "weiner",
-      "frequency": 8,
-      "direction": "right",
-      "x": 15,
-      "y": 21,
-      "width": 2,
-      "height": 2
-    },
-    {
-      "room": 14,
       "mob": "burger",
       "frequency": 4,
       "direction": "right",
-      "x": 23,
-      "y": 30,
+      "x": 15,
+      "y": 22,
       "width": 2,
       "height": 1
     },
     {
-      "room": 12,
+      "room": 11,
+      "mob": "burger",
+      "frequency": 4,
+      "direction": "right",
+      "x": 35,
+      "y": 21,
+      "width": 2,
+      "height": 1
+    },
+    {
+      "room": 10,
       "mob": "weiner",
       "frequency": 8,
-      "direction": "right",
-      "x": 3,
-      "y": 29,
+      "direction": "left",
+      "x": 22,
+      "y": 17,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "room": 2,
+      "mob": "weiner",
+      "frequency": 8,
+      "direction": "left",
+      "x": 23,
+      "y": 1,
       "width": 2,
       "height": 2
     }

@@ -1,7 +1,8 @@
-`FREQUENCY` is a relative selection weight among mobs eligible for the current
-biome. It does not determine the total number of enemies in a level. A weight
-of 8 is the common baseline: WEINER should appear with roughly the regularity
-of Spelunky's SNAKE. These initial weights are tuning values, not guarantees.
+Every mob eligible for a biome has a minimum population of two. `FREQUENCY` is
+a relative selection weight for additional population beyond those guarantees;
+it does not determine the minimum or the total number of enemies in a level. A
+weight of 8 is the common baseline: WEINER should appear with roughly the
+regularity of Spelunky's SNAKE. These initial weights remain tuning values.
 
 # WEINER
 BIOMES: [ PATIO_1, PATIO_2, DINING_ROOM_1, KITCHEN_1, FREEZER ]

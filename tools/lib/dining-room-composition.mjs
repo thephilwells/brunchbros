@@ -51,6 +51,7 @@ export const RESERVATION_EXIT = 0x10;
 export const RESERVATION_LEDGE_CATCH = 0x20;
 const BACKGROUND_BLOCKING_RESERVATIONS = RESERVATION_PORT | RESERVATION_WIDE_SEAM | RESERVATION_SPAWN | RESERVATION_EXIT | RESERVATION_LEDGE_CATCH;
 const ENCOUNTER_BLOCKING_RESERVATIONS = RESERVATION_PORT | RESERVATION_WIDE_SEAM | RESERVATION_SPAWN | RESERVATION_EXIT | RESERVATION_LEDGE_CATCH;
+const ONE_WAY_TILES = new Set([50, 51, 52, 53, 57, 58, 63, 77, 78, 112, 113, 114]);
 
 function mixSelection(seed, room, salt) {
   let state = ((seed || 0xace1) ^ ((room + 1) * 0x9e37) ^ salt) & 0xffff;
@@ -369,60 +370,75 @@ function furnitureCells(level) {
   return cells;
 }
 
-function mobCandidates(level, room, mob, occupiedFurniture) {
+function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new Set()) {
   if (room === level.spawnRoom || room === level.exitRoom || level.roomTraversalClasses[room] === TRAVERSAL_LEDGE_CATCH) return [];
   const roomX = room % 4 * ROOM_WIDTH;
   const roomY = Math.floor(room / 4) * ROOM_HEIGHT;
   const candidates = [];
+  const bodyOpen = (x, y) => {
+    const index = y * LEVEL_WIDTH + x;
+    return level.structuralTiles[index] === 17 && !(level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) && !occupiedFurniture.has(index) && !occupiedMobs.has(index);
+  };
+  const solidSupport = (x, y) => {
+    const index = y * LEVEL_WIDTH + x;
+    const tile = level.structuralTiles[index];
+    return tile >= 1 && tile <= 16 && !(level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS);
+  };
+  const burgerSupport = (x, y) => {
+    const index = y * LEVEL_WIDTH + x;
+    return (solidSupport(x, y) || ONE_WAY_TILES.has(level.tiles[index])) && !(level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS);
+  };
   for (let y = roomY; y + mob.height < roomY + ROOM_HEIGHT; y++) {
     for (let x = roomX; x + mob.width <= roomX + ROOM_WIDTH; x++) {
+      if (x <= roomX || x + mob.width >= roomX + ROOM_WIDTH) continue;
       let valid = true;
       for (let bodyY = y; bodyY < y + mob.height; bodyY++) {
         for (let bodyX = x; bodyX < x + mob.width; bodyX++) {
-          const index = bodyY * LEVEL_WIDTH + bodyX;
-          if (level.structuralTiles[index] !== 17 || level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS || occupiedFurniture.has(index)) valid = false;
+          if (!bodyOpen(bodyX, bodyY)) valid = false;
         }
+        if (level.structuralTiles[bodyY * LEVEL_WIDTH + x - 1] !== 17 || level.structuralTiles[bodyY * LEVEL_WIDTH + x + mob.width] !== 17) valid = false;
       }
-      for (let supportX = x; supportX < x + mob.width; supportX++) {
-        const index = (y + mob.height) * LEVEL_WIDTH + supportX;
-        const tile = level.structuralTiles[index];
-        if (tile < 1 || tile > 16 || level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) valid = false;
+      if (!valid) continue;
+      if (mob.id === 'burger') {
+        if ([0, 1].every(offset => burgerSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
+        continue;
       }
-      if (valid) candidates.push({ room, x, y });
+      if ([0, 1].every(offset => solidSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
+      else if (y > roomY && [0, 1].every(offset => solidSupport(x + offset, y - 1))) candidates.push({ room, x, y, direction: 'left' });
     }
   }
   return candidates;
 }
 
 function mobSelections(level) {
-  const envelope = MOB_BY_ID.get('weiner');
   const occupiedFurniture = furnitureCells(level);
-  const candidatesByRoom = Array.from({ length: 16 }, (_, room) => mobCandidates(level, room, envelope, occupiedFurniture));
-  const eligibleRooms = candidatesByRoom.flatMap((candidates, room) => candidates.length ? [room] : []);
-  eligibleRooms.sort((left, right) => mixSelection(level.seed, left, MOB_MANIFEST.population.selectionSalt) - mixSelection(level.seed, right, MOB_MANIFEST.population.selectionSalt) || left - right);
-  const range = MOB_MANIFEST.population.maximum - MOB_MANIFEST.population.minimum + 1;
-  const target = MOB_MANIFEST.population.minimum + mixSelection(level.seed, 16, MOB_MANIFEST.population.selectionSalt) % range;
-  const placements = eligibleRooms.slice(0, target).map(room => {
-    const candidates = candidatesByRoom[room];
-    const position = candidates[mixSelection(level.seed, room, MOB_MANIFEST.population.positionSalt) % candidates.length];
-    const totalFrequency = MOB_MANIFEST.mobs.reduce((total, mob) => total + mob.frequency, 0);
-    let typeRoll = mixSelection(level.seed, room, MOB_MANIFEST.population.typeSalt) % totalFrequency;
-    const mob = MOB_MANIFEST.mobs.find(candidate => {
-      if (typeRoll < candidate.frequency) return true;
-      typeRoll -= candidate.frequency;
-      return false;
-    });
-    return {
-      room,
-      mob: mob.id,
-      frequency: mob.frequency,
-      direction: mob.direction,
-      x: position.x,
-      y: position.y + envelope.height - mob.height,
-      width: mob.width,
-      height: mob.height,
-    };
-  });
+  const occupiedMobs = new Set();
+  const priority = ['burger', 'weiner'].map(id => MOB_BY_ID.get(id));
+  const candidatesByRoom = Array.from({ length: 16 }, (_, room) => priority.reduce((total, mob) => total + mobCandidates(level, room, mob, occupiedFurniture).length, 0));
+  const placements = [];
+  for (const [typeIndex, mob] of priority.entries()) {
+    for (let instance = 0; instance < mob.minimum; instance++) {
+      const selectionSalt = MOB_MANIFEST.population.selectionSalt ^ typeIndex * 0x101 ^ instance;
+      const positionSalt = MOB_MANIFEST.population.positionSalt ^ typeIndex * 0x101 ^ instance;
+      const rooms = Array.from({ length: 16 }, (_, room) => ({ room, candidates: mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs) })).filter(entry => entry.candidates.length);
+      rooms.sort((left, right) => mixSelection(level.seed, left.room, selectionSalt) - mixSelection(level.seed, right.room, selectionSalt) || left.room - right.room);
+      const selectedRoom = rooms[0];
+      if (!selectedRoom) continue;
+      const position = selectedRoom.candidates[mixSelection(level.seed, selectedRoom.room, positionSalt) % selectedRoom.candidates.length];
+      for (let y = position.y; y < position.y + mob.height; y++) for (let x = position.x; x < position.x + mob.width; x++) occupiedMobs.add(y * LEVEL_WIDTH + x);
+      placements.push({
+        room: selectedRoom.room,
+        mob: mob.id,
+        frequency: mob.frequency,
+        direction: position.direction,
+        x: position.x,
+        y: position.y,
+        width: mob.width,
+        height: mob.height,
+      });
+    }
+  }
+  const target = MOB_MANIFEST.mobs.reduce((total, mob) => total + mob.minimum, 0);
   return { candidatesByRoom, placements, target };
 }
 
@@ -430,7 +446,7 @@ export function addDiningRoomMobs(level) {
   const selection = mobSelections(level);
   return {
     ...level,
-    roomMobCandidateCounts: selection.candidatesByRoom.map(candidates => candidates.length),
+    roomMobCandidateCounts: selection.candidatesByRoom,
     mobPopulationTarget: selection.target,
     mobPlacements: selection.placements,
   };
@@ -593,9 +609,10 @@ export function validateDiningRoomComposition(level) {
 
   const expectedMobs = mobSelections(level);
   if (level.mobPopulationTarget !== expectedMobs.target) errors.push('mob population target is inconsistent');
-  if (level.roomMobCandidateCounts.some((count, room) => count !== expectedMobs.candidatesByRoom[room].length)) errors.push('room mob candidate counts are inconsistent');
+  if (level.roomMobCandidateCounts.some((count, room) => count !== expectedMobs.candidatesByRoom[room])) errors.push('room mob candidate counts are inconsistent');
   if (JSON.stringify(level.mobPlacements) !== JSON.stringify(expectedMobs.placements)) errors.push('mob placements are inconsistent');
-  const mobRooms = new Set();
+  const mobCounts = new Map();
+  const occupiedMobCells = new Set();
   const occupiedFurnitureCells = furnitureCells(level);
   for (const placement of level.mobPlacements ?? []) {
     const mob = MOB_BY_ID.get(placement.mob);
@@ -603,27 +620,22 @@ export function validateDiningRoomComposition(level) {
       errors.push(`room ${placement.room} uses unknown mob ${placement.mob}`);
       continue;
     }
-    if (mobRooms.has(placement.room)) errors.push(`room ${placement.room} contains multiple mobs`);
-    mobRooms.add(placement.room);
+    mobCounts.set(placement.mob, (mobCounts.get(placement.mob) ?? 0) + 1);
     if (placement.room === level.spawnRoom || placement.room === level.exitRoom) errors.push(`protected endpoint room ${placement.room} contains a mob`);
     if (level.roomTraversalClasses[placement.room] === TRAVERSAL_LEDGE_CATCH) errors.push(`ledge-catch room ${placement.room} contains a mob`);
-    if (placement.width !== mob.width || placement.height !== mob.height || placement.frequency !== mob.frequency || placement.direction !== mob.direction) errors.push(`${placement.mob} metadata is inconsistent in room ${placement.room}`);
+    if (placement.width !== mob.width || placement.height !== mob.height || placement.frequency !== mob.frequency) errors.push(`${placement.mob} metadata is inconsistent in room ${placement.room}`);
     for (let y = placement.y; y < placement.y + placement.height; y++) {
       for (let x = placement.x; x < placement.x + placement.width; x++) {
         const index = y * LEVEL_WIDTH + x;
         if (level.structuralTiles[index] !== 17) errors.push(`${placement.mob} body is obstructed at ${x},${y}`);
         if (level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) errors.push(`${placement.mob} occupies protected encounter cell ${x},${y}`);
         if (occupiedFurnitureCells.has(index)) errors.push(`${placement.mob} overlaps furniture at ${x},${y}`);
+        if (occupiedMobCells.has(index)) errors.push(`${placement.mob} overlaps another mob at ${x},${y}`);
+        occupiedMobCells.add(index);
       }
     }
-    for (let x = placement.x; x < placement.x + placement.width; x++) {
-      const y = placement.y + placement.height;
-      const index = y * LEVEL_WIDTH + x;
-      const tile = level.structuralTiles[index];
-      if (tile < 1 || tile > 16) errors.push(`${placement.mob} lacks full-solid support at ${x},${y}`);
-      if (level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) errors.push(`${placement.mob} support occupies protected encounter cell ${x},${y}`);
-    }
   }
+  for (const mob of MOB_MANIFEST.mobs) if ((mobCounts.get(mob.id) ?? 0) < mob.minimum) errors.push(`${mob.id} population is below ${mob.minimum}`);
 
   for (let index = 0; index < level.tiles.length; index++) {
     if (!occupied.has(index) && level.tiles[index] !== level.structuralTiles[index]) errors.push(`composition changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);

@@ -200,10 +200,12 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile
    above, through a forward slash, to the accepted waist-height finish.
-   Host-side dining-room population now selects two through four WEINER slots
-   from safe full-solid surfaces, exports JSON/TMX spawn metadata, and draws
-   gallery overlays. The initial density and placement gallery are provisionally
-   accepted; the RGBDS runtime port and production gameplay tuning are next.
+   Host and RGBDS dining-room population now guarantee two WEINERs and two
+   BURGERs per level. Species-specific candidates allow WEINER floor, ceiling,
+   and wall starts plus BURGER solid and one-way support. JSON/TMX spawn
+   metadata and gallery overlays expose every placement; exhaustive host
+   validation covers all 65,536 seeds. Additional weighted slots remain a
+   later density-tuning pass.
 4. **Reward exploration.** Introduce a collectible and optional-room placement,
    followed by breakable eggs and lifting/throwing. Prefer better treasure farther
    from the critical route, while keeping nearby side rooms worthwhile. Tune the

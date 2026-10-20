@@ -82,9 +82,13 @@ WallpaperPlacementRoom: db
 WallpaperRoomX: db
 WallpaperRoomY: db
 MobCandidateCounts: ds 16
+MobOccupiedTiles: ds 160
 MobCandidateCount: db
 MobLocalX: db
 MobLocalY: db
+MobType: db
+MobCandidateDirection: db
+MobReservationRow: db
 MobCandidateOrdinal: db
 MobTargetOrdinal: db
 MobTargetCount: db
@@ -3068,6 +3072,32 @@ WallpaperSelectionRandomModulo:
 
 SECTION "Dining Room Mob Generation", ROMX
 PlaceDiningRoomMobs:
+	ld hl, MobOccupiedTiles
+	ld b, 160
+	xor a
+.clearOccupied
+	ld [hl+], a
+	dec b
+	jr nz, .clearOccupied
+	xor a
+	ld [MobType], a
+	ld a, DINING_BURGER_MINIMUM
+	call PlaceMobType
+	ld a, 1
+	ld [MobType], a
+	ld a, DINING_WEINER_MINIMUM
+	jp PlaceMobType
+
+PlaceMobType:
+	ld [MobTargetCount], a
+	xor a
+	ld [MobSelectedCount], a
+.select
+	ld a, [MobSelectedCount]
+	ld b, a
+	ld a, [MobTargetCount]
+	cp a, b
+	ret z
 	xor a
 	ld [GenerationRoom], a
 .countRooms
@@ -3090,22 +3120,6 @@ PlaceDiningRoomMobs:
 	ld [GenerationRoom], a
 	cp a, 16
 	jr c, .countRooms
-
-	ld a, 16
-	ld de, DINING_MOB_SELECTION_SALT
-	call MobSelectionMix
-	ld c, DINING_MOB_MAXIMUM - DINING_MOB_MINIMUM + 1
-	call MobResultModulo
-	add a, DINING_MOB_MINIMUM
-	ld [MobTargetCount], a
-	xor a
-	ld [MobSelectedCount], a
-.select
-	ld a, [MobSelectedCount]
-	ld b, a
-	ld a, [MobTargetCount]
-	cp a, b
-	ret z
 	call FindBestMobRoom
 	ld a, [MobBestFound]
 	and a
@@ -3118,10 +3132,8 @@ PlaceDiningRoomMobs:
 	add hl, de
 	ld a, [hl]
 	ld c, a
-	or a, $80
-	ld [hl], a
 	ld a, [GenerationRoom]
-	ld de, DINING_MOB_POSITION_SALT
+	call LoadMobPositionSalt
 	call MobSelectionMix
 	ld a, [MobBestRoom]
 	ld e, a
@@ -3129,12 +3141,19 @@ PlaceDiningRoomMobs:
 	ld hl, MobCandidateCounts
 	add hl, de
 	ld a, [hl]
-	and a, $7f
 	ld c, a
 	call MobResultModulo
 	ld [MobTargetOrdinal], a
 	call FindMobCandidate
-	call CreateSelectedMob
+	call MarkMobCandidateOccupied
+	ld a, [MobType]
+	and a
+	jr z, .createBurger
+	call CreateSelectedWeiner
+	jr .created
+.createBurger
+	call CreateSelectedBurger
+.created
 	ld hl, MobSelectedCount
 	inc [hl]
 	jr .select
@@ -3150,12 +3169,10 @@ FindBestMobRoom:
 	ld hl, MobCandidateCounts
 	add hl, de
 	ld a, [hl]
-	bit 7, a
-	jr nz, .nextRoom
-	and a, $7f
+	and a
 	jr z, .nextRoom
 	ld a, [GenerationRoom]
-	ld de, DINING_MOB_SELECTION_SALT
+	call LoadMobSelectionSalt
 	call MobSelectionMix
 	ld a, [MobBestFound]
 	and a
@@ -3238,7 +3255,14 @@ CountMobCandidates:
 	ld hl, MobLocalY
 	inc [hl]
 	ld a, [hl]
-	cp a, 6
+	ld b, 6
+	ld a, [MobType]
+	and a
+	jr nz, .rowLimitReady
+	inc b
+.rowLimitReady
+	ld a, [MobLocalY]
+	cp a, b
 	jr c, .row
 	ld a, [MobCandidateCount]
 	ret
@@ -3269,15 +3293,31 @@ FindMobCandidate:
 	ld hl, MobLocalY
 	inc [hl]
 	ld a, [hl]
-	cp a, 6
+	ld b, 6
+	ld a, [MobType]
+	and a
+	jr nz, .rowLimitReady
+	inc b
+.rowLimitReady
+	ld a, [MobLocalY]
+	cp a, b
 	jr c, .row
 	ret
 
 IsMobCandidate:
 	call IsMobFootprintReserved
 	jr c, .invalid
+	ld a, [MobLocalX]
+	and a
+	jr z, .invalid
+	cp a, 8
+	jr nc, .invalid
 	call GetMobCandidatePointer
-	ld b, 2
+	ld a, [MobType]
+	and a
+	ld b, 1
+	jr z, .bodyRow
+	inc b
 .bodyRow
 	ld c, 2
 .bodyCell
@@ -3296,6 +3336,10 @@ IsMobCandidate:
 	call IsFurnitureCellOpen
 	pop hl
 	jr nc, .invalidPop
+	push hl
+	call IsMobCellOpen
+	pop hl
+	jr nc, .invalidPop
 	pop bc
 	inc hl
 	dec c
@@ -3304,23 +3348,127 @@ IsMobCandidate:
 	add hl, de
 	dec b
 	jr nz, .bodyRow
+	call AreMobCandidateSidesClear
+	jr nz, .invalid
+	ld a, [MobType]
+	and a
+	jr nz, ResolveWeinerCandidateDirection
+	ld a, [MobLocalY]
+	inc a
+	call IsMobRowReserved
+	jr c, .invalid
 	call GetMobCandidatePointer
-	ld de, 80
+	ld de, 40
 	add hl, de
 	ld b, 2
 .support
+	push hl
 	ld a, [hl+]
-	cp a, 1
-	jr c, .invalid
-	cp a, 17
-	jr nc, .invalid
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	pop hl
+	and a
+	jr z, .invalid
+	inc hl
 	dec b
 	jr nz, .support
+	xor a
+	ld [MobCandidateDirection], a
 	scf
 	ret
 .invalidPop
 	pop bc
 .invalid
+	and a
+	ret
+
+ResolveWeinerCandidateDirection:
+	ld a, [MobLocalY]
+	add a, 2
+	call IsMobRowReserved
+	jr c, .above
+	call GetMobCandidatePointer
+	ld de, 80
+	add hl, de
+	call IsTwoSolidMobSupport
+	jr c, .right
+.above
+	ld a, [MobLocalY]
+	and a
+	jr z, .invalid
+	dec a
+	call IsMobRowReserved
+	jr c, .invalid
+	call GetMobCandidatePointer
+	ld de, -40
+	add hl, de
+	call IsTwoSolidMobSupport
+	jr c, .left
+	jr .invalid
+.right
+	ld a, WEINER_DIRECTION_RIGHT
+	jr .valid
+.left
+	ld a, WEINER_DIRECTION_LEFT
+.valid
+	ld [MobCandidateDirection], a
+	scf
+	ret
+.invalid
+	and a
+	ret
+
+IsTwoSolidMobSupport:
+	ld b, 2
+.loop
+	ld a, [hl+]
+	and a
+	jr z, .invalid
+	cp a, 17
+	jr nc, .invalid
+	dec b
+	jr nz, .loop
+	scf
+	ret
+.invalid
+	and a
+	ret
+
+AreMobCandidateSidesClear:
+	call GetMobCandidatePointer
+	ld a, [MobType]
+	and a
+	ld b, 1
+	jr z, .row
+	inc b
+.row
+	dec hl
+	call IsEmptyMobTerrainCell
+	ret nz
+	inc hl
+	inc hl
+	inc hl
+	call IsEmptyMobTerrainCell
+	ret nz
+	ld de, 38
+	add hl, de
+	dec b
+	jr nz, .row
+	xor a
+	ret
+
+IsEmptyMobTerrainCell:
+	push hl
+	ld a, [hl]
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	pop hl
 	and a
 	ret
 
@@ -3375,7 +3523,103 @@ IsFurnitureCellOpen:
 	and a
 	ret
 
+IsMobCellOpen:
+	ld de, LevelMap
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, l
+	and a, 7
+	ld e, a
+	ld d, 0
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	ld bc, MobOccupiedTiles
+	add hl, bc
+	ld a, [hl]
+	ld hl, BitMasks
+	add hl, de
+	and a, [hl]
+	jr nz, .occupied
+	scf
+	ret
+.occupied
+	and a
+	ret
+
+MarkMobCandidateOccupied:
+	call GetMobCandidatePointer
+	ld a, [MobType]
+	and a
+	ld b, 1
+	jr z, .row
+	inc b
+.row
+	ld c, 2
+.cell
+	push bc
+	push hl
+	call MarkMobCellOccupied
+	pop hl
+	pop bc
+	inc hl
+	dec c
+	jr nz, .cell
+	ld de, 38
+	add hl, de
+	dec b
+	jr nz, .row
+	ret
+
+MarkMobCellOccupied:
+	ld de, LevelMap
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, l
+	and a, 7
+	ld e, a
+	ld d, 0
+	srl h
+	rr l
+	srl h
+	rr l
+	srl h
+	rr l
+	ld bc, MobOccupiedTiles
+	add hl, bc
+	push hl
+	ld hl, BitMasks
+	add hl, de
+	ld a, [hl]
+	pop hl
+	or a, [hl]
+	ld [hl], a
+	ret
+
 IsMobFootprintReserved:
+	ld a, [MobLocalY]
+	call IsMobRowReserved
+	ret c
+	ld a, [MobType]
+	and a
+	ret z
+	ld a, [MobLocalY]
+	inc a
+	jp IsMobRowReserved
+
+IsMobRowReserved:
+	ld [MobReservationRow], a
 	ld a, [GenerationRoom]
 	ld e, a
 	ld d, 0
@@ -3392,9 +3636,11 @@ IsMobFootprintReserved:
 	jr nc, .east
 	bit 0, c
 	jr nz, .reserved
-	ld a, [MobLocalY]
-	and a
-	jr nz, .reserved
+	ld a, [MobReservationRow]
+	cp a, 3
+	jr c, .east
+	cp a, 7
+	jr c, .reserved
 .east
 	bit 1, b
 	jr z, .north
@@ -3403,13 +3649,15 @@ IsMobFootprintReserved:
 	jr c, .north
 	bit 1, c
 	jr nz, .reserved
-	ld a, [MobLocalY]
-	and a
-	jr nz, .reserved
+	ld a, [MobReservationRow]
+	cp a, 3
+	jr c, .north
+	cp a, 7
+	jr c, .reserved
 .north
 	bit 2, b
 	jr z, .south
-	ld a, [MobLocalY]
+	ld a, [MobReservationRow]
 	cp a, 4
 	jr nc, .south
 	bit 2, c
@@ -3422,8 +3670,8 @@ IsMobFootprintReserved:
 .south
 	bit 3, b
 	jr z, .clear
-	ld a, [MobLocalY]
-	cp a, 2
+	ld a, [MobReservationRow]
+	cp a, 4
 	jr c, .clear
 	bit 3, c
 	jr nz, .reserved
@@ -3438,16 +3686,6 @@ IsMobFootprintReserved:
 .reserved
 	scf
 	ret
-
-CreateSelectedMob:
-	ld a, [GenerationRoom]
-	ld de, DINING_MOB_TYPE_SALT
-	call MobSelectionMix
-	ld c, DINING_MOB_TOTAL_FREQUENCY
-	call MobResultModulo
-	cp a, DINING_WEINER_FREQUENCY
-	jr c, CreateSelectedWeiner
-	jr CreateSelectedBurger
 
 CreateSelectedWeiner:
 	ld a, [GenerationRoom]
@@ -3472,7 +3710,15 @@ CreateSelectedWeiner:
 	ld a, [MobLocalY]
 	add a, c
 	ld c, a
-	jp CreateWeinerAtTile
+	call CreateWeinerAtTile
+	ld a, [WeinerCount]
+	dec a
+	call GetWeinerRecordPointer
+	ld de, 7
+	add hl, de
+	ld a, [MobCandidateDirection]
+	ld [hl], a
+	ret
 
 CreateSelectedBurger:
 	ld a, [GenerationRoom]
@@ -3495,10 +3741,35 @@ CreateSelectedBurger:
 	add a, a
 	ld c, a
 	ld a, [MobLocalY]
-	inc a
 	add a, c
 	ld c, a
 	jp CreateBurgerAtTile
+
+LoadMobSelectionSalt:
+	push af
+	ld de, DINING_MOB_SELECTION_SALT
+	jr ApplyMobSalt
+
+LoadMobPositionSalt:
+	push af
+	ld de, DINING_MOB_POSITION_SALT
+
+ApplyMobSalt:
+	ld a, [MobType]
+	and a
+	jr z, .instance
+	ld a, e
+	xor a, 1
+	ld e, a
+	ld a, d
+	xor a, 1
+	ld d, a
+.instance
+	ld a, [MobSelectedCount]
+	xor a, e
+	ld e, a
+	pop af
+	ret
 
 MobSelectionMix:
 	ld [GenerationIndex], a
@@ -3564,14 +3835,17 @@ MobResultModulo:
 
 IF DEF(FURNITURE_PARITY_TEST)
 VerifyMobParity:
-	ld a, [WeinerCount]
 	ld hl, MobParityData
+	ld a, [WeinerCount]
 	cp a, [hl]
 	jr nz, .failed
 	inc hl
+	ld b, a
 	ld de, WeinerRecords
-	ld b, WEINER_MAX_COUNT
-.record
+.weiner
+	ld a, b
+	and a
+	jr z, .burgers
 	ld a, [de]
 	cp a, [hl]
 	jr nz, .failed
@@ -3586,20 +3860,33 @@ VerifyMobParity:
 	cp a, [hl]
 	jr nz, .failed
 	inc hl
-	ld a, WEINER_RECORD_SIZE - 2
-.skip
+	ld a, WEINER_RECORD_SIZE - 6
+.skipWeiner
 	inc de
 	dec a
-	jr nz, .skip
+	jr nz, .skipWeiner
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld a, WEINER_RECORD_SIZE - 7
+.finishWeiner
+	inc de
+	dec a
+	jr nz, .finishWeiner
 	dec b
-	jr nz, .record
+	jr .weiner
+.burgers
 	ld a, [BurgerCount]
 	cp a, [hl]
 	jr nz, .failed
 	inc hl
+	ld b, a
 	ld de, BurgerRecords
-	ld b, BURGER_MAX_COUNT
-.burgerRecord
+.burger
+	ld a, b
+	and a
+	ret z
 	ld a, [de]
 	cp a, [hl]
 	jr nz, .failed
@@ -3620,8 +3907,7 @@ VerifyMobParity:
 	dec a
 	jr nz, .skipBurger
 	dec b
-	jr nz, .burgerRecord
-	ret
+	jr .burger
 .failed
 	jr .failed
 ENDC

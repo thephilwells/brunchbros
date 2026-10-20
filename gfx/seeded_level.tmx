@@ -140,8 +140,9 @@
   <object id="91" name="wallpaper-15-14" type="wallpaper_placement" x="288" y="200" width="8" height="8"><properties><property name="chamber" type="int" value="15"/><property name="room" type="int" value="15"/><property name="rooms" value="15"/><property name="tile" type="int" value="80"/></properties></object>
  </objectgroup>
  <objectgroup id="7" name="Mob Spawns">
-  <object id="92" name="weiner-9" type="mob_spawn" x="120" y="168" width="16" height="16"><properties><property name="mob" value="weiner"/><property name="room" type="int" value="9"/><property name="direction" value="right"/><property name="frequency" type="int" value="8"/></properties></object>
-  <object id="93" name="burger-14" type="mob_spawn" x="184" y="240" width="16" height="8"><properties><property name="mob" value="burger"/><property name="room" type="int" value="14"/><property name="direction" value="right"/><property name="frequency" type="int" value="4"/></properties></object>
-  <object id="94" name="weiner-12" type="mob_spawn" x="24" y="232" width="16" height="16"><properties><property name="mob" value="weiner"/><property name="room" type="int" value="12"/><property name="direction" value="right"/><property name="frequency" type="int" value="8"/></properties></object>
+  <object id="92" name="burger-9" type="mob_spawn" x="120" y="176" width="16" height="8"><properties><property name="mob" value="burger"/><property name="room" type="int" value="9"/><property name="direction" value="right"/><property name="frequency" type="int" value="4"/></properties></object>
+  <object id="93" name="burger-11" type="mob_spawn" x="280" y="168" width="16" height="8"><properties><property name="mob" value="burger"/><property name="room" type="int" value="11"/><property name="direction" value="right"/><property name="frequency" type="int" value="4"/></properties></object>
+  <object id="94" name="weiner-10" type="mob_spawn" x="176" y="136" width="16" height="16"><properties><property name="mob" value="weiner"/><property name="room" type="int" value="10"/><property name="direction" value="left"/><property name="frequency" type="int" value="8"/></properties></object>
+  <object id="95" name="weiner-2" type="mob_spawn" x="184" y="8" width="16" height="16"><properties><property name="mob" value="weiner"/><property name="room" type="int" value="2"/><property name="direction" value="left"/><property name="frequency" type="int" value="8"/></properties></object>
  </objectgroup>
 </map>

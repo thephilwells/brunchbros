@@ -76,6 +76,7 @@ done
 rgbasm -o build/main.o src/main.asm
 rgblink -o build/brunchbros.gb -m build/main.map -n build/main.sym build/main.o
 rgbfix -v -p 0xFF build/brunchbros.gb
+node tools/verify-runtime-mob-selector.mjs
 ```
 
 Produces `build/brunchbros.gb`. Open it in SameBoy to run. The default VS
