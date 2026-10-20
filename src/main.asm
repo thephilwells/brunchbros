@@ -62,9 +62,11 @@ DEF BURGER_TERMINAL_VELOCITY EQU 8
 DEF PANCAKE_FIRST_TILE EQU 196
 DEF PANCAKE_FRAME_DURATION EQU 8
 DEF PANCAKE_STATE_ACTIVE EQU 1
+DEF PANCAKE_STATE_BURST EQU 2
 DEF PANCAKE_OSCILLATION_SPAN EQU 24
 DEF PANCAKE_TARGET_RADIUS EQU PANCAKE_OSCILLATION_SPAN / 2
 DEF PANCAKE_WALL_RETREAT_STEPS EQU PANCAKE_OSCILLATION_SPAN
+DEF PANCAKE_HIT_KNOCKBACK_DISTANCE EQU 8
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -166,6 +168,12 @@ PancakeMoveTimer: db
 PancakeAnimTimer: db
 PancakeTileBase: db
 PancakeRetreatTimer: db
+PancakeHealth: db
+PancakeHitThisSwing: db
+PancakeHitFlashTimer: db
+PancakeBurstTimer: db
+PancakeKnockbackRemaining: db
+PancakeKnockbackDirection: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -1000,6 +1008,7 @@ MainLoop:
 	push de
 	call ResetWeinerHitLatches
 	call ResetBurgerHitLatches
+	call ResetPancakeHitLatch
 	pop de
 	pop bc
 .attackInputDone
@@ -1439,8 +1448,10 @@ MainLoop:
 .attackPoseDone
 	call TryPanHitWeiners
 	call TryPanHitBurgers
+	call TryPanHitPancake
 	call TryWeinerContacts
 	call TryBurgerContacts
+	call TryPancakeContact
 
 	jp MainLoop
 
@@ -3941,7 +3952,7 @@ HideBurgerSprite:
 SECTION "PANCAKE Runtime", ROMX
 ClearPancake:
 	ld hl, PancakeY
-	ld b, 9
+	ld b, 15
 	xor a
 .clear
 	ld [hl+], a
@@ -3963,13 +3974,27 @@ InitializePlaytestPancake:
 	ld [PancakeState], a
 	ld a, PANCAKE_FIRST_TILE
 	ld [PancakeTileBase], a
+	ld a, 2
+	ld [PancakeHealth], a
 	ret
 ENDC
 
 AdvancePancake:
 	ld a, [PancakeState]
-	cp a, PANCAKE_STATE_ACTIVE
-	ret nz
+	and a
+	ret z
+	ld hl, PancakeHitFlashTimer
+	ld a, [hl]
+	and a
+	jr z, .state
+	dec [hl]
+.state
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_BURST
+	jp z, AdvancePancakeBurst
+	ld a, [PancakeKnockbackRemaining]
+	and a
+	jp nz, ApplyPancakeKnockback
 	ld hl, PancakeAnimTimer
 	inc [hl]
 	ld a, [hl]
@@ -4021,6 +4046,7 @@ AdvancePancake:
 	ld a, PANCAKE_WALL_RETREAT_STEPS
 	ld [PancakeRetreatTimer], a
 	ret
+
 .left
 	call PancakeWallLeft
 	jr z, .reverseRight
@@ -4039,6 +4065,24 @@ AdvancePancake:
 	ld [PancakeDirection], a
 	ld a, PANCAKE_WALL_RETREAT_STEPS
 	ld [PancakeRetreatTimer], a
+	ret
+
+AdvancePancakeBurst:
+	ld hl, PancakeBurstTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	jr nc, .finished
+	and a, ENEMY_BURST_FRAME_DURATION - 1
+	ret nz
+	ld hl, PancakeTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+.finished
+	xor a
+	ld [PancakeState], a
 	ret
 
 AimPancakeAtPlayer:
@@ -4201,13 +4245,330 @@ PancakeWallLeft:
 	ld d, a
 	jp IsWall
 
+ResetPancakeHitLatch:
+	xor a
+	ld [PancakeHitThisSwing], a
+	ret
+
+TryPanHitPancake:
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_ACTIVE
+	ret nz
+	ld a, [PancakeHitThisSwing]
+	and a
+	ret nz
+	ld a, [AttackTimer]
+	and a
+	ret z
+	ld a, [AttackPanTileBase]
+	and a
+	ret z
+	call CheckPancakeAttackX
+	ret nc
+	call CheckPancakeAttackY
+	ret nc
+	ld a, 1
+	ld [PancakeHitThisSwing], a
+	ld hl, PancakeHealth
+	dec [hl]
+	jr z, StartPancakeBurst
+	ld a, 12
+	ld [PancakeHitFlashTimer], a
+	call StartPancakeKnockback
+	ret
+
+StartPancakeBurst:
+	xor a
+	ld [PancakeBurstTimer], a
+	ld [PancakeHitFlashTimer], a
+	ld a, ENEMY_BURST_FIRST_TILE
+	ld [PancakeTileBase], a
+	ld a, PANCAKE_STATE_BURST
+	ld [PancakeState], a
+	ret
+
+StartPancakeKnockback:
+	ld a, PANCAKE_HIT_KNOCKBACK_DISTANCE
+	ld [PancakeKnockbackRemaining], a
+	ld a, [PancakeX]
+	add a, 8
+	ld l, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .left
+	ld a, 1
+	jr .store
+.left
+	ld a, -1
+.store
+	ld [PancakeKnockbackDirection], a
+	ld [PancakeDirection], a
+	ret
+
+ApplyPancakeKnockback:
+	ld a, [PancakeKnockbackDirection]
+	bit 7, a
+	jr nz, .left
+	call PancakeWallRight
+	jr z, .blocked
+	ld hl, PancakeX
+	inc [hl]
+	jr nz, .moved
+	inc hl
+	inc [hl]
+	jr .moved
+.left
+	call PancakeWallLeft
+	jr z, .blocked
+	ld hl, PancakeX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+.moved
+	ld hl, PancakeKnockbackRemaining
+	dec [hl]
+	ret
+.blocked
+	xor a
+	ld [PancakeKnockbackRemaining], a
+	ret
+
+CheckPancakeAttackX:
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jp z, CheckPancakeCloseX
+	ld a, [FacingFlip]
+	and a
+	jr nz, .left
+	ld a, [PancakeX]
+	add a, 8
+	ld l, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	jr .compare
+.left
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [PancakeX]
+	add a, 8
+	ld e, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld d, a
+.compare
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .miss
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 21
+	ret
+.miss
+	and a
+	ret
+
+CheckPancakeCloseX:
+	ld a, [PancakeX]
+	add a, 8
+	ld l, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .compare
+	ld a, l
+	cpl
+	inc a
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.compare
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.miss
+	and a
+	ret
+
+CheckPancakeAttackY:
+	ld a, [PlayerY]
+	ld b, a
+	ld c, a
+	dec c
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .checkStrike
+	ld a, b
+	sub a, 24
+	ld b, a
+	ld a, c
+	sub a, 16
+	ld c, a
+	jr .boundsReady
+.checkStrike
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .recovery
+	ld a, b
+	sub a, 16
+	ld b, a
+	jr .boundsReady
+.recovery
+	ld a, b
+	sub a, 8
+	ld b, a
+.boundsReady
+	ld a, [PancakeY]
+	add a, 7
+	cp a, b
+	jr c, .miss
+	ld a, [PancakeY]
+	ld d, a
+	ld a, c
+	cp a, d
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
+TryPancakeContact:
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_ACTIVE
+	ret nz
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	ret nz
+	call CheckPancakeCloseX
+	ret nc
+	ld a, [PlayerY]
+	dec a
+	ld b, a
+	ld a, [PancakeY]
+	ld c, a
+	ld a, b
+	cp a, c
+	jr c, .miss
+	ld a, [PancakeY]
+	add a, 7
+	ld c, a
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, c
+	cp a, b
+	jr c, .miss
+	ld a, [CurrentHealth]
+	and a
+	ret z
+	dec a
+	ld [CurrentHealth], a
+	and a
+	jp z, StartPlayerDeath
+	ld a, 60
+	ld [PlayerInvulnerabilityTimer], a
+	ld a, 4
+	ld [PlayerKnockbackRemaining], a
+	ld a, [PlayerX]
+	add a, 6
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PancakeX]
+	add a, 8
+	ld e, a
+	ld a, [PancakeX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, h
+	or a, l
+	jr z, .knockLeft
+	bit 7, h
+	jr nz, .knockLeft
+	ld a, 1
+	jr .storeKnockback
+.knockLeft
+	ld a, -1
+.storeKnockback
+	ld [PlayerKnockbackDirection], a
+	xor a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	ret
+.miss
+	ret
+
 UpdatePancakeSprite:
 	ld a, [BurgerOAMPointer]
 	ld l, a
 	ld a, [BurgerOAMPointer + 1]
 	ld h, a
 	ld a, [PancakeState]
-	cp a, PANCAKE_STATE_ACTIVE
+	and a
+	jp z, HidePancakeSprite
+	ld a, [PancakeHitFlashTimer]
+	bit 1, a
 	jp nz, HidePancakeSprite
 	ld a, [PancakeX + 1]
 	ld d, a
@@ -4257,6 +4618,9 @@ UpdatePancakeSprite:
 	cp a, e
 	jp nc, HidePancakeSprite
 .visible
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_BURST
+	jp z, UpdatePancakeBurstSprite
 	ld a, [CameraY]
 	ld b, a
 	ld a, [CameraX]
@@ -4285,6 +4649,65 @@ UpdatePancakeSprite:
 	inc a
 	ld [hl+], a
 	xor a
+	ld [hl+], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	ret
+
+UpdatePancakeBurstSprite:
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [PancakeY]
+	add a, 12
+	sub a, b
+	ld d, a
+	ld a, [PancakeX]
+	add a, 8
+	sub a, c
+	ld e, a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, [PancakeTileBase]
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, [PancakeTileBase]
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	add a, 8
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, [PancakeTileBase]
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	add a, 8
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, [PancakeTileBase]
+	add a, 3
+	ld [hl+], a
+	xor a
 	ld [hl], a
 	ret
 
@@ -4292,6 +4715,10 @@ HidePancakeSprite:
 	xor a
 	ld [hl], a
 	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
 	add hl, de
 	ld [hl], a
 	ret
