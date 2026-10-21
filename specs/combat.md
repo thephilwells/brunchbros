@@ -70,8 +70,13 @@ passes upward through one-way platforms, and lands on solid or one-way support.
 Only obstacles lower than its standing body trigger a jump. A full-height wall
 cancels its directional commitment and horizontal velocity so it can resume
 pursuit instead of repeating failed jumps.
-Its art sits one pixel below its collision feet line. Combat and production
-placement are not connected yet.
+Its art sits one pixel below its collision feet line. Its contact-damage hitbox
+is the two center pixels of its body, allowing Chef to clear its visible edges
+while jumping over it. Contact removes one half-heart. Each nonlethal pan hit
+flickers it and knocks it eight pixels away
+from Chef, followed by a 20-frame pursuit stun that still permits falling and
+landing; the third hit starts the shared cloudburst. Production placement is not
+connected yet.
 
 Production levels guarantee two instances of every biome-eligible mob. The
 current dining-room roster produces two WEINERs, two BURGERs, and two

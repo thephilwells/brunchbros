@@ -79,8 +79,10 @@ DEF FRIED_EGG_LANDING_TILE EQU FRIED_EGG_FIRST_TILE + 12
 DEF FRIED_EGG_STATE_GROUNDED EQU 1
 DEF FRIED_EGG_STATE_AIRBORNE EQU 2
 DEF FRIED_EGG_STATE_LANDING EQU 3
+DEF FRIED_EGG_STATE_BURST EQU 4
 DEF FRIED_EGG_MAX_COUNT EQU 2
-DEF FRIED_EGG_RECORD_SIZE EQU 13
+DEF FRIED_EGG_RECORD_SIZE EQU 19
+DEF FRIED_EGG_RECORD_HIT_LATCH EQU 14
 DEF FRIED_EGG_FRAME_DURATION EQU 8
 DEF FRIED_EGG_LANDING_DURATION EQU 8
 DEF FRIED_EGG_LAUNCH_VELOCITY EQU -5
@@ -89,6 +91,8 @@ DEF FRIED_EGG_LEVEL_TOLERANCE EQU 28
 DEF FRIED_EGG_MAX_HORIZONTAL_VELOCITY EQU 16
 DEF FRIED_EGG_HORIZONTAL_ACCELERATION EQU 4
 DEF FRIED_EGG_TURN_COMMITMENT EQU 20
+DEF FRIED_EGG_HIT_KNOCKBACK_DISTANCE EQU 8
+DEF FRIED_EGG_HIT_STUN_DURATION EQU 20
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -217,6 +221,12 @@ FriedEggVelocityX: db
 FriedEggFractionX: db
 FriedEggTargetDirection: db
 FriedEggTurnCommitment: db
+FriedEggHealth: db
+FriedEggHitThisSwing: db
+FriedEggHitFlashTimer: db
+FriedEggKnockbackRemaining: db
+FriedEggKnockbackDirection: db
+FriedEggStunTimer: db
 FriedEggRecords: ds FRIED_EGG_MAX_COUNT * FRIED_EGG_RECORD_SIZE
 FriedEggCount: db
 FriedEggLoopIndex: db
@@ -1113,6 +1123,7 @@ MainLoop:
 	call ResetWeinerHitLatches
 	call ResetBurgerHitLatches
 	call ResetPancakeHitLatch
+	call ResetFriedEggHitLatches
 	pop de
 	pop bc
 .attackInputDone
@@ -1553,9 +1564,11 @@ MainLoop:
 	call TryPanHitWeiners
 	call TryPanHitBurgers
 	call TryPanHitPancakes
+	call TryPanHitFriedEggs
 	call TryWeinerContacts
 	call TryBurgerContacts
 	call TryPancakeContacts
+	call TryFriedEggContacts
 
 	jp MainLoop
 
@@ -5172,6 +5185,11 @@ InitializePlaytestFriedEgg:
 	ld [FriedEggAnimTimer], a
 	ld [FriedEggFractionX], a
 	ld [FriedEggTurnCommitment], a
+	ld [FriedEggHitThisSwing], a
+	ld [FriedEggHitFlashTimer], a
+	ld [FriedEggKnockbackRemaining], a
+	ld [FriedEggKnockbackDirection], a
+	ld [FriedEggStunTimer], a
 	ld a, -1
 	ld [FriedEggDirection], a
 	ld [FriedEggTargetDirection], a
@@ -5181,12 +5199,26 @@ InitializePlaytestFriedEgg:
 	ld [FriedEggState], a
 	ld a, FRIED_EGG_IDLE_TILE
 	ld [FriedEggTileBase], a
+	ld a, 3
+	ld [FriedEggHealth], a
 	xor a
 	call StoreFriedEggRecord
 	ld a, 1
 	ld [FriedEggCount], a
 	ret
 ENDC
+
+ResetFriedEggHitLatches:
+	ld hl, FriedEggRecords + FRIED_EGG_RECORD_HIT_LATCH
+	ld de, FRIED_EGG_RECORD_SIZE
+	ld b, FRIED_EGG_MAX_COUNT
+	xor a
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
+	ret
 
 AdvanceFriedEggs:
 	xor a
@@ -5213,6 +5245,22 @@ AdvanceFriedEgg:
 	ld a, [FriedEggState]
 	and a
 	ret z
+	ld hl, FriedEggHitFlashTimer
+	ld a, [hl]
+	and a
+	jr z, .state
+	dec [hl]
+.state
+	ld a, [FriedEggState]
+	cp a, FRIED_EGG_STATE_BURST
+	jp z, AdvanceFriedEggBurst
+	ld a, [FriedEggKnockbackRemaining]
+	and a
+	jp nz, ApplyFriedEggKnockback
+	ld a, [FriedEggStunTimer]
+	and a
+	jp nz, AdvanceStunnedFriedEgg
+	ld a, [FriedEggState]
 	cp a, FRIED_EGG_STATE_AIRBORNE
 	jp z, AdvanceFriedEggAirborne
 	cp a, FRIED_EGG_STATE_LANDING
@@ -5227,6 +5275,18 @@ AdvanceFriedEgg:
 .pursue
 	call ChooseFriedEggDirection
 	jp AdvanceFriedEggHorizontal
+
+AdvanceStunnedFriedEgg:
+	ld hl, FriedEggStunTimer
+	dec [hl]
+	ld a, [FriedEggState]
+	cp a, FRIED_EGG_STATE_AIRBORNE
+	jp z, AdvanceFriedEggAirborne
+	cp a, FRIED_EGG_STATE_LANDING
+	jp z, AdvanceFriedEggLanding
+	call FriedEggSupportBelow
+	jp nz, StartFriedEggFall
+	ret
 
 AnimateGroundedFriedEgg:
 	ld hl, FriedEggAnimTimer
@@ -5243,6 +5303,24 @@ AnimateGroundedFriedEgg:
 	ld a, FRIED_EGG_STEP_TILE
 .store
 	ld [FriedEggTileBase], a
+	ret
+
+AdvanceFriedEggBurst:
+	ld hl, FriedEggTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	jr nc, .finished
+	and a, ENEMY_BURST_FRAME_DURATION - 1
+	ret nz
+	ld hl, FriedEggTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+.finished
+	xor a
+	ld [FriedEggState], a
 	ret
 
 FriedEggPlayerSameLevel:
@@ -5647,6 +5725,422 @@ FriedEggSupportBelow:
 	ld d, a
 	jp IsSupport
 
+TryPanHitFriedEggs:
+	xor a
+	ld [FriedEggLoopIndex], a
+.loop
+	ld a, [FriedEggLoopIndex]
+	ld b, a
+	ld a, [FriedEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadFriedEggRecord
+	call TryPanHitFriedEgg
+	pop af
+	push af
+	call StoreFriedEggRecord
+	pop af
+	inc a
+	ld [FriedEggLoopIndex], a
+	jr .loop
+
+TryPanHitFriedEgg:
+	ld a, [FriedEggState]
+	and a
+	ret z
+	cp a, FRIED_EGG_STATE_BURST
+	ret z
+	ld a, [FriedEggHitThisSwing]
+	and a
+	ret nz
+	ld a, [AttackTimer]
+	and a
+	ret z
+	ld a, [AttackPanTileBase]
+	and a
+	ret z
+	call CheckFriedEggAttackX
+	ret nc
+	call CheckFriedEggAttackY
+	ret nc
+	ld a, 1
+	ld [FriedEggHitThisSwing], a
+	ld hl, FriedEggHealth
+	dec [hl]
+	jp z, StartFriedEggBurst
+	ld a, 12
+	ld [FriedEggHitFlashTimer], a
+	call StartFriedEggKnockback
+	ret
+
+StartFriedEggKnockback:
+	ld a, FRIED_EGG_HIT_KNOCKBACK_DISTANCE
+	ld [FriedEggKnockbackRemaining], a
+	ld a, [FriedEggX]
+	add a, 8
+	ld l, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .left
+	ld a, 1
+	jr .store
+.left
+	ld a, -1
+.store
+	ld [FriedEggKnockbackDirection], a
+	ld [FriedEggDirection], a
+	bit 7, a
+	ld a, FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+	jr z, .storeVelocity
+	ld a, -FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+.storeVelocity
+	ld [FriedEggVelocityX], a
+	xor a
+	ld [FriedEggFractionX], a
+	ld [FriedEggTurnCommitment], a
+	ret
+
+ApplyFriedEggKnockback:
+	ld a, [FriedEggKnockbackDirection]
+	bit 7, a
+	jr nz, .left
+	call FriedEggWallRight
+	jr z, .blocked
+	ld hl, FriedEggX
+	inc [hl]
+	jr nz, .moved
+	inc hl
+	inc [hl]
+	jr .moved
+.left
+	call FriedEggWallLeft
+	jr z, .blocked
+	ld hl, FriedEggX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+.moved
+	ld hl, FriedEggKnockbackRemaining
+	dec [hl]
+	ret nz
+	jr FinishFriedEggKnockback
+.blocked
+	xor a
+	ld [FriedEggKnockbackRemaining], a
+
+FinishFriedEggKnockback:
+	xor a
+	ld [FriedEggVelocityX], a
+	ld [FriedEggFractionX], a
+	ld [FriedEggTurnCommitment], a
+	ld a, FRIED_EGG_HIT_STUN_DURATION
+	ld [FriedEggStunTimer], a
+	ret
+
+StartFriedEggBurst:
+	xor a
+	ld [FriedEggTimer], a
+	ld [FriedEggHitFlashTimer], a
+	ld a, ENEMY_BURST_FIRST_TILE
+	ld [FriedEggTileBase], a
+	ld a, FRIED_EGG_STATE_BURST
+	ld [FriedEggState], a
+	ret
+
+CheckFriedEggAttackX:
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jp z, CheckFriedEggCloseX
+	ld a, [FacingFlip]
+	and a
+	jr nz, .left
+	ld a, [FriedEggX]
+	add a, 8
+	ld l, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	jr .compare
+.left
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [FriedEggX]
+	add a, 8
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld d, a
+.compare
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .miss
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 21
+	ret
+.miss
+	and a
+	ret
+
+CheckFriedEggCloseX:
+	ld a, [FriedEggX]
+	add a, 8
+	ld l, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .compare
+	ld a, l
+	cpl
+	inc a
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.compare
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.miss
+	and a
+	ret
+
+CheckFriedEggAttackY:
+	ld a, [PlayerY]
+	ld b, a
+	ld c, a
+	dec c
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .checkStrike
+	ld a, b
+	sub a, 24
+	ld b, a
+	ld a, c
+	sub a, 16
+	ld c, a
+	jr .boundsReady
+.checkStrike
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .recovery
+	ld a, b
+	sub a, 16
+	ld b, a
+	jr .boundsReady
+.recovery
+	ld a, b
+	sub a, 8
+	ld b, a
+.boundsReady
+	ld a, [FriedEggY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [FriedEggY]
+	sub a, 16
+	ld d, a
+	ld a, c
+	cp a, d
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
+TryFriedEggContacts:
+	xor a
+	ld [FriedEggLoopIndex], a
+.loop
+	ld a, [FriedEggLoopIndex]
+	ld b, a
+	ld a, [FriedEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadFriedEggRecord
+	call TryFriedEggContact
+	pop af
+	push af
+	call StoreFriedEggRecord
+	pop af
+	inc a
+	ld [FriedEggLoopIndex], a
+	jr .loop
+
+TryFriedEggContact:
+	ld a, [FriedEggState]
+	and a
+	ret z
+	cp a, FRIED_EGG_STATE_BURST
+	ret z
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	ret nz
+	call CheckFriedEggContactX
+	ret nc
+	ld a, [PlayerY]
+	dec a
+	ld b, a
+	ld a, [FriedEggY]
+	sub a, 16
+	ld c, a
+	ld a, b
+	cp a, c
+	jr c, .miss
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, [FriedEggY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [CurrentHealth]
+	and a
+	ret z
+	dec a
+	ld [CurrentHealth], a
+	and a
+	jp z, StartPlayerDeath
+	ld a, 60
+	ld [PlayerInvulnerabilityTimer], a
+	ld a, 4
+	ld [PlayerKnockbackRemaining], a
+	ld a, [PlayerX]
+	add a, 6
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [FriedEggX]
+	add a, 8
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, h
+	or a, l
+	jr z, .knockLeft
+	bit 7, h
+	jr nz, .knockLeft
+	ld a, 1
+	jr .storeKnockback
+.knockLeft
+	ld a, -1
+.storeKnockback
+	ld [PlayerKnockbackDirection], a
+	xor a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	ret
+.miss
+	ret
+
+CheckFriedEggContactX:
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [FriedEggX]
+	add a, 7
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	jr nz, .miss
+	ld a, [FriedEggX]
+	add a, 8
+	ld l, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT
+	ld e, a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	jr nz, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
 UpdateFriedEggSprites:
 	ld a, [PancakeOAMPointer]
 	ld [FriedEggOAMPointer], a
@@ -5709,6 +6203,12 @@ UpdateFriedEggSprite:
 	ld a, [FriedEggState]
 	and a
 	jp z, HideFriedEggSprite
+	ld a, [FriedEggHitFlashTimer]
+	bit 1, a
+	jp nz, HideFriedEggSprite
+	ld a, [FriedEggState]
+	cp a, FRIED_EGG_STATE_BURST
+	jp z, UpdateFriedEggBurstSprite
 	ld a, [CameraY]
 	ld b, a
 	ld a, [CameraX]
@@ -5792,6 +6292,60 @@ UpdateFriedEggSprite:
 .bottomRightReady
 	ld [hl+], a
 	ld a, d
+	ld [hl], a
+	ret
+
+UpdateFriedEggBurstSprite:
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [FriedEggY]
+	add a, 4
+	sub a, b
+	ld d, a
+	ld a, [FriedEggX]
+	add a, 8
+	sub a, c
+	ld e, a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	add a, 8
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, d
+	add a, 8
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	add a, 3
+	ld [hl+], a
+	xor a
 	ld [hl], a
 	ret
 
