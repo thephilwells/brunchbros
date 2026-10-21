@@ -169,16 +169,19 @@ tilemap. Fixed-seed parity covers seeds 0, 1, 77, `$1234`, and `$FFFF` across al
 ## Initial encounter population
 
 `data/dining-room-mobs.json` guarantees two instances of every mob eligible for
-the biome. The current dining-room roster therefore produces two WEINERs and
-two BURGERs. Additional weighted slots are independently tunable and currently
-disabled; their future type selection will use the accepted frequency weights
-of eight and four without weakening the per-type minimum.
+the biome. The current dining-room roster therefore produces two WEINERs, two
+BURGERs, and two PANCAKEs. Additional weighted slots are independently
+tunable and currently disabled; their future type selection will use the
+accepted frequency weights of eight, four, and three without weakening the
+per-type minimum.
 
 WEINER candidates reserve a 2×2 empty structural envelope against a full-solid
 floor or ceiling and record the matching crawl direction. BURGER
 candidates reserve a 2×1 empty envelope above two supporting cells; both solid
-and one-way support are valid. Both types require a full empty tile beside each
-side of their body at spawn; WEINERs reach walls through ordinary crawling.
+and one-way support are valid. PANCAKE candidates reserve a 2×1 empty envelope
+five tiles above a room row containing structural floor. All types require a
+collision-free tile beside each side of their body at spawn; WEINERs reach
+walls through ordinary crawling.
 They cannot overlap furniture, standard-port approaches, wide seams, endpoint
 envelopes, or ledge-catch reservations. Spawn and exit rooms and the selected
 ledge-catch room are excluded entirely. The blanket critical-room flag remains
@@ -186,10 +189,11 @@ a furniture restriction; it does not by itself reject an encounter candidate.
 This permits ordinary required-route rooms to contain enemies while preserving
 their exact transition clearances.
 
-BURGERs are placed before WEINERs because their legal support is scarcer.
+PANCAKEs are placed before BURGERs and WEINERs because their altitude envelope
+is the most constrained.
 Seed-local mixes independently select eligible rooms and anchors without
 advancing the structural PRNG. Multiple mobs may occupy one room when their
 footprints do not overlap. JSON records candidate counts, the target, and
 placements; TMX adds a visible `Mob Spawns` layer; gallery thumbnails
-distinguish WEINER and BURGER. Exhaustive host validation guarantees both
-per-type minimums across all 65,536 seeds.
+distinguish WEINER, BURGER, and PANCAKE. Exhaustive host validation guarantees
+all three per-type minimums across all 65,536 seeds.

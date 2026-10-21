@@ -396,9 +396,20 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
         for (let bodyX = x; bodyX < x + mob.width; bodyX++) {
           if (!bodyOpen(bodyX, bodyY)) valid = false;
         }
-        if (level.structuralTiles[bodyY * LEVEL_WIDTH + x - 1] !== 17 || level.structuralTiles[bodyY * LEVEL_WIDTH + x + mob.width] !== 17) valid = false;
+        const leftIndex = bodyY * LEVEL_WIDTH + x - 1;
+        const rightIndex = bodyY * LEVEL_WIDTH + x + mob.width;
+        if (level.structuralTiles[leftIndex] !== 17 || ONE_WAY_TILES.has(level.tiles[leftIndex]) || level.structuralTiles[rightIndex] !== 17 || ONE_WAY_TILES.has(level.tiles[rightIndex])) valid = false;
       }
       if (!valid) continue;
+      if (mob.id === 'pancake') {
+        const floorY = y + 5;
+        const hasRoomFloor = floorY < roomY + ROOM_HEIGHT && Array.from({ length: ROOM_WIDTH - 2 }, (_, offset) => roomX + 1 + offset).some(floorX => {
+          const tile = level.structuralTiles[floorY * LEVEL_WIDTH + floorX];
+          return tile >= 1 && tile <= 16;
+        });
+        if (hasRoomFloor) candidates.push({ room, x, y, direction: 'right' });
+        continue;
+      }
       if (mob.id === 'burger') {
         if ([0, 1].every(offset => burgerSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
         continue;
@@ -413,7 +424,7 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
 function mobSelections(level) {
   const occupiedFurniture = furnitureCells(level);
   const occupiedMobs = new Set();
-  const priority = ['burger', 'weiner'].map(id => MOB_BY_ID.get(id));
+  const priority = ['pancake', 'burger', 'weiner'].map(id => MOB_BY_ID.get(id));
   const candidatesByRoom = Array.from({ length: 16 }, (_, room) => priority.reduce((total, mob) => total + mobCandidates(level, room, mob, occupiedFurniture).length, 0));
   const placements = [];
   for (const [typeIndex, mob] of priority.entries()) {

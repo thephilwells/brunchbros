@@ -22,6 +22,14 @@
       "width": 2,
       "height": 1,
       "direction": "right"
+    },
+    {
+      "id": "pancake",
+      "minimum": 2,
+      "frequency": 3,
+      "width": 2,
+      "height": 1,
+      "direction": "right"
     }
   ]
 }

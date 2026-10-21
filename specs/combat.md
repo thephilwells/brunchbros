@@ -7,7 +7,9 @@ ceiling, concave-corner, and convex-corner locomotion is implemented in the
 focused fixture. A generic three-frame enemy cloudburst is implemented.
 BURGER's accepted idle, leap, wall-bounce, platform-landing, two-hit, and
 contact-damage rules run in both its focused fixture and seeded production
-levels.
+levels. PANCAKE's accepted eased 24-pixel horizontal oscillation, two-hit
+damage response, eight-pixel hit knockback, contact damage, and cloudburst run
+in both its focused fixture and seeded production levels.
 
 ## Calibration fixture
 
@@ -54,11 +56,13 @@ resulting height at solid corners. The first pan hit
 briefly flickers the BURGER, and the second starts the shared cloudburst.
 
 Production levels guarantee two instances of every biome-eligible mob. The
-current dining-room roster produces two WEINERs and two BURGERs. WEINERs may
-begin on full-solid floors or ceilings; BURGERs begin on solid or one-way
-support. Both require one empty tile of lateral clearance on each side.
-Frequency weights eight and four remain available for later
-additional slots. The current four-enemy total lets every actor reserve four
+current dining-room roster produces two WEINERs, two BURGERs, and two
+PANCAKEs. WEINERs may begin on full-solid floors or ceilings; BURGERs begin on
+solid or one-way
+support. PANCAKEs begin five tiles above a structural floor row and oscillate
+across a three-tile span. All three require one collision-free tile beside
+each side. Frequency weights eight, four, and three remain available for later
+additional slots. The current six-enemy total lets every actor reserve four
 shadow-OAM entries, including its cloudburst.
 
 ## Accepted initial rules

@@ -3081,9 +3081,13 @@ PlaceDiningRoomMobs:
 	jr nz, .clearOccupied
 	xor a
 	ld [MobType], a
-	ld a, DINING_BURGER_MINIMUM
+	ld a, DINING_PANCAKE_MINIMUM
 	call PlaceMobType
 	ld a, 1
+	ld [MobType], a
+	ld a, DINING_BURGER_MINIMUM
+	call PlaceMobType
+	ld a, 2
 	ld [MobType], a
 	ld a, DINING_WEINER_MINIMUM
 	jp PlaceMobType
@@ -3148,15 +3152,20 @@ PlaceMobType:
 	call MarkMobCandidateOccupied
 	ld a, [MobType]
 	and a
+	jr z, .createPancake
+	cp a, 1
 	jr z, .createBurger
 	call CreateSelectedWeiner
+	jr .created
+.createPancake
+	call CreateSelectedPancake
 	jr .created
 .createBurger
 	call CreateSelectedBurger
 .created
 	ld hl, MobSelectedCount
 	inc [hl]
-	jr .select
+	jp .select
 
 FindBestMobRoom:
 	xor a
@@ -3255,11 +3264,11 @@ CountMobCandidates:
 	ld hl, MobLocalY
 	inc [hl]
 	ld a, [hl]
-	ld b, 6
+	ld b, 7
 	ld a, [MobType]
-	and a
+	cp a, 2
 	jr nz, .rowLimitReady
-	inc b
+	dec b
 .rowLimitReady
 	ld a, [MobLocalY]
 	cp a, b
@@ -3293,11 +3302,11 @@ FindMobCandidate:
 	ld hl, MobLocalY
 	inc [hl]
 	ld a, [hl]
-	ld b, 6
+	ld b, 7
 	ld a, [MobType]
-	and a
+	cp a, 2
 	jr nz, .rowLimitReady
-	inc b
+	dec b
 .rowLimitReady
 	ld a, [MobLocalY]
 	cp a, b
@@ -3314,10 +3323,10 @@ IsMobCandidate:
 	jr nc, .invalid
 	call GetMobCandidatePointer
 	ld a, [MobType]
-	and a
 	ld b, 1
-	jr z, .bodyRow
-	inc b
+	cp a, 2
+	jr nz, .bodyRow
+	ld b, 2
 .bodyRow
 	ld c, 2
 .bodyCell
@@ -3351,8 +3360,10 @@ IsMobCandidate:
 	call AreMobCandidateSidesClear
 	jr nz, .invalid
 	ld a, [MobType]
+	cp a, 2
+	jp z, ResolveWeinerCandidateDirection
 	and a
-	jr nz, ResolveWeinerCandidateDirection
+	jp z, ResolvePancakeCandidate
 	ld a, [MobLocalY]
 	inc a
 	call IsMobRowReserved
@@ -3383,6 +3394,43 @@ IsMobCandidate:
 	pop bc
 .invalid
 	and a
+	ret
+
+ResolvePancakeCandidate:
+	ld a, [MobLocalY]
+	add a, 5
+	cp a, 8
+	jr nc, .invalid
+	ld b, a
+	ld a, [GenerationRoom]
+	call GetRoomDestination
+	ld de, 40
+.row
+	ld a, b
+	and a
+	jr z, .rowReady
+	add hl, de
+	dec b
+	jr .row
+.rowReady
+	inc hl
+	ld b, 8
+.scan
+	ld a, [hl+]
+	and a
+	jr z, .next
+	cp a, 17
+	jr c, .valid
+.next
+	dec b
+	jr nz, .scan
+.invalid
+	and a
+	ret
+.valid
+	xor a
+	ld [MobCandidateDirection], a
+	scf
 	ret
 
 ResolveWeinerCandidateDirection:
@@ -3440,10 +3488,10 @@ IsTwoSolidMobSupport:
 AreMobCandidateSidesClear:
 	call GetMobCandidatePointer
 	ld a, [MobType]
-	and a
 	ld b, 1
-	jr z, .row
-	inc b
+	cp a, 2
+	jr nz, .row
+	ld b, 2
 .row
 	dec hl
 	call IsEmptyMobTerrainCell
@@ -3557,10 +3605,10 @@ IsMobCellOpen:
 MarkMobCandidateOccupied:
 	call GetMobCandidatePointer
 	ld a, [MobType]
-	and a
 	ld b, 1
-	jr z, .row
-	inc b
+	cp a, 2
+	jr nz, .row
+	ld b, 2
 .row
 	ld c, 2
 .cell
@@ -3612,8 +3660,11 @@ IsMobFootprintReserved:
 	call IsMobRowReserved
 	ret c
 	ld a, [MobType]
+	cp a, 2
+	jr z, .secondRow
 	and a
-	ret z
+	ret
+.secondRow
 	ld a, [MobLocalY]
 	inc a
 	jp IsMobRowReserved
@@ -3745,6 +3796,31 @@ CreateSelectedBurger:
 	ld c, a
 	jp CreateBurgerAtTile
 
+CreateSelectedPancake:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	add a, c
+	ld c, a
+	jp CreatePancakeAtTile
+
 LoadMobSelectionSalt:
 	push af
 	ld de, DINING_MOB_SELECTION_SALT
@@ -3756,13 +3832,12 @@ LoadMobPositionSalt:
 
 ApplyMobSalt:
 	ld a, [MobType]
-	and a
-	jr z, .instance
+	ld b, a
 	ld a, e
-	xor a, 1
+	xor a, b
 	ld e, a
 	ld a, d
-	xor a, 1
+	xor a, b
 	ld d, a
 .instance
 	ld a, [MobSelectedCount]
@@ -3886,7 +3961,7 @@ VerifyMobParity:
 .burger
 	ld a, b
 	and a
-	ret z
+	jr z, .pancakes
 	ld a, [de]
 	cp a, [hl]
 	jr nz, .failed
@@ -3908,6 +3983,38 @@ VerifyMobParity:
 	jr nz, .skipBurger
 	dec b
 	jr .burger
+.pancakes
+	ld a, [PancakeCount]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld b, a
+	ld de, PancakeRecords
+.pancake
+	ld a, b
+	and a
+	ret z
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld a, PANCAKE_RECORD_SIZE - 2
+.skipPancake
+	inc de
+	dec a
+	jr nz, .skipPancake
+	dec b
+	jr .pancake
 .failed
 	jr .failed
 ENDC

@@ -60,6 +60,9 @@ DEF BURGER_LANDING_DURATION EQU 10
 DEF BURGER_LAUNCH_VELOCITY EQU -8
 DEF BURGER_TERMINAL_VELOCITY EQU 8
 DEF PANCAKE_FIRST_TILE EQU 196
+DEF PANCAKE_MAX_COUNT EQU 2
+DEF PANCAKE_RECORD_SIZE EQU 15
+DEF PANCAKE_RECORD_HIT_LATCH EQU 10
 DEF PANCAKE_FRAME_DURATION EQU 8
 DEF PANCAKE_STATE_ACTIVE EQU 1
 DEF PANCAKE_STATE_BURST EQU 2
@@ -174,6 +177,10 @@ PancakeHitFlashTimer: db
 PancakeBurstTimer: db
 PancakeKnockbackRemaining: db
 PancakeKnockbackDirection: db
+PancakeRecords: ds PANCAKE_MAX_COUNT * PANCAKE_RECORD_SIZE
+PancakeCount: db
+PancakeLoopIndex: db
+PancakeOAMPointer: dw
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -404,7 +411,7 @@ LoadCurrentLevel:
 	call DisableLCD
 	call ClearWeinerRecords
 	call ClearBurgerRecords
-	call ClearPancake
+	call ClearPancakeRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -502,7 +509,7 @@ ENDC
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
-	call UpdatePancakeSprite
+	call UpdatePancakeSprites
 	call hOAMDMA
 
 	ld a, %10000011
@@ -804,18 +811,18 @@ PrepareSpriteBuffer:
 	call UpdateDeathSprite
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
-	call UpdatePancakeSprite
+	call UpdatePancakeSprites
 	ret
 .gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
 	call AdvanceWeiners
 	call AdvanceBurgers
-	call AdvancePancake
+	call AdvancePancakes
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
-	call UpdatePancakeSprite
+	call UpdatePancakeSprites
 	ret
 
 UpdateCameraState:
@@ -1448,10 +1455,10 @@ MainLoop:
 .attackPoseDone
 	call TryPanHitWeiners
 	call TryPanHitBurgers
-	call TryPanHitPancake
+	call TryPanHitPancakes
 	call TryWeinerContacts
 	call TryBurgerContacts
-	call TryPancakeContact
+	call TryPancakeContacts
 
 	jp MainLoop
 
@@ -3950,24 +3957,66 @@ HideBurgerSprite:
 	ret
 
 SECTION "PANCAKE Runtime", ROMX
-ClearPancake:
+ClearPancakeRecords:
 	ld hl, PancakeY
 	ld b, 15
+	xor a
+.clearScratch
+	ld [hl+], a
+	dec b
+	jr nz, .clearScratch
+	ld hl, PancakeRecords
+	ld b, PANCAKE_MAX_COUNT * PANCAKE_RECORD_SIZE
+.clearRecords
+	ld [hl+], a
+	dec b
+	jr nz, .clearRecords
+	ld [PancakeCount], a
+	ret
+
+GetPancakeRecordPointer:
+	ld hl, PancakeRecords
+	and a
+	ret z
+	ld de, PANCAKE_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadPancakeRecord:
+	call GetPancakeRecordPointer
+	ld de, PancakeY
+	ld b, PANCAKE_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StorePancakeRecord:
+	call GetPancakeRecordPointer
+	ld de, PancakeY
+	ld b, PANCAKE_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+InitializePancakeScratch:
+	ld hl, PancakeDirection
+	ld b, 12
 	xor a
 .clear
 	ld [hl+], a
 	dec b
 	jr nz, .clear
-	ret
-
-IF DEF(PANCAKE_PLAYTEST)
-InitializePlaytestPancake:
-	ld a, PANCAKE_PLAYTEST_PANCAKE_Y
-	ld [PancakeY], a
-	ld a, LOW(PANCAKE_PLAYTEST_PANCAKE_X)
-	ld [PancakeX], a
-	ld a, HIGH(PANCAKE_PLAYTEST_PANCAKE_X)
-	ld [PancakeX + 1], a
 	ld a, -1
 	ld [PancakeDirection], a
 	ld a, PANCAKE_STATE_ACTIVE
@@ -3977,7 +4026,68 @@ InitializePlaytestPancake:
 	ld a, 2
 	ld [PancakeHealth], a
 	ret
+
+CreatePancakeAtTile:
+	ld a, c
+	add a, a
+	add a, a
+	add a, a
+	ld [PancakeY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [PancakeX], a
+	ld a, h
+	ld [PancakeX + 1], a
+	call InitializePancakeScratch
+	ld a, [PancakeCount]
+	push af
+	call StorePancakeRecord
+	pop af
+	inc a
+	ld [PancakeCount], a
+	ret
+
+IF DEF(PANCAKE_PLAYTEST)
+InitializePlaytestPancake:
+	call ClearPancakeRecords
+	ld a, PANCAKE_PLAYTEST_PANCAKE_Y
+	ld [PancakeY], a
+	ld a, LOW(PANCAKE_PLAYTEST_PANCAKE_X)
+	ld [PancakeX], a
+	ld a, HIGH(PANCAKE_PLAYTEST_PANCAKE_X)
+	ld [PancakeX + 1], a
+	call InitializePancakeScratch
+	xor a
+	call StorePancakeRecord
+	ld a, 1
+	ld [PancakeCount], a
+	ret
 ENDC
+
+AdvancePancakes:
+	xor a
+	ld [PancakeLoopIndex], a
+.loop
+	ld a, [PancakeLoopIndex]
+	ld b, a
+	ld a, [PancakeCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadPancakeRecord
+	call AdvancePancake
+	pop af
+	push af
+	call StorePancakeRecord
+	pop af
+	inc a
+	ld [PancakeLoopIndex], a
+	jr .loop
 
 AdvancePancake:
 	ld a, [PancakeState]
@@ -4246,9 +4356,37 @@ PancakeWallLeft:
 	jp IsWall
 
 ResetPancakeHitLatch:
+	ld hl, PancakeRecords + PANCAKE_RECORD_HIT_LATCH
+	ld de, PANCAKE_RECORD_SIZE
+	ld b, PANCAKE_MAX_COUNT
 	xor a
-	ld [PancakeHitThisSwing], a
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
 	ret
+
+TryPanHitPancakes:
+	xor a
+	ld [PancakeLoopIndex], a
+.loop
+	ld a, [PancakeLoopIndex]
+	ld b, a
+	ld a, [PancakeCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadPancakeRecord
+	call TryPanHitPancake
+	pop af
+	push af
+	call StorePancakeRecord
+	pop af
+	inc a
+	ld [PancakeLoopIndex], a
+	jr .loop
 
 TryPanHitPancake:
 	ld a, [PancakeState]
@@ -4482,6 +4620,27 @@ CheckPancakeAttackY:
 	and a
 	ret
 
+TryPancakeContacts:
+	xor a
+	ld [PancakeLoopIndex], a
+.loop
+	ld a, [PancakeLoopIndex]
+	ld b, a
+	ld a, [PancakeCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadPancakeRecord
+	call TryPancakeContact
+	pop af
+	push af
+	call StorePancakeRecord
+	pop af
+	inc a
+	ld [PancakeLoopIndex], a
+	jr .loop
+
 TryPancakeContact:
 	ld a, [PancakeState]
 	cp a, PANCAKE_STATE_ACTIVE
@@ -4559,10 +4718,64 @@ TryPancakeContact:
 .miss
 	ret
 
-UpdatePancakeSprite:
+UpdatePancakeSprites:
 	ld a, [BurgerOAMPointer]
-	ld l, a
+	ld [PancakeOAMPointer], a
 	ld a, [BurgerOAMPointer + 1]
+	ld [PancakeOAMPointer + 1], a
+	xor a
+	ld [PancakeLoopIndex], a
+.loop
+	ld a, [PancakeLoopIndex]
+	ld b, a
+	ld a, [PancakeCount]
+	cp a, b
+	jr z, HideUnusedPancakeSprites
+	ld a, b
+	push af
+	call LoadPancakeRecord
+	call UpdatePancakeSprite
+	pop af
+	inc a
+	ld [PancakeLoopIndex], a
+	ld a, [PancakeOAMPointer]
+	add a, 16
+	ld [PancakeOAMPointer], a
+	jr nc, .loop
+	ld hl, PancakeOAMPointer + 1
+	inc [hl]
+	jr .loop
+
+HideUnusedPancakeSprites:
+	ld a, [PancakeCount]
+	ld b, a
+	ld a, PANCAKE_MAX_COUNT
+	sub a, b
+	ret z
+	ld b, a
+	ld a, [PancakeOAMPointer]
+	ld l, a
+	ld a, [PancakeOAMPointer + 1]
+	ld h, a
+	xor a
+.block
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .block
+	ret
+
+UpdatePancakeSprite:
+	ld a, [PancakeOAMPointer]
+	ld l, a
+	ld a, [PancakeOAMPointer + 1]
 	ld h, a
 	ld a, [PancakeState]
 	and a
