@@ -19,7 +19,8 @@ maps live in fixed ROM bank 1:
   loads the 128-slot dining-room atlas at `$9000`, all 18 Chef/pan animation
   composites at `$8010`, three HUD heart tiles at `$8490`, the 96-tile WEINER
   surface-crawl set at `$84C0`, the 12-tile cloudburst at `$8B00`, and the
-  eight-tile BURGER set at `$8BC0`. It then draws
+  eight-tile BURGER set at `$8BC0`, the eight-tile PANCAKE set at `$8C40`, and
+  the sixteen-tile FRIED_EGG review set at `$8CC0`. It then draws
   a BG-only title screen and waits for a fresh Start press while counting
   frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
@@ -169,6 +170,10 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `BurgerState` / `BurgerTimer` / `BurgerTileBase` | Idle, wind-up, airborne, landing, or burst phase and its timing/art state |
 | `BurgerHealth` / `BurgerHitThisSwing` / `BurgerHitFlashTimer` | Two-hit health, per-swing repeat-hit latch, and first-hit feedback |
 | `BurgerRecords` / `BurgerCount` | Up to four live BURGER state records and their active count |
+| `PancakeRecords` / `PancakeCount` | Up to two live PANCAKE state records and their active count |
+| `FriedEggY` / `FriedEggX` / `FriedEggVelY` | Active-record FRIED_EGG feet line, left edge, and signed vertical velocity |
+| `FriedEggState` / `FriedEggTimer` / `FriedEggAnimTimer` / `FriedEggTileBase` | Grounded, airborne, or landing phase and its timing/art state |
+| `FriedEggRecords` / `FriedEggCount` | Two-record fixture-ready FRIED_EGG storage; production population is not connected |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |
@@ -185,7 +190,8 @@ The Chef and frying pan use sprite tile indices 1–72 in `$8010–$848F`; HUD
 hearts use sprite indices 73–75 in `$8490–$84BF`; the WEINER surface-crawl set
 uses indices 76–171 in `$84C0–$8ABF`; the death frame uses indices 172–175 in
 `$8AC0–$8AFF`; the cloudburst uses indices 176–187 in `$8B00–$8BBF`; and the
-BURGER uses indices 188–195 in `$8BC0–$8C3F`. Signed background
+BURGER uses indices 188–195 in `$8BC0–$8C3F`, PANCAKE uses indices 196–203 in
+`$8C40–$8CBF`, and FRIED_EGG uses indices 204–219 in `$8CC0–$8DBF`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in

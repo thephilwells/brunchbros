@@ -56,6 +56,23 @@ resulting height at solid corners. The first pan hit briefly flickers the
 BURGER and knocks it eight pixels away from the Chef. The second starts the
 shared cloudburst.
 
+The FRIED_EGG fixture loads one 16×16 egg into a closed floor chamber with two
+one-tile solid obstacles and elevated one-way shelves. Its four four-tile poses
+are idle, step, airborne, and landing. While the Chef remains within one jump
+arc of its floor level, it accelerates toward him up to one pixel per frame.
+This keeps horizontal pursuit active while Chef jumps over it but excludes the
+fixture's elevated shelf. When Chef crosses overhead, the egg commits to its
+current heading for 20 pixels before its quarter-pixel-per-frame acceleration
+takes eight frames to reverse full velocity. The resulting turn carries it
+roughly two-and-a-half tiles beyond Chef. It uses a short hop that can land on
+one-tile solid obstacles blocking its path, falls from unsupported edges,
+passes upward through one-way platforms, and lands on solid or one-way support.
+Only obstacles lower than its standing body trigger a jump. A full-height wall
+cancels its directional commitment and horizontal velocity so it can resume
+pursuit instead of repeating failed jumps.
+Its art sits one pixel below its collision feet line. Combat and production
+placement are not connected yet.
+
 Production levels guarantee two instances of every biome-eligible mob. The
 current dining-room roster produces two WEINERs, two BURGERs, and two
 PANCAKEs. WEINERs may begin on full-solid floors or ceilings; BURGERs begin on

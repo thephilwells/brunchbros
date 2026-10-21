@@ -71,6 +71,24 @@ DEF PANCAKE_OSCILLATION_SPAN EQU 24
 DEF PANCAKE_TARGET_RADIUS EQU PANCAKE_OSCILLATION_SPAN / 2
 DEF PANCAKE_WALL_RETREAT_STEPS EQU PANCAKE_OSCILLATION_SPAN
 DEF PANCAKE_HIT_KNOCKBACK_DISTANCE EQU 8
+DEF FRIED_EGG_FIRST_TILE EQU 204
+DEF FRIED_EGG_IDLE_TILE EQU FRIED_EGG_FIRST_TILE
+DEF FRIED_EGG_STEP_TILE EQU FRIED_EGG_FIRST_TILE + 4
+DEF FRIED_EGG_AIRBORNE_TILE EQU FRIED_EGG_FIRST_TILE + 8
+DEF FRIED_EGG_LANDING_TILE EQU FRIED_EGG_FIRST_TILE + 12
+DEF FRIED_EGG_STATE_GROUNDED EQU 1
+DEF FRIED_EGG_STATE_AIRBORNE EQU 2
+DEF FRIED_EGG_STATE_LANDING EQU 3
+DEF FRIED_EGG_MAX_COUNT EQU 2
+DEF FRIED_EGG_RECORD_SIZE EQU 13
+DEF FRIED_EGG_FRAME_DURATION EQU 8
+DEF FRIED_EGG_LANDING_DURATION EQU 8
+DEF FRIED_EGG_LAUNCH_VELOCITY EQU -5
+DEF FRIED_EGG_TERMINAL_VELOCITY EQU 8
+DEF FRIED_EGG_LEVEL_TOLERANCE EQU 28
+DEF FRIED_EGG_MAX_HORIZONTAL_VELOCITY EQU 16
+DEF FRIED_EGG_HORIZONTAL_ACCELERATION EQU 4
+DEF FRIED_EGG_TURN_COMMITMENT EQU 20
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -91,6 +109,9 @@ INCLUDE "build/burger_playtest.inc"
 ENDC
 IF DEF(PANCAKE_PLAYTEST)
 INCLUDE "build/pancake_playtest.inc"
+ENDC
+IF DEF(FRIED_EGG_PLAYTEST)
+INCLUDE "build/fried_egg_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -184,6 +205,22 @@ PancakeRecords: ds PANCAKE_MAX_COUNT * PANCAKE_RECORD_SIZE
 PancakeCount: db
 PancakeLoopIndex: db
 PancakeOAMPointer: dw
+FriedEggY: db
+FriedEggX: dw
+FriedEggVelY: db
+FriedEggDirection: db
+FriedEggState: db
+FriedEggTimer: db
+FriedEggAnimTimer: db
+FriedEggTileBase: db
+FriedEggVelocityX: db
+FriedEggFractionX: db
+FriedEggTargetDirection: db
+FriedEggTurnCommitment: db
+FriedEggRecords: ds FRIED_EGG_MAX_COUNT * FRIED_EGG_RECORD_SIZE
+FriedEggCount: db
+FriedEggLoopIndex: db
+FriedEggOAMPointer: dw
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -335,6 +372,19 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyPancakeTiles
+	ld de, FriedEggTiles
+	ld hl, $8cc0
+	ld b, 16
+.copyFriedEggTilesOuter
+	ld c, 16
+.copyFriedEggTilesInner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyFriedEggTilesInner
+	dec b
+	jr nz, .copyFriedEggTilesOuter
 
 	call LoadTitleScreen
 	xor a
@@ -415,10 +465,15 @@ LoadCurrentLevel:
 	call ClearWeinerRecords
 	call ClearBurgerRecords
 	call ClearPancakeRecords
+	call ClearFriedEggRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
+	IF DEF(FRIED_EGG_PLAYTEST)
+	call LoadFriedEggPlaytest
+	ELSE
 	call GenerateLevel
+	ENDC
 ENDC
 IF DEF(PANCAKE_PLAYTEST)
 	call LoadPancakePlaytest
@@ -503,6 +558,9 @@ ENDC
 IF DEF(PANCAKE_PLAYTEST)
 	call InitializePlaytestPancake
 ENDC
+IF DEF(FRIED_EGG_PLAYTEST)
+	call InitializePlaytestFriedEgg
+ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
@@ -513,6 +571,9 @@ ENDC
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
+	IF DEF(FRIED_EGG_PLAYTEST)
+	call UpdateFriedEggSprites
+	ENDC
 	call hOAMDMA
 
 	ld a, %10000011
@@ -600,6 +661,30 @@ LoadPancakePlaytest:
 	ld a, HIGH(PANCAKE_PLAYTEST_PLAYER_X)
 	ld [GeneratedPlayerX + 1], a
 	ld a, PANCAKE_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
+
+IF DEF(FRIED_EGG_PLAYTEST)
+LoadFriedEggPlaytest:
+	ld de, FriedEggPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(FRIED_EGG_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(FRIED_EGG_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, FRIED_EGG_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
 	ret
 ENDC
@@ -815,6 +900,9 @@ PrepareSpriteBuffer:
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
+	IF DEF(FRIED_EGG_PLAYTEST)
+	call UpdateFriedEggSprites
+	ENDC
 	ret
 .gameplay
 	call UpdateCameraState
@@ -822,10 +910,16 @@ PrepareSpriteBuffer:
 	call AdvanceWeiners
 	call AdvanceBurgers
 	call AdvancePancakes
+	IF DEF(FRIED_EGG_PLAYTEST)
+	call AdvanceFriedEggs
+	ENDC
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
+	IF DEF(FRIED_EGG_PLAYTEST)
+	call UpdateFriedEggSprites
+	ENDC
 	ret
 
 UpdateCameraState:
@@ -5011,6 +5105,708 @@ HidePancakeSprite:
 	ld [hl], a
 	ret
 
+SECTION "FRIED_EGG Runtime", ROMX
+ClearFriedEggRecords:
+	ld hl, FriedEggY
+	ld b, FRIED_EGG_RECORD_SIZE
+	xor a
+.clearScratch
+	ld [hl+], a
+	dec b
+	jr nz, .clearScratch
+	ld hl, FriedEggRecords
+	ld b, FRIED_EGG_MAX_COUNT * FRIED_EGG_RECORD_SIZE
+.clearRecords
+	ld [hl+], a
+	dec b
+	jr nz, .clearRecords
+	ld [FriedEggCount], a
+	ret
+
+GetFriedEggRecordPointer:
+	ld hl, FriedEggRecords
+	and a
+	ret z
+	ld de, FRIED_EGG_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadFriedEggRecord:
+	call GetFriedEggRecordPointer
+	ld de, FriedEggY
+	ld b, FRIED_EGG_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StoreFriedEggRecord:
+	call GetFriedEggRecordPointer
+	ld de, FriedEggY
+	ld b, FRIED_EGG_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+IF DEF(FRIED_EGG_PLAYTEST)
+InitializePlaytestFriedEgg:
+	ld a, FRIED_EGG_PLAYTEST_EGG_Y
+	ld [FriedEggY], a
+	ld a, LOW(FRIED_EGG_PLAYTEST_EGG_X)
+	ld [FriedEggX], a
+	ld a, HIGH(FRIED_EGG_PLAYTEST_EGG_X)
+	ld [FriedEggX + 1], a
+	xor a
+	ld [FriedEggVelY], a
+	ld [FriedEggTimer], a
+	ld [FriedEggAnimTimer], a
+	ld [FriedEggFractionX], a
+	ld [FriedEggTurnCommitment], a
+	ld a, -1
+	ld [FriedEggDirection], a
+	ld [FriedEggTargetDirection], a
+	ld a, -FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+	ld [FriedEggVelocityX], a
+	ld a, FRIED_EGG_STATE_GROUNDED
+	ld [FriedEggState], a
+	ld a, FRIED_EGG_IDLE_TILE
+	ld [FriedEggTileBase], a
+	xor a
+	call StoreFriedEggRecord
+	ld a, 1
+	ld [FriedEggCount], a
+	ret
+ENDC
+
+AdvanceFriedEggs:
+	xor a
+	ld [FriedEggLoopIndex], a
+.loop
+	ld a, [FriedEggLoopIndex]
+	ld b, a
+	ld a, [FriedEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadFriedEggRecord
+	call AdvanceFriedEgg
+	pop af
+	push af
+	call StoreFriedEggRecord
+	pop af
+	inc a
+	ld [FriedEggLoopIndex], a
+	jr .loop
+
+AdvanceFriedEgg:
+	ld a, [FriedEggState]
+	and a
+	ret z
+	cp a, FRIED_EGG_STATE_AIRBORNE
+	jp z, AdvanceFriedEggAirborne
+	cp a, FRIED_EGG_STATE_LANDING
+	jp z, AdvanceFriedEggLanding
+	call FriedEggSupportBelow
+	jp nz, StartFriedEggFall
+	call AnimateGroundedFriedEgg
+	call FriedEggPlayerSameLevel
+	jr c, .pursue
+	call BrakeFriedEggVelocity
+	jp AdvanceFriedEggHorizontal
+.pursue
+	call ChooseFriedEggDirection
+	jp AdvanceFriedEggHorizontal
+
+AnimateGroundedFriedEgg:
+	ld hl, FriedEggAnimTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, FRIED_EGG_FRAME_DURATION
+	ret c
+	xor a
+	ld [hl], a
+	ld a, [FriedEggTileBase]
+	cp a, FRIED_EGG_IDLE_TILE
+	ld a, FRIED_EGG_IDLE_TILE
+	jr nz, .store
+	ld a, FRIED_EGG_STEP_TILE
+.store
+	ld [FriedEggTileBase], a
+	ret
+
+FriedEggPlayerSameLevel:
+	ld a, [PlayerY]
+	ld b, a
+	ld a, [FriedEggY]
+	sub a, b
+	jr nc, .absoluteReady
+	cpl
+	inc a
+.absoluteReady
+	cp a, FRIED_EGG_LEVEL_TOLERANCE + 1
+	ret
+
+ChooseFriedEggDirection:
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [FriedEggX]
+	add a, 8
+	ld l, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, e
+	sub a, l
+	ld a, d
+	sbc a, h
+	bit 7, a
+	ld b, -1
+	jr nz, SetFriedEggTargetDirection
+.right
+	ld b, 1
+
+SetFriedEggTargetDirection:
+	ld a, [FriedEggTargetDirection]
+	cp a, b
+	jr z, .continueTurn
+	ld a, b
+	ld [FriedEggTargetDirection], a
+	ld a, [FriedEggVelocityX]
+	and a
+	jr z, .accelerate
+	xor a, b
+	bit 7, a
+	jr z, .accelerate
+	ld a, FRIED_EGG_TURN_COMMITMENT - 1
+	ld [FriedEggTurnCommitment], a
+	ret
+.continueTurn
+	ld hl, FriedEggTurnCommitment
+	ld a, [hl]
+	and a
+	jr z, .accelerate
+	dec [hl]
+	ret
+.accelerate
+	ld a, b
+	ld b, a
+	jr AccelerateFriedEggVelocity
+
+AccelerateFriedEggVelocity:
+	bit 7, b
+	jr nz, .left
+	ld a, [FriedEggVelocityX]
+	add a, FRIED_EGG_HORIZONTAL_ACCELERATION
+	bit 7, a
+	jr nz, .store
+	cp a, FRIED_EGG_MAX_HORIZONTAL_VELOCITY + 1
+	jr c, .store
+	ld a, FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+	jr .store
+.left
+	ld a, [FriedEggVelocityX]
+	sub a, FRIED_EGG_HORIZONTAL_ACCELERATION
+	bit 7, a
+	jr z, .store
+	cp a, -FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+	jr nc, .store
+	ld a, -FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+.store
+	ld [FriedEggVelocityX], a
+	and a
+	ret z
+	bit 7, a
+	ld a, 1
+	jr z, .storeDirection
+	ld a, -1
+.storeDirection
+	ld [FriedEggDirection], a
+	ret
+
+BrakeFriedEggVelocity:
+	xor a
+	ld [FriedEggTurnCommitment], a
+	ld a, [FriedEggVelocityX]
+	and a
+	ret z
+	bit 7, a
+	jr nz, .negative
+	sub a, FRIED_EGG_HORIZONTAL_ACCELERATION
+	jr nc, .store
+	xor a
+	jr .store
+.negative
+	add a, FRIED_EGG_HORIZONTAL_ACCELERATION
+	bit 7, a
+	jr nz, .store
+	xor a
+.store
+	ld [FriedEggVelocityX], a
+	ret
+
+AdvanceFriedEggHorizontal:
+	ld a, [FriedEggVelocityX]
+	and a
+	ret z
+	bit 7, a
+	jr nz, .left
+	ld b, a
+	ld a, [FriedEggFractionX]
+	add a, b
+	cp a, 16
+	jr nc, .moveRight
+	ld [FriedEggFractionX], a
+	ret
+.moveRight
+	sub a, 16
+	ld [FriedEggFractionX], a
+	jp MoveFriedEggHorizontal
+.left
+	cpl
+	inc a
+	ld b, a
+	ld a, [FriedEggFractionX]
+	sub a, b
+	jr c, .moveLeft
+	ld [FriedEggFractionX], a
+	ret
+.moveLeft
+	add a, 16
+	ld [FriedEggFractionX], a
+	jp MoveFriedEggHorizontal
+
+StartFriedEggFall:
+	xor a
+	ld [FriedEggVelY], a
+	jr StartFriedEggAirborne
+
+StartFriedEggJump:
+	ld a, FRIED_EGG_LAUNCH_VELOCITY
+	ld [FriedEggVelY], a
+StartFriedEggAirborne:
+	ld a, FRIED_EGG_STATE_AIRBORNE
+	ld [FriedEggState], a
+	ld a, FRIED_EGG_AIRBORNE_TILE
+	ld [FriedEggTileBase], a
+	ret
+
+AdvanceFriedEggAirborne:
+	ld hl, FriedEggVelY
+	ld a, [hl]
+	inc a
+	bit 7, a
+	jr nz, .storeVelocity
+	cp a, FRIED_EGG_TERMINAL_VELOCITY + 1
+	jr c, .storeVelocity
+	ld a, FRIED_EGG_TERMINAL_VELOCITY
+.storeVelocity
+	ld [hl], a
+	and a
+	jp z, AdvanceFriedEggHorizontal
+	bit 7, a
+	jr nz, .rising
+	ld b, a
+.fallStep
+	call FriedEggSupportBelow
+	jr z, StartFriedEggLanding
+	ld hl, FriedEggY
+	inc [hl]
+	dec b
+	jr nz, .fallStep
+	jp AdvanceFriedEggHorizontal
+.rising
+	cpl
+	inc a
+	ld b, a
+.riseStep
+	call FriedEggCeilingAbove
+	jr z, .headBump
+	ld hl, FriedEggY
+	dec [hl]
+	dec b
+	jr nz, .riseStep
+	jp AdvanceFriedEggHorizontal
+.headBump
+	xor a
+	ld [FriedEggVelY], a
+	jp AdvanceFriedEggHorizontal
+
+StartFriedEggLanding:
+	ld hl, FriedEggY
+	inc [hl]
+	xor a
+	ld [FriedEggVelY], a
+	ld [FriedEggTimer], a
+	ld a, FRIED_EGG_STATE_LANDING
+	ld [FriedEggState], a
+	ld a, FRIED_EGG_LANDING_TILE
+	ld [FriedEggTileBase], a
+	ret
+
+AdvanceFriedEggLanding:
+	ld hl, FriedEggTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, FRIED_EGG_LANDING_DURATION
+	ret c
+	xor a
+	ld [FriedEggTimer], a
+	ld [FriedEggAnimTimer], a
+	ld a, FRIED_EGG_STATE_GROUNDED
+	ld [FriedEggState], a
+	ld a, FRIED_EGG_IDLE_TILE
+	ld [FriedEggTileBase], a
+	ret
+
+MoveFriedEggHorizontal:
+	ld a, [FriedEggDirection]
+	bit 7, a
+	jr nz, .left
+	call FriedEggWallRight
+	jr z, .blocked
+	ld hl, FriedEggX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.left
+	call FriedEggWallLeft
+	jr z, .blocked
+	ld hl, FriedEggX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+	ret
+.blocked
+	ld a, [FriedEggState]
+	cp a, FRIED_EGG_STATE_AIRBORNE
+	ret z
+	call FriedEggForwardTopBlocked
+	jp nz, StartFriedEggJump
+	xor a
+	ld [FriedEggVelocityX], a
+	ld [FriedEggFractionX], a
+	ld [FriedEggTurnCommitment], a
+	ret
+
+FriedEggForwardTopBlocked:
+	ld a, [FriedEggDirection]
+	bit 7, a
+	jr nz, .left
+	ld a, [FriedEggX]
+	add a, 16
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	jr .probe
+.left
+	ld a, [FriedEggX]
+	sub a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	sbc a, 0
+.probe
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 15
+	ld d, a
+	jp IsWall
+
+FriedEggWallRight:
+	ld a, [FriedEggX]
+	add a, 16
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 15
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [FriedEggX]
+	add a, 16
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [FriedEggX]
+	add a, 16
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	dec a
+	ld d, a
+	jp IsWall
+
+FriedEggWallLeft:
+	ld a, [FriedEggX]
+	sub a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 15
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [FriedEggX]
+	sub a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 8
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [FriedEggX]
+	sub a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	dec a
+	ld d, a
+	jp IsWall
+
+FriedEggCeilingAbove:
+	ld a, [FriedEggX]
+	add a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 16
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [FriedEggX]
+	add a, 14
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 16
+	ld d, a
+	jp IsWall
+
+FriedEggSupportBelow:
+	ld a, [FriedEggX]
+	add a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	inc a
+	ld d, a
+	call IsSupport
+	ret z
+	ld a, [FriedEggX]
+	add a, 14
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [FriedEggY]
+	inc a
+	ld d, a
+	jp IsSupport
+
+UpdateFriedEggSprites:
+	ld a, [PancakeOAMPointer]
+	ld [FriedEggOAMPointer], a
+	ld a, [PancakeOAMPointer + 1]
+	ld [FriedEggOAMPointer + 1], a
+	xor a
+	ld [FriedEggLoopIndex], a
+.loop
+	ld a, [FriedEggLoopIndex]
+	ld b, a
+	ld a, [FriedEggCount]
+	cp a, b
+	jr z, HideUnusedFriedEggSprites
+	ld a, b
+	push af
+	call LoadFriedEggRecord
+	call UpdateFriedEggSprite
+	pop af
+	inc a
+	ld [FriedEggLoopIndex], a
+	ld a, [FriedEggOAMPointer]
+	add a, 16
+	ld [FriedEggOAMPointer], a
+	jr nc, .loop
+	ld hl, FriedEggOAMPointer + 1
+	inc [hl]
+	jr .loop
+
+HideUnusedFriedEggSprites:
+	ld a, [FriedEggCount]
+	ld b, a
+	ld a, FRIED_EGG_MAX_COUNT
+	sub a, b
+	ret z
+	ld b, a
+	ld a, [FriedEggOAMPointer]
+	ld l, a
+	ld a, [FriedEggOAMPointer + 1]
+	ld h, a
+	xor a
+.block
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .block
+	ret
+
+UpdateFriedEggSprite:
+	ld a, [FriedEggOAMPointer]
+	ld l, a
+	ld a, [FriedEggOAMPointer + 1]
+	ld h, a
+	ld a, [FriedEggState]
+	and a
+	jp z, HideFriedEggSprite
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [FriedEggDirection]
+	bit 7, a
+	ld d, 0
+	jr z, .attributesReady
+	ld d, $20
+.attributesReady
+	ld a, [FriedEggY]
+	sub a, b
+	inc a
+	ld e, a
+	ld a, [FriedEggX]
+	add a, 8
+	sub a, c
+	ld c, a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr z, .topLeftReady
+	inc a
+.topLeftReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr nz, .topRightReady
+	inc a
+.topRightReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	add a, 2
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr z, .bottomLeftReady
+	inc a
+.bottomLeftReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, [FriedEggTileBase]
+	add a, 2
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr nz, .bottomRightReady
+	inc a
+.bottomRightReady
+	ld [hl+], a
+	ld a, d
+	ld [hl], a
+	ret
+
+HideFriedEggSprite:
+	xor a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	ret
+
 SECTION "Main Continued", ROM0
 
 StartPlayerDeath:
@@ -5606,6 +6402,9 @@ BurgerTiles:
 PancakeTiles:
 	INCBIN "build/pancake_motion.2bpp"
 
+FriedEggTiles:
+	INCBIN "build/fried_egg_motion.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
@@ -5625,4 +6424,11 @@ PancakePlaytestMap:
 	INCBIN "build/pancake_playtest.tilemap"
 PancakePlaytestMapEnd:
 ASSERT PancakePlaytestMapEnd - PancakePlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(FRIED_EGG_PLAYTEST)
+FriedEggPlaytestMap:
+	INCBIN "build/fried_egg_playtest.tilemap"
+FriedEggPlaytestMapEnd:
+ASSERT FriedEggPlaytestMapEnd - FriedEggPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC

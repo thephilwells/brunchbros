@@ -58,3 +58,20 @@ sheet before adding a second animated mob. Decide whether `$8800–$8FFF` remain
 background expansion or becomes the upper OBJ pool. Continue tracking both
 unique tile storage and worst-case OAM entries per scanline for every accepted
 mob.
+
+## 2026-10-21 FRIED_EGG check
+
+The accepted production allocation now ends with PANCAKE at OBJ tile 203.
+Tiles 204–255 provide 52 remaining slots. Four 16×16 FRIED_EGG poses use 16
+tiles and leave 36 slots, so its review vocabulary fits without runtime tile
+loading. ROM bank 1 has 8,273 bytes free and WRAM has 1,631 bytes free before
+the FRIED_EGG implementation.
+
+OAM is the limiting budget. Eleven entries are reserved before enemies, and
+the current six-enemy roster reserves another 24 entries. Two four-entry eggs
+would require 43 of the hardware's 40 entries. Before production integration,
+BURGER and PANCAKE must use their two-entry 16×8 footprint instead of four
+reserved entries. That recovers eight entries and keeps the eight-enemy steady
+state at 35 entries. Cloudbursts temporarily require two extra entries for a
+BURGER or PANCAKE, so simultaneous destruction still needs an explicit cap or
+reduced small-enemy burst before FRIED_EGG ships in production.

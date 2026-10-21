@@ -58,6 +58,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate FRIED_EGG",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-fried-egg.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Combat Playtest",
       "type": "shell",
       "command": "node",
@@ -76,6 +83,13 @@
       "type": "shell",
       "command": "node",
       "args": ["tools/generate-pancake-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate FRIED_EGG Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-fried-egg-playtest.mjs"],
       "problemMatcher": []
     },
     {
@@ -146,6 +160,13 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/pancake_motion.2bpp", "gfx/pancake_motion.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert FRIED_EGG",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/fried_egg_motion.2bpp", "gfx/fried_egg_motion.png"],
       "problemMatcher": []
     },
     {
@@ -279,7 +300,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -649,6 +670,65 @@
         "${workspaceFolder}/build/brunchbros-pancake-playtest.gb"
       ],
       "dependsOn": "Build PANCAKE Playtest ROM",
+      "problemMatcher": []
+    },
+    {
+      "label": "Assemble FRIED_EGG Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DFURNITURE_PARITY_TEST=1",
+        "-DFRIED_EGG_PLAYTEST=1",
+        "-o",
+        "build/fried_egg_playtest_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link FRIED_EGG Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-fried-egg-playtest.gb",
+        "-m",
+        "build/fried_egg_playtest_main.map",
+        "-n",
+        "build/fried_egg_playtest_main.sym",
+        "build/fried_egg_playtest_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix FRIED_EGG Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-fried-egg-playtest.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build FRIED_EGG Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Generate FRIED_EGG Playtest", "Assemble FRIED_EGG Playtest", "Link FRIED_EGG Playtest", "Fix FRIED_EGG Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run FRIED_EGG Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-fried-egg-playtest.gb"
+      ],
+      "dependsOn": "Build FRIED_EGG Playtest ROM",
       "problemMatcher": []
     }
   ]
