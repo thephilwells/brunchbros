@@ -51,7 +51,7 @@ DEF BURGER_STATE_AIRBORNE EQU 3
 DEF BURGER_STATE_LANDING EQU 4
 DEF BURGER_STATE_BURST EQU 5
 DEF BURGER_MAX_COUNT EQU 4
-DEF BURGER_RECORD_SIZE EQU 11
+DEF BURGER_RECORD_SIZE EQU 13
 DEF BURGER_RECORD_HIT_LATCH EQU 9
 DEF BURGER_IDLE_DURATION EQU 120
 DEF BURGER_IDLE_BEAT_DURATION EQU 8
@@ -59,6 +59,7 @@ DEF BURGER_WINDUP_DURATION EQU 20
 DEF BURGER_LANDING_DURATION EQU 10
 DEF BURGER_LAUNCH_VELOCITY EQU -8
 DEF BURGER_TERMINAL_VELOCITY EQU 8
+DEF BURGER_HIT_KNOCKBACK_DISTANCE EQU 8
 DEF PANCAKE_FIRST_TILE EQU 196
 DEF PANCAKE_MAX_COUNT EQU 2
 DEF PANCAKE_RECORD_SIZE EQU 15
@@ -159,6 +160,8 @@ BurgerTileBase: db
 BurgerHealth: db
 BurgerHitThisSwing: db
 BurgerHitFlashTimer: db
+BurgerKnockbackRemaining: db
+BurgerKnockbackDirection: db
 BurgerRecords: ds BURGER_MAX_COUNT * BURGER_RECORD_SIZE
 BurgerCount: db
 BurgerLoopIndex: db
@@ -2990,7 +2993,7 @@ UpdateWeinerSprite:
 SECTION "BURGER Runtime", ROMX
 ClearBurgerRecords:
 	ld hl, BurgerY
-	ld b, 11
+	ld b, BURGER_RECORD_SIZE
 	xor a
 .clearScratch
 	ld [hl+], a
@@ -3046,6 +3049,8 @@ InitializeBurgerScratch:
 	ld [BurgerTimer], a
 	ld [BurgerHitThisSwing], a
 	ld [BurgerHitFlashTimer], a
+	ld [BurgerKnockbackRemaining], a
+	ld [BurgerKnockbackDirection], a
 	ld a, 1
 	ld [BurgerVelX], a
 	ld a, BURGER_STATE_IDLE
@@ -3144,6 +3149,10 @@ AdvanceBurger:
 	ld a, [BurgerState]
 	cp a, BURGER_STATE_BURST
 	jp z, AdvanceBurgerBurst
+	ld a, [BurgerKnockbackRemaining]
+	and a
+	jp nz, ApplyBurgerKnockback
+	ld a, [BurgerState]
 	cp a, BURGER_STATE_IDLE
 	jr z, AdvanceBurgerIdle
 	cp a, BURGER_STATE_WINDUP
@@ -3471,6 +3480,72 @@ TryPanHitBurger:
 	jr z, StartBurgerBurst
 	ld a, 12
 	ld [BurgerHitFlashTimer], a
+	call StartBurgerKnockback
+	ret
+
+StartBurgerKnockback:
+	ld a, BURGER_HIT_KNOCKBACK_DISTANCE
+	ld [BurgerKnockbackRemaining], a
+	ld a, [BurgerX]
+	add a, 8
+	ld l, a
+	ld a, [BurgerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .left
+	ld a, 1
+	jr .store
+.left
+	ld a, -1
+.store
+	ld [BurgerKnockbackDirection], a
+	ld [BurgerVelX], a
+	ret
+
+ApplyBurgerKnockback:
+	ld a, [BurgerKnockbackDirection]
+	bit 7, a
+	jr nz, .left
+	call BurgerWallRight
+	jr z, .blocked
+	ld hl, BurgerX
+	inc [hl]
+	jr nz, .moved
+	inc hl
+	inc [hl]
+	jr .moved
+.left
+	call BurgerWallLeft
+	jr z, .blocked
+	ld hl, BurgerX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+.moved
+	ld hl, BurgerKnockbackRemaining
+	dec [hl]
+	ret
+.blocked
+	xor a
+	ld [BurgerKnockbackRemaining], a
 	ret
 
 StartBurgerBurst:

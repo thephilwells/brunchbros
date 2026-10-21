@@ -52,8 +52,9 @@ per frame with an initial vertical velocity of −8. Only full-solid side contac
 reverses its airborne horizontal direction. Downward motion lands on both solid
 and one-way surfaces; upward motion ignores one-way surfaces. Vertical motion
 resolves before the horizontal step so the side probe uses the BURGER's
-resulting height at solid corners. The first pan hit
-briefly flickers the BURGER, and the second starts the shared cloudburst.
+resulting height at solid corners. The first pan hit briefly flickers the
+BURGER and knocks it eight pixels away from the Chef. The second starts the
+shared cloudburst.
 
 Production levels guarantee two instances of every biome-eligible mob. The
 current dining-room roster produces two WEINERs, two BURGERs, and two
