@@ -77,9 +77,10 @@ flickers it and knocks it eight pixels away
 from Chef, followed by a 20-frame pursuit stun that still permits falling and
 landing; the third hit starts the shared cloudburst.
 
-Production levels guarantee two instances of every biome-eligible mob. The
-current dining-room roster produces two WEINERs, two BURGERs, and two
-PANCAKEs, and two FRIED_EGGs as a temporary integration stress test. WEINERs
+Production levels will guarantee two instances of every mob eligible for that
+specific level roster. The current dining-room build attempts two WEINERs, two
+BURGERs, two PANCAKEs, and two FRIED_EGGs as a temporary integration stress
+test rather than a final encounter distribution. WEINERs
 may begin on full-solid floors or ceilings; BURGERs and FRIED_EGGs begin on
 solid or one-way support. PANCAKEs begin five tiles above a structural floor
 row and oscillate across a three-tile span. All four require one collision-free
@@ -88,7 +89,9 @@ available for later additional slots. BURGER and PANCAKE reserve two
 shadow-OAM entries normally and expand to four during their cloudbursts.
 Layouts without two remaining safe two-tile floor footprints may omit an EGG
 during this temporary combined-roster phase; biome-specific rosters will replace
-that exception.
+that exception. The observed slowdown while all eight stress-test mobs are
+active is not a tuning target. Reassess performance after `DINING_ROOM_1` and
+`DINING_ROOM_2` use their documented level-specific rosters.
 
 ## Accepted initial rules
 

@@ -1,8 +1,33 @@
-Every mob eligible for a biome has a minimum population of two. `FREQUENCY` is
-a relative selection weight for additional population beyond those guarantees;
-it does not determine the minimum or the total number of enemies in a level. A
-weight of 8 is the common baseline: WEINER should appear with roughly the
-regularity of Spelunky's SNAKE. These initial weights remain tuning values.
+Every mob eligible for a specific level has a minimum population of two.
+Eligibility comes from the level identifiers in each mob's `BIOMES` list; mobs
+from the same biome do not automatically coexist. `FREQUENCY` is a relative
+selection weight for additional population beyond those guarantees; it does
+not determine the minimum or the total number of enemies in a level. A weight
+of 8 is the common baseline: WEINER should appear with roughly the regularity
+of Spelunky's SNAKE. These initial weights remain tuning values.
+
+The current seeded Dining Room production build deliberately loads all
+implemented mobs together as an integration stress fixture. Safe placement is
+required, but this temporary roster need not fit two of every mob in every
+seed. New mobs should be added only to the level rosters named by `BIOMES`, not
+automatically added to this all-mob fixture. Performance tuning is deferred
+until representative level-specific rosters are active; the current slowdown
+with every mob alive is useful stress-test data rather than the target runtime
+load.
+
+# Next population step
+
+Replace the temporary all-mob Dining Room population with explicit level
+rosters before adding another mob to production:
+
+- `DINING_ROOM_1`: WEINER, PANCAKE, FRIED_EGG
+- `DINING_ROOM_2`: BURGER, PANCAKE, FRIED_EGG
+
+Apply the two-per-eligible-mob minimum within each roster, retain the documented
+frequency weights for later extra slots, and rerun spawn-safety, runtime-parity,
+and performance checks against those representative populations. DISCO_FRY is
+the next unimplemented mob, but it belongs to the Kitchen roster rather than
+the Dining Room.
 
 # WEINER
 BIOMES: [ PATIO_1, PATIO_2, DINING_ROOM_1, KITCHEN_1, FREEZER ]
@@ -31,6 +56,9 @@ FREQUENCY: 2 (UNCOMMON)
 DAMAGE: .5 heart
 DIES TO: 3 hits
 DESCRIPTION: A walking fried egg, capable of walking at Chef's speed and jumping just like Chef. It moves toward Chef whenever Chef is on the same room-level that it is. It attacks by just walking into Chef, oscillating on the ground around stopping points, if possible, similar to how PANCAKE seems restless when it gets where it's going.
+
+Its same-level activation is intentional: EGG remains dormant until Chef enters
+its vertical room level, giving it a sentry-like role.
 
 # DISCO_FRY
 BIOMES: [ KITCHEN_1, KITCHEN_2 ]
