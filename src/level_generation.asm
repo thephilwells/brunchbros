@@ -3080,6 +3080,11 @@ PlaceDiningRoomMobs:
 	dec b
 	jr nz, .clearOccupied
 	xor a
+	ld a, 2
+	ld [MobType], a
+	ld a, DINING_FRIED_EGG_MINIMUM
+	call PlaceMobType
+	xor a
 	ld [MobType], a
 	ld a, DINING_PANCAKE_MINIMUM
 	call PlaceMobType
@@ -3087,7 +3092,7 @@ PlaceDiningRoomMobs:
 	ld [MobType], a
 	ld a, DINING_BURGER_MINIMUM
 	call PlaceMobType
-	ld a, 2
+	ld a, 3
 	ld [MobType], a
 	ld a, DINING_WEINER_MINIMUM
 	jp PlaceMobType
@@ -3155,7 +3160,12 @@ PlaceMobType:
 	jr z, .createPancake
 	cp a, 1
 	jr z, .createBurger
+	cp a, 2
+	jr z, .createFriedEgg
 	call CreateSelectedWeiner
+	jr .created
+.createFriedEgg
+	call CreateSelectedFriedEgg
 	jr .created
 .createPancake
 	call CreateSelectedPancake
@@ -3267,7 +3277,7 @@ CountMobCandidates:
 	ld b, 7
 	ld a, [MobType]
 	cp a, 2
-	jr nz, .rowLimitReady
+	jr c, .rowLimitReady
 	dec b
 .rowLimitReady
 	ld a, [MobLocalY]
@@ -3305,7 +3315,7 @@ FindMobCandidate:
 	ld b, 7
 	ld a, [MobType]
 	cp a, 2
-	jr nz, .rowLimitReady
+	jr c, .rowLimitReady
 	dec b
 .rowLimitReady
 	ld a, [MobLocalY]
@@ -3315,17 +3325,17 @@ FindMobCandidate:
 
 IsMobCandidate:
 	call IsMobFootprintReserved
-	jr c, .invalid
+	jp c, .invalid
 	ld a, [MobLocalX]
 	and a
-	jr z, .invalid
+	jp z, .invalid
 	cp a, 8
-	jr nc, .invalid
+	jp nc, .invalid
 	call GetMobCandidatePointer
 	ld a, [MobType]
 	ld b, 1
 	cp a, 2
-	jr nz, .bodyRow
+	jr c, .bodyRow
 	ld b, 2
 .bodyRow
 	ld c, 2
@@ -3360,16 +3370,29 @@ IsMobCandidate:
 	call AreMobCandidateSidesClear
 	jr nz, .invalid
 	ld a, [MobType]
-	cp a, 2
+	cp a, 3
 	jp z, ResolveWeinerCandidateDirection
 	and a
 	jp z, ResolvePancakeCandidate
+	ld a, [MobType]
+	cp a, 2
+	jr c, .singleSupportRow
+	ld a, [MobLocalY]
+	add a, 2
+	jr .supportRowReady
+.singleSupportRow
 	ld a, [MobLocalY]
 	inc a
+.supportRowReady
 	call IsMobRowReserved
 	jr c, .invalid
 	call GetMobCandidatePointer
 	ld de, 40
+	ld a, [MobType]
+	cp a, 2
+	jr c, .supportPointerReady
+	ld de, 80
+.supportPointerReady
 	add hl, de
 	ld b, 2
 .support
@@ -3490,7 +3513,7 @@ AreMobCandidateSidesClear:
 	ld a, [MobType]
 	ld b, 1
 	cp a, 2
-	jr nz, .row
+	jr c, .row
 	ld b, 2
 .row
 	dec hl
@@ -3607,7 +3630,7 @@ MarkMobCandidateOccupied:
 	ld a, [MobType]
 	ld b, 1
 	cp a, 2
-	jr nz, .row
+	jr c, .row
 	ld b, 2
 .row
 	ld c, 2
@@ -3661,13 +3684,14 @@ IsMobFootprintReserved:
 	ret c
 	ld a, [MobType]
 	cp a, 2
-	jr z, .secondRow
-	and a
-	ret
+	jr c, .singleRow
 .secondRow
 	ld a, [MobLocalY]
 	inc a
 	jp IsMobRowReserved
+.singleRow
+	and a
+	ret
 
 IsMobRowReserved:
 	ld [MobReservationRow], a
@@ -3821,6 +3845,31 @@ CreateSelectedPancake:
 	ld c, a
 	jp CreatePancakeAtTile
 
+CreateSelectedFriedEgg:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	add a, c
+	ld c, a
+	jp CreateFriedEggAtTile
+
 LoadMobSelectionSalt:
 	push af
 	ld de, DINING_MOB_SELECTION_SALT
@@ -3913,7 +3962,7 @@ VerifyMobParity:
 	ld hl, MobParityData
 	ld a, [WeinerCount]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld b, a
 	ld de, WeinerRecords
@@ -3923,17 +3972,17 @@ VerifyMobParity:
 	jr z, .burgers
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc de
 	inc hl
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc de
 	inc hl
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld a, WEINER_RECORD_SIZE - 6
 .skipWeiner
@@ -3942,7 +3991,7 @@ VerifyMobParity:
 	jr nz, .skipWeiner
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld a, WEINER_RECORD_SIZE - 7
 .finishWeiner
@@ -3954,7 +4003,7 @@ VerifyMobParity:
 .burgers
 	ld a, [BurgerCount]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld b, a
 	ld de, BurgerRecords
@@ -3964,17 +4013,17 @@ VerifyMobParity:
 	jr z, .pancakes
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc de
 	inc hl
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc de
 	inc hl
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld a, BURGER_RECORD_SIZE - 2
 .skipBurger
@@ -3986,27 +4035,27 @@ VerifyMobParity:
 .pancakes
 	ld a, [PancakeCount]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld b, a
 	ld de, PancakeRecords
 .pancake
 	ld a, b
 	and a
-	ret z
+	jr z, .friedEggs
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc de
 	inc hl
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc de
 	inc hl
 	ld a, [de]
 	cp a, [hl]
-	jr nz, .failed
+	jp nz, .failed
 	inc hl
 	ld a, PANCAKE_RECORD_SIZE - 2
 .skipPancake
@@ -4015,6 +4064,38 @@ VerifyMobParity:
 	jr nz, .skipPancake
 	dec b
 	jr .pancake
+.friedEggs
+	ld a, [FriedEggCount]
+	cp a, [hl]
+	jp nz, .failed
+	inc hl
+	ld b, a
+	ld de, FriedEggRecords
+.friedEgg
+	ld a, b
+	and a
+	ret z
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc hl
+	ld a, FRIED_EGG_RECORD_SIZE - 2
+.skipFriedEgg
+	inc de
+	dec a
+	jr nz, .skipFriedEgg
+	dec b
+	jr .friedEgg
 .failed
 	jr .failed
 ENDC

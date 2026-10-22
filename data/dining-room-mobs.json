@@ -30,6 +30,14 @@
       "width": 2,
       "height": 1,
       "direction": "right"
+    },
+    {
+      "id": "fried_egg",
+      "minimum": 2,
+      "frequency": 2,
+      "width": 2,
+      "height": 2,
+      "direction": "right"
     }
   ]
 }

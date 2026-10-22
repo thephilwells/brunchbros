@@ -75,18 +75,20 @@ is the two center pixels of its body, allowing Chef to clear its visible edges
 while jumping over it. Contact removes one half-heart. Each nonlethal pan hit
 flickers it and knocks it eight pixels away
 from Chef, followed by a 20-frame pursuit stun that still permits falling and
-landing; the third hit starts the shared cloudburst. Production placement is not
-connected yet.
+landing; the third hit starts the shared cloudburst.
 
 Production levels guarantee two instances of every biome-eligible mob. The
 current dining-room roster produces two WEINERs, two BURGERs, and two
-PANCAKEs. WEINERs may begin on full-solid floors or ceilings; BURGERs begin on
-solid or one-way
-support. PANCAKEs begin five tiles above a structural floor row and oscillate
-across a three-tile span. All three require one collision-free tile beside
-each side. Frequency weights eight, four, and three remain available for later
-additional slots. The current six-enemy total lets every actor reserve four
-shadow-OAM entries, including its cloudburst.
+PANCAKEs, and two FRIED_EGGs as a temporary integration stress test. WEINERs
+may begin on full-solid floors or ceilings; BURGERs and FRIED_EGGs begin on
+solid or one-way support. PANCAKEs begin five tiles above a structural floor
+row and oscillate across a three-tile span. All four require one collision-free
+tile beside each side. Frequency weights eight, four, three, and two remain
+available for later additional slots. BURGER and PANCAKE reserve two
+shadow-OAM entries normally and expand to four during their cloudbursts.
+Layouts without two remaining safe two-tile floor footprints may omit an EGG
+during this temporary combined-roster phase; biome-specific rosters will replace
+that exception.
 
 ## Accepted initial rules
 

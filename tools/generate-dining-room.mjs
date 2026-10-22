@@ -477,6 +477,8 @@ writeFileSync('build/dining_room_mobs.inc', [
   `DEF DINING_BURGER_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'burger').minimum}`,
   `DEF DINING_PANCAKE_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'pancake').frequency}`,
   `DEF DINING_PANCAKE_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'pancake').minimum}`,
+  `DEF DINING_FRIED_EGG_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'fried_egg').frequency}`,
+  `DEF DINING_FRIED_EGG_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'fried_egg').minimum}`,
   `DEF DINING_MOB_TOTAL_FREQUENCY EQU ${mobManifest.mobs.reduce((total, mob) => total + mob.frequency, 0)}`,
   '',
 ].join('\n'));

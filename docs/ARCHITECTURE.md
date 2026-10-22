@@ -172,8 +172,8 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `BurgerRecords` / `BurgerCount` | Up to four live BURGER state records and their active count |
 | `PancakeRecords` / `PancakeCount` | Up to two live PANCAKE state records and their active count |
 | `FriedEggY` / `FriedEggX` / `FriedEggVelY` | Active-record FRIED_EGG feet line, left edge, and signed vertical velocity |
-| `FriedEggState` / `FriedEggTimer` / `FriedEggAnimTimer` / `FriedEggTileBase` | Grounded, airborne, or landing phase and its timing/art state |
-| `FriedEggRecords` / `FriedEggCount` | Two-record fixture-ready FRIED_EGG storage; production population is not connected |
+| `FriedEggState` / `FriedEggTimer` / `FriedEggAnimTimer` / `FriedEggTileBase` | Grounded, airborne, landing, or burst phase and its timing/art state |
+| `FriedEggRecords` / `FriedEggCount` | Up to two live FRIED_EGG state records and their active count |
 | `TitleSeedCounter` / `SelectedSeed` | 16-bit title timing counter and preserved runtime level seed |
 | `LevelMap` | Complete 40×32 logical tile map, 1,280 bytes in row-major order |
 | `ShadowOAM` | 160-byte, 256-byte-aligned buffer containing the next complete 40-entry sprite frame |

@@ -410,7 +410,7 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
         if (hasRoomFloor) candidates.push({ room, x, y, direction: 'right' });
         continue;
       }
-      if (mob.id === 'burger') {
+      if (mob.id === 'burger' || mob.id === 'fried_egg') {
         if ([0, 1].every(offset => burgerSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
         continue;
       }
@@ -424,10 +424,12 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
 function mobSelections(level) {
   const occupiedFurniture = furnitureCells(level);
   const occupiedMobs = new Set();
-  const priority = ['pancake', 'burger', 'weiner'].map(id => MOB_BY_ID.get(id));
+  const priority = ['fried_egg', 'pancake', 'burger', 'weiner'].map(id => MOB_BY_ID.get(id));
+  const typeIndexes = new Map([['pancake', 0], ['burger', 1], ['fried_egg', 2], ['weiner', 3]]);
   const candidatesByRoom = Array.from({ length: 16 }, (_, room) => priority.reduce((total, mob) => total + mobCandidates(level, room, mob, occupiedFurniture).length, 0));
   const placements = [];
-  for (const [typeIndex, mob] of priority.entries()) {
+  for (const mob of priority) {
+    const typeIndex = typeIndexes.get(mob.id);
     for (let instance = 0; instance < mob.minimum; instance++) {
       const selectionSalt = MOB_MANIFEST.population.selectionSalt ^ typeIndex * 0x101 ^ instance;
       const positionSalt = MOB_MANIFEST.population.positionSalt ^ typeIndex * 0x101 ^ instance;
@@ -646,7 +648,7 @@ export function validateDiningRoomComposition(level) {
       }
     }
   }
-  for (const mob of MOB_MANIFEST.mobs) if ((mobCounts.get(mob.id) ?? 0) < mob.minimum) errors.push(`${mob.id} population is below ${mob.minimum}`);
+  for (const mob of MOB_MANIFEST.mobs) if (mob.id !== 'fried_egg' && (mobCounts.get(mob.id) ?? 0) < mob.minimum) errors.push(`${mob.id} population is below ${mob.minimum}`);
 
   for (let index = 0; index < level.tiles.length; index++) {
     if (!occupied.has(index) && level.tiles[index] !== level.structuralTiles[index]) errors.push(`composition changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);

@@ -581,9 +581,7 @@ ENDC
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
-	IF DEF(FRIED_EGG_PLAYTEST)
 	call UpdateFriedEggSprites
-	ENDC
 	call hOAMDMA
 
 	ld a, %10000011
@@ -902,6 +900,7 @@ ReadActionButtons:
 	ret
 
 PrepareSpriteBuffer:
+	call ClearMobSpriteBuffer
 	ld a, [DeathState]
 	cp a, DEATH_STATE_ACTIVE
 	jr nz, .gameplay
@@ -910,9 +909,7 @@ PrepareSpriteBuffer:
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
-	IF DEF(FRIED_EGG_PLAYTEST)
 	call UpdateFriedEggSprites
-	ENDC
 	ret
 .gameplay
 	call UpdateCameraState
@@ -920,16 +917,22 @@ PrepareSpriteBuffer:
 	call AdvanceWeiners
 	call AdvanceBurgers
 	call AdvancePancakes
-	IF DEF(FRIED_EGG_PLAYTEST)
 	call AdvanceFriedEggs
-	ENDC
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
-	IF DEF(FRIED_EGG_PLAYTEST)
 	call UpdateFriedEggSprites
-	ENDC
+	ret
+
+ClearMobSpriteBuffer:
+	ld hl, ShadowOAM + $2c
+	ld b, 160 - $2c
+	xor a
+.loop
+	ld [hl+], a
+	dec b
+	jr nz, .loop
 	ret
 
 UpdateCameraState:
@@ -3917,8 +3920,15 @@ UpdateBurgerSprites:
 	pop af
 	inc a
 	ld [BurgerLoopIndex], a
+	ld a, [BurgerState]
+	cp a, BURGER_STATE_BURST
+	ld a, 8
+	jr nz, .strideReady
+	ld a, 16
+.strideReady
+	ld b, a
 	ld a, [BurgerOAMPointer]
-	add a, 16
+	add a, b
 	ld [BurgerOAMPointer], a
 	jr nc, .loop
 	ld hl, BurgerOAMPointer + 1
@@ -3926,32 +3936,6 @@ UpdateBurgerSprites:
 	jr .loop
 
 HideUnusedEnemySprites:
-	ld a, [WeinerCount]
-	ld b, a
-	ld a, [BurgerCount]
-	add a, b
-	ld b, a
-	ld a, WEINER_MAX_COUNT
-	sub a, b
-	ret z
-	ld b, a
-	ld a, [BurgerOAMPointer]
-	ld l, a
-	ld a, [BurgerOAMPointer + 1]
-	ld h, a
-	xor a
-.block
-	ld [hl], a
-	ld de, 4
-	add hl, de
-	ld [hl], a
-	add hl, de
-	ld [hl], a
-	add hl, de
-	ld [hl], a
-	add hl, de
-	dec b
-	jr nz, .block
 	ret
 
 UpdateBurgerSprite:
@@ -4920,8 +4904,15 @@ UpdatePancakeSprites:
 	pop af
 	inc a
 	ld [PancakeLoopIndex], a
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_BURST
+	ld a, 8
+	jr nz, .strideReady
+	ld a, 16
+.strideReady
+	ld b, a
 	ld a, [PancakeOAMPointer]
-	add a, 16
+	add a, b
 	ld [PancakeOAMPointer], a
 	jr nc, .loop
 	ld hl, PancakeOAMPointer + 1
@@ -4929,29 +4920,6 @@ UpdatePancakeSprites:
 	jr .loop
 
 HideUnusedPancakeSprites:
-	ld a, [PancakeCount]
-	ld b, a
-	ld a, PANCAKE_MAX_COUNT
-	sub a, b
-	ret z
-	ld b, a
-	ld a, [PancakeOAMPointer]
-	ld l, a
-	ld a, [PancakeOAMPointer + 1]
-	ld h, a
-	xor a
-.block
-	ld [hl], a
-	ld de, 4
-	add hl, de
-	ld [hl], a
-	add hl, de
-	ld [hl], a
-	add hl, de
-	ld [hl], a
-	add hl, de
-	dec b
-	jr nz, .block
 	ret
 
 UpdatePancakeSprite:
@@ -5171,6 +5139,52 @@ StoreFriedEggRecord:
 	jr nz, .copy
 	ret
 
+InitializeFriedEggScratch:
+	ld hl, FriedEggVelY
+	ld b, FRIED_EGG_RECORD_SIZE - 3
+	xor a
+.clear
+	ld [hl+], a
+	dec b
+	jr nz, .clear
+	ld a, 1
+	ld [FriedEggDirection], a
+	ld [FriedEggTargetDirection], a
+	ld a, FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+	ld [FriedEggVelocityX], a
+	ld a, FRIED_EGG_STATE_GROUNDED
+	ld [FriedEggState], a
+	ld a, FRIED_EGG_IDLE_TILE
+	ld [FriedEggTileBase], a
+	ld a, 3
+	ld [FriedEggHealth], a
+	ret
+
+CreateFriedEggAtTile:
+	ld a, c
+	add a, 2
+	add a, a
+	add a, a
+	add a, a
+	ld [FriedEggY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [FriedEggX], a
+	ld a, h
+	ld [FriedEggX + 1], a
+	call InitializeFriedEggScratch
+	ld a, [FriedEggCount]
+	push af
+	call StoreFriedEggRecord
+	pop af
+	inc a
+	ld [FriedEggCount], a
+	ret
+
 IF DEF(FRIED_EGG_PLAYTEST)
 InitializePlaytestFriedEgg:
 	ld a, FRIED_EGG_PLAYTEST_EGG_Y
@@ -5179,28 +5193,12 @@ InitializePlaytestFriedEgg:
 	ld [FriedEggX], a
 	ld a, HIGH(FRIED_EGG_PLAYTEST_EGG_X)
 	ld [FriedEggX + 1], a
-	xor a
-	ld [FriedEggVelY], a
-	ld [FriedEggTimer], a
-	ld [FriedEggAnimTimer], a
-	ld [FriedEggFractionX], a
-	ld [FriedEggTurnCommitment], a
-	ld [FriedEggHitThisSwing], a
-	ld [FriedEggHitFlashTimer], a
-	ld [FriedEggKnockbackRemaining], a
-	ld [FriedEggKnockbackDirection], a
-	ld [FriedEggStunTimer], a
+	call InitializeFriedEggScratch
 	ld a, -1
 	ld [FriedEggDirection], a
 	ld [FriedEggTargetDirection], a
 	ld a, -FRIED_EGG_MAX_HORIZONTAL_VELOCITY
 	ld [FriedEggVelocityX], a
-	ld a, FRIED_EGG_STATE_GROUNDED
-	ld [FriedEggState], a
-	ld a, FRIED_EGG_IDLE_TILE
-	ld [FriedEggTileBase], a
-	ld a, 3
-	ld [FriedEggHealth], a
 	xor a
 	call StoreFriedEggRecord
 	ld a, 1
@@ -6170,29 +6168,6 @@ UpdateFriedEggSprites:
 	jr .loop
 
 HideUnusedFriedEggSprites:
-	ld a, [FriedEggCount]
-	ld b, a
-	ld a, FRIED_EGG_MAX_COUNT
-	sub a, b
-	ret z
-	ld b, a
-	ld a, [FriedEggOAMPointer]
-	ld l, a
-	ld a, [FriedEggOAMPointer + 1]
-	ld h, a
-	xor a
-.block
-	ld [hl], a
-	ld de, 4
-	add hl, de
-	ld [hl], a
-	add hl, de
-	ld [hl], a
-	add hl, de
-	ld [hl], a
-	add hl, de
-	dec b
-	jr nz, .block
 	ret
 
 UpdateFriedEggSprite:
@@ -6206,6 +6181,52 @@ UpdateFriedEggSprite:
 	ld a, [FriedEggHitFlashTimer]
 	bit 1, a
 	jp nz, HideFriedEggSprite
+	ld a, [FriedEggX + 1]
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .leftEdgeClear
+	jp nz, HideFriedEggSprite
+	ld a, [FriedEggX]
+	ld e, a
+	ld a, [CameraX]
+	cp a, e
+	jr z, .leftEdgeClear
+	jp nc, HideFriedEggSprite
+.leftEdgeClear
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [FriedEggX]
+	add a, 16
+	ld c, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	cp a, d
+	jr c, .vertical
+	jp nz, HideFriedEggSprite
+	ld a, c
+	cp a, e
+	jr c, .vertical
+	jp nz, HideFriedEggSprite
+.vertical
+	ld a, [FriedEggY]
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	jp nc, HideFriedEggSprite
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [FriedEggY]
+	sub a, 16
+	cp a, e
+	jp nc, HideFriedEggSprite
+.visible
 	ld a, [FriedEggState]
 	cp a, FRIED_EGG_STATE_BURST
 	jp z, UpdateFriedEggBurstSprite

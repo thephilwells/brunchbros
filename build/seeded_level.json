@@ -6193,16 +6193,36 @@
     2,
     10,
     0,
-    14,
+    17,
     8,
     2,
     2,
     0,
     1,
-    14
+    16
   ],
-  "mobPopulationTarget": 6,
+  "mobPopulationTarget": 8,
   "mobPlacements": [
+    {
+      "room": 9,
+      "mob": "fried_egg",
+      "frequency": 2,
+      "direction": "right",
+      "x": 13,
+      "y": 21,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "room": 9,
+      "mob": "fried_egg",
+      "frequency": 2,
+      "direction": "right",
+      "x": 15,
+      "y": 21,
+      "width": 2,
+      "height": 2
+    },
     {
       "room": 9,
       "mob": "pancake",
@@ -6224,12 +6244,12 @@
       "height": 1
     },
     {
-      "room": 9,
+      "room": 15,
       "mob": "burger",
       "frequency": 4,
       "direction": "right",
-      "x": 13,
-      "y": 22,
+      "x": 36,
+      "y": 27,
       "width": 2,
       "height": 1
     },
@@ -6244,22 +6264,22 @@
       "height": 1
     },
     {
-      "room": 9,
+      "room": 10,
       "mob": "weiner",
       "frequency": 8,
       "direction": "left",
-      "x": 16,
+      "x": 25,
       "y": 17,
       "width": 2,
       "height": 2
     },
     {
-      "room": 7,
+      "room": 2,
       "mob": "weiner",
       "frequency": 8,
       "direction": "left",
-      "x": 36,
-      "y": 9,
+      "x": 26,
+      "y": 1,
       "width": 2,
       "height": 2
     }

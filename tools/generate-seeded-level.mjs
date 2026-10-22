@@ -22,6 +22,7 @@ writeFileSync('build/runtime_level_parity.tilemap', Buffer.from(level.tiles));
 const weiners = level.mobPlacements.filter(placement => placement.mob === 'weiner');
 const burgers = level.mobPlacements.filter(placement => placement.mob === 'burger');
 const pancakes = level.mobPlacements.filter(placement => placement.mob === 'pancake');
+const friedEggs = level.mobPlacements.filter(placement => placement.mob === 'fried_egg');
 const directions = { right: 0, down: 1, left: 2, up: 3 };
 const mobParity = [weiners.length];
 for (const placement of weiners) {
@@ -37,6 +38,11 @@ mobParity.push(pancakes.length);
 for (const placement of pancakes) {
   const x = placement.x * 8;
   mobParity.push(placement.y * 8, x & 0xff, x >> 8);
+}
+mobParity.push(friedEggs.length);
+for (const placement of friedEggs) {
+  const x = placement.x * 8;
+  mobParity.push((placement.y + 2) * 8, x & 0xff, x >> 8);
 }
 writeFileSync('build/runtime_mob_parity.bin', Buffer.from(mobParity));
 writeFileSync('build/room_templates.bin', Buffer.from(runtimeTemplates));
