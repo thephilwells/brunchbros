@@ -98,8 +98,12 @@ DEF TREASURE_EGG_FIRST_TILE EQU 220
 DEF TREASURE_EGG_UNCRACKED_TILE EQU TREASURE_EGG_FIRST_TILE
 DEF TREASURE_EGG_CRACKED_TILE EQU TREASURE_EGG_FIRST_TILE + 4
 DEF TREASURE_EGG_STATE_UNCRACKED EQU 1
+DEF TREASURE_EGG_STATE_CRACKED EQU 2
+DEF TREASURE_EGG_STATE_BURST EQU 3
+DEF TREASURE_EGG_STATE_HEART EQU 4
 DEF TREASURE_EGG_MAX_COUNT EQU 4
-DEF TREASURE_EGG_RECORD_SIZE EQU 5
+DEF TREASURE_EGG_RECORD_SIZE EQU 7
+DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -247,6 +251,8 @@ TreasureEggY: db
 TreasureEggX: dw
 TreasureEggState: db
 TreasureEggContents: db
+TreasureEggTimer: db
+TreasureEggHitThisSwing: db
 TreasureEggRecords: ds TREASURE_EGG_MAX_COUNT * TREASURE_EGG_RECORD_SIZE
 TreasureEggCount: db
 TreasureEggLoopIndex: db
@@ -1010,6 +1016,7 @@ PrepareSpriteBuffer:
 	call AdvanceBurgers
 	call AdvancePancakes
 	call AdvanceFriedEggs
+	call AdvanceTreasureEggs
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
@@ -1221,6 +1228,7 @@ MainLoop:
 	call ResetBurgerHitLatches
 	call ResetPancakeHitLatch
 	call ResetFriedEggHitLatches
+	call ResetTreasureEggHitLatches
 	pop de
 	pop bc
 .attackInputDone
@@ -1662,10 +1670,12 @@ MainLoop:
 	call TryPanHitBurgers
 	call TryPanHitPancakes
 	call TryPanHitFriedEggs
+	call TryPanHitTreasureEggs
 	call TryWeinerContacts
 	call TryBurgerContacts
 	call TryPancakeContacts
 	call TryFriedEggContacts
+	call TryCollectTreasureHearts
 
 	jp MainLoop
 
@@ -6600,8 +6610,335 @@ InitializePlaytestTreasureEggs:
 	call StoreTreasureEggRecord
 	ld a, 2
 	ld [TreasureEggCount], a
+	ld a, 4
+	ld [CurrentHealth], a
 	ret
 ENDC
+
+ResetTreasureEggHitLatches:
+	ld hl, TreasureEggRecords + TREASURE_EGG_RECORD_HIT_LATCH
+	ld de, TREASURE_EGG_RECORD_SIZE
+	ld b, TREASURE_EGG_MAX_COUNT
+	xor a
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
+	ret
+
+AdvanceTreasureEggs:
+	xor a
+	ld [TreasureEggLoopIndex], a
+.loop
+	ld a, [TreasureEggLoopIndex]
+	ld b, a
+	ld a, [TreasureEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadTreasureEggRecord
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_BURST
+	call z, AdvanceTreasureEggBurst
+	pop af
+	push af
+	call StoreTreasureEggRecord
+	pop af
+	inc a
+	ld [TreasureEggLoopIndex], a
+	jr .loop
+
+AdvanceTreasureEggBurst:
+	ld hl, TreasureEggTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	ret c
+	ld a, [TreasureEggContents]
+	and a
+	ld a, TREASURE_EGG_STATE_HEART
+	jr nz, .store
+	xor a
+.store
+	ld [TreasureEggState], a
+	ret
+
+TryPanHitTreasureEggs:
+	xor a
+	ld [TreasureEggLoopIndex], a
+.loop
+	ld a, [TreasureEggLoopIndex]
+	ld b, a
+	ld a, [TreasureEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadTreasureEggRecord
+	call TryPanHitTreasureEgg
+	pop af
+	push af
+	call StoreTreasureEggRecord
+	pop af
+	inc a
+	ld [TreasureEggLoopIndex], a
+	jr .loop
+
+TryPanHitTreasureEgg:
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_UNCRACKED
+	jr z, .active
+	cp a, TREASURE_EGG_STATE_CRACKED
+	ret nz
+.active
+	ld a, [TreasureEggHitThisSwing]
+	and a
+	ret nz
+	ld a, [AttackTimer]
+	and a
+	ret z
+	ld a, [AttackPanTileBase]
+	and a
+	ret z
+	call CheckTreasureEggAttackX
+	ret nc
+	call CheckTreasureEggAttackY
+	ret nc
+	ld a, 1
+	ld [TreasureEggHitThisSwing], a
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_UNCRACKED
+	jr nz, .burst
+	ld a, TREASURE_EGG_STATE_CRACKED
+	ld [TreasureEggState], a
+	ret
+.burst
+	ld a, TREASURE_EGG_STATE_BURST
+	ld [TreasureEggState], a
+	xor a
+	ld [TreasureEggTimer], a
+	ret
+
+CheckTreasureEggAttackX:
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jp z, CheckTreasureEggCloseX
+	ld a, [FacingFlip]
+	and a
+	jr nz, .left
+	ld a, [TreasureEggX]
+	add a, 8
+	ld l, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	jr .compare
+.left
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [TreasureEggX]
+	add a, 8
+	ld e, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	ld d, a
+.compare
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .miss
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 21
+	ret
+.miss
+	and a
+	ret
+
+CheckTreasureEggCloseX:
+	ld a, [TreasureEggX]
+	add a, 8
+	ld l, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .compare
+	ld a, l
+	cpl
+	inc a
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.compare
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.miss
+	and a
+	ret
+
+CheckTreasureEggAttackY:
+	ld a, [PlayerY]
+	ld b, a
+	ld c, a
+	dec c
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .checkStrike
+	ld a, b
+	sub a, 24
+	ld b, a
+	ld a, c
+	sub a, 16
+	ld c, a
+	jr .boundsReady
+.checkStrike
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .recovery
+	ld a, b
+	sub a, 16
+	ld b, a
+	jr .boundsReady
+.recovery
+	ld a, b
+	sub a, 8
+	ld b, a
+.boundsReady
+	ld a, [TreasureEggY]
+	dec a
+	cp a, b
+	jr c, .miss
+	ld a, [TreasureEggY]
+	sub a, 16
+	ld d, a
+	ld a, c
+	cp a, d
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
+TryCollectTreasureHearts:
+	ld a, [CurrentHealth]
+	cp a, HUD_MAX_HEALTH
+	ret nc
+	xor a
+	ld [TreasureEggLoopIndex], a
+.loop
+	ld a, [TreasureEggLoopIndex]
+	ld b, a
+	ld a, [TreasureEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadTreasureEggRecord
+	call TryCollectTreasureHeart
+	pop af
+	push af
+	call StoreTreasureEggRecord
+	pop af
+	inc a
+	ld [TreasureEggLoopIndex], a
+	jr .loop
+
+TryCollectTreasureHeart:
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_HEART
+	ret nz
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [TreasureEggX]
+	add a, 4
+	ld e, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	ret nz
+	ld a, [TreasureEggX]
+	add a, 11
+	ld l, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT
+	ld e, a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	ret nz
+	ld a, [PlayerY]
+	ld b, a
+	ld a, [TreasureEggY]
+	sub a, 8
+	cp a, b
+	ret nc
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, [TreasureEggY]
+	dec a
+	cp a, b
+	ret c
+	ld a, [CurrentHealth]
+	add a, 2
+	cp a, HUD_MAX_HEALTH + 1
+	jr c, .storeHealth
+	ld a, HUD_MAX_HEALTH
+.storeHealth
+	ld [CurrentHealth], a
+	xor a
+	ld [TreasureEggState], a
+	ret
 
 UpdateTreasureEggSprites:
 	ld a, [FriedEggOAMPointer]
@@ -6639,10 +6976,20 @@ UpdateTreasureEggSprite:
 	ld a, [TreasureEggState]
 	and a
 	ret z
+	cp a, TREASURE_EGG_STATE_HEART
+	jr z, .heart
+	cp a, TREASURE_EGG_STATE_BURST
+	jr z, .burst
 	ld d, TREASURE_EGG_UNCRACKED_TILE
 	cp a, TREASURE_EGG_STATE_UNCRACKED
 	jr z, .tileReady
 	ld d, TREASURE_EGG_CRACKED_TILE
+	jr .tileReady
+.burst
+	ld a, [TreasureEggTimer]
+	and a, $0c
+	add a, ENEMY_BURST_FIRST_TILE
+	ld d, a
 .tileReady
 	ld a, [CameraY]
 	ld b, a
@@ -6692,6 +7039,24 @@ UpdateTreasureEggSprite:
 	ld [hl+], a
 	ld a, d
 	add a, 3
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+.heart
+	ld a, [CameraY]
+	ld b, a
+	ld a, [TreasureEggY]
+	add a, 8
+	sub a, b
+	ld [hl+], a
+	ld a, [CameraX]
+	ld b, a
+	ld a, [TreasureEggX]
+	add a, 12
+	sub a, b
+	ld [hl+], a
+	ld a, HUD_FULL_HEART_TILE
 	ld [hl+], a
 	xor a
 	ld [hl], a

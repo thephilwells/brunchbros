@@ -1,8 +1,7 @@
 # HUD
 
-Status: **three-heart display and half-heart damage behavior implemented and
-accepted**. Death and Game Over were implemented for review on 2026-10-14;
-healing is not implemented.
+Status: **three-heart display, half-heart damage, and dropped-heart healing
+implemented**. Death and Game Over were implemented for review on 2026-10-14.
 
 ## Health
 
@@ -12,6 +11,8 @@ healing is not implemented.
   empty right half in the rightmost remaining heart.
 - Level transitions preserve health. Returning to the title after Game Over and
   starting a new run restores all three hearts.
+- A dropped heart restores two half-heart units, caps at six, and remains
+  collectible when Chef is already at full health.
 
 ## Rendering
 
