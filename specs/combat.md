@@ -69,7 +69,10 @@ one-tile solid obstacles blocking its path, falls from unsupported edges,
 passes upward through one-way platforms, and lands on solid or one-way support.
 Only obstacles lower than its standing body trigger a jump. A full-height wall
 cancels its directional commitment and horizontal velocity so it can resume
-pursuit instead of repeating failed jumps.
+pursuit instead of repeating failed jumps. When the Chef is above it, a
+grounded EGG blocked by a body-height wall uses a stronger escape jump if the
+next tile above the wall is open. This lets it climb out of Dining Room seam
+wells without treating full room walls as climbable.
 Its art sits one pixel below its collision feet line. Its contact-damage hitbox
 is the two center pixels of its body, allowing Chef to clear its visible edges
 while jumping over it. Contact removes one half-heart. Each nonlethal pan hit
@@ -77,21 +80,19 @@ flickers it and knocks it eight pixels away
 from Chef, followed by a 20-frame pursuit stun that still permits falling and
 landing; the third hit starts the shared cloudburst.
 
-Production levels will guarantee two instances of every mob eligible for that
-specific level roster. The current dining-room build attempts two WEINERs, two
-BURGERs, two PANCAKEs, and two FRIED_EGGs as a temporary integration stress
-test rather than a final encounter distribution. WEINERs
+Production alternates between two level-specific rosters. `DINING_ROOM_1`
+attempts two WEINERs, two PANCAKEs, and two FRIED_EGGs; `DINING_ROOM_2`
+attempts two BURGERs, two PANCAKEs, and two FRIED_EGGs. WEINERs
 may begin on full-solid floors or ceilings; BURGERs and FRIED_EGGs begin on
 solid or one-way support. PANCAKEs begin five tiles above a structural floor
 row and oscillate across a three-tile span. All four require one collision-free
 tile beside each side. Frequency weights eight, four, three, and two remain
 available for later additional slots. BURGER and PANCAKE reserve two
 shadow-OAM entries normally and expand to four during their cloudbursts.
-Layouts without two remaining safe two-tile floor footprints may omit an EGG
-during this temporary combined-roster phase; biome-specific rosters will replace
-that exception. The observed slowdown while all eight stress-test mobs are
-active is not a tuning target. Reassess performance after `DINING_ROOM_1` and
-`DINING_ROOM_2` use their documented level-specific rosters.
+Layouts without enough safe footprints may fall short of the population target;
+future curated seed pools can exclude those seeds. Performance should be
+reassessed against these six-mob level-specific populations before runtime
+optimization is scheduled.
 
 ## Accepted initial rules
 

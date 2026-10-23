@@ -465,6 +465,18 @@ writeFileSync('build/dining_room_wallpaper.inc', [
   `DEF DINING_WALLPAPER_SELECTION_SALT EQU $${wallpaperManifest.selectionSalt.toString(16).padStart(4, '0')}`,
   '',
 ].join('\n'));
+const mobById = new Map(mobManifest.mobs.map(mob => [mob.id, mob]));
+const levelKindName = id => `LEVEL_KIND_${id.toUpperCase()}`;
+const rosterLabel = id => `DiningRoomMobRoster_${id}`;
+const mobRosterLines = mobManifest.levelKinds.flatMap((levelKind, index) => {
+  const eligible = new Set(levelKind.mobs);
+  const ordered = mobManifest.population.placementOrder.filter(id => eligible.has(id)).map(id => mobById.get(id));
+  return [
+    `DEF ${levelKindName(levelKind.id)} EQU ${index}`,
+    `${rosterLabel(levelKind.id)}:`,
+    `\tdb ${ordered.flatMap(mob => [mob.runtimeType, mob.minimum]).join(', ')}, $ff`,
+  ];
+});
 writeFileSync('build/dining_room_mobs.inc', [
   `DEF DINING_MOB_ADDITIONAL_MINIMUM EQU ${mobManifest.population.additionalMinimum}`,
   `DEF DINING_MOB_ADDITIONAL_MAXIMUM EQU ${mobManifest.population.additionalMaximum}`,
@@ -480,6 +492,10 @@ writeFileSync('build/dining_room_mobs.inc', [
   `DEF DINING_FRIED_EGG_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'fried_egg').frequency}`,
   `DEF DINING_FRIED_EGG_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'fried_egg').minimum}`,
   `DEF DINING_MOB_TOTAL_FREQUENCY EQU ${mobManifest.mobs.reduce((total, mob) => total + mob.frequency, 0)}`,
+  `DEF DINING_ROOM_LEVEL_KIND_COUNT EQU ${mobManifest.levelKinds.length}`,
+  'DiningRoomMobRosterPointers:',
+  ...mobManifest.levelKinds.map(levelKind => `\tdw ${rosterLabel(levelKind.id)}`),
+  ...mobRosterLines,
   '',
 ].join('\n'));
 

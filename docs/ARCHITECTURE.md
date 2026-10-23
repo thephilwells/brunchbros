@@ -88,9 +88,11 @@ maps live in fixed ROM bank 1:
   centers the Chef at the threshold, and advances the existing right-facing
   walk frames diagonally for 32 frames. OAM background priority lets nonzero
   doorway pixels mask the Chef while the color-0 opening remains transparent.
-  The finished state hides the Chef. The next frame advances the xorshift state,
-  preserves that value as the next seed, and calls `LoadCurrentLevel`. Until
-  other biome generators exist, this immediately produces another dining room.
+  The finished state hides the Chef. The next frame advances the xorshift state
+  and `LevelProgressionIndex`, loads the corresponding `CurrentLevelKind`, and
+  calls `LoadCurrentLevel`. The current progression table alternates
+  `DINING_ROOM_1` and `DINING_ROOM_2`; both use the Dining Room generator but
+  select different encounter rosters.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
   into the four shadow-OAM entries that make up the 16×16 player and, while attacking,
   the adjacent four-entry pan composite, converting to
@@ -161,6 +163,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerInvulnerabilityTimer` | Remaining contact-damage immunity frames; also drives four-frame flicker blocks |
 | `PlayerKnockbackRemaining` / `PlayerKnockbackDirection` | Remaining one-pixel solid-aware push steps and signed horizontal direction |
 | `DeathState` / `DeathHoldTimer` / `DeathScreenY` / `DeathVelocity` | Death/Game Over phase, stare hold, and collision-free 16-bit screen-space death arc |
+| `LevelProgressionIndex` / `CurrentLevelKind` | Position in the ordered level-kind queue and the encounter/generator identity selected for the current level |
 | `WeinerY` / `WeinerX` | Active-record WEINER top-left position in world coordinates |
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion or four-frame cloudburst cadence and the active four-tile pose |
 | `WeinerActive` / `WeinerHitThisSwing` | Inactive, live, or bursting state and per-swing repeat-hit latch |
@@ -198,9 +201,12 @@ all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. 
 `LevelMap`; `$9800–$9BFF` contains its streamed 32-column view. The map includes
 a maximum compatible matching of reciprocal horizontal and vertical domino
 seams, at most one generated ledge-catch room, and the shared descent exit.
-Exit descent currently reloads a freshly seeded dining room through the shared
-level-load path. Biome selection and non-dining generators do not exist. See
-`specs/background-assets.md` for the remaining VRAM allocation.
+Exit descent reloads a freshly seeded level through the shared level-load path.
+`LevelProgression` is the ordered queue of level kinds, while
+`DiningRoomMobRosterPointers` maps the current kind to its encounter roster.
+Future biome generators can dispatch from `CurrentLevelKind`; only the shared
+Dining Room generator exists today. See `specs/background-assets.md` for the
+remaining VRAM allocation.
 
 ## World vs. screen coordinates
 

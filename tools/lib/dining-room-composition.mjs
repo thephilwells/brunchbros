@@ -18,6 +18,7 @@ const BACKGROUND_BY_ID = new Map(BACKGROUND_MANIFEST.components.map(component =>
 const WALLPAPER_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-wallpaper.json', import.meta.url), 'utf8'));
 const MOB_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-mobs.json', import.meta.url), 'utf8'));
 const MOB_BY_ID = new Map(MOB_MANIFEST.mobs.map(mob => [mob.id, mob]));
+const MOB_ROSTERS = new Map(MOB_MANIFEST.levelKinds.map(levelKind => [levelKind.id, levelKind.mobs]));
 
 function componentLayouts(component) {
   return component.orientations ?? [{ id: 'default', tiles: component.tiles }];
@@ -421,15 +422,15 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
   return candidates;
 }
 
-function mobSelections(level) {
+function mobSelections(level, levelKind) {
   const occupiedFurniture = furnitureCells(level);
   const occupiedMobs = new Set();
-  const priority = ['fried_egg', 'pancake', 'burger', 'weiner'].map(id => MOB_BY_ID.get(id));
-  const typeIndexes = new Map([['pancake', 0], ['burger', 1], ['fried_egg', 2], ['weiner', 3]]);
+  const eligible = new Set(MOB_ROSTERS.get(levelKind));
+  const priority = MOB_MANIFEST.population.placementOrder.filter(id => eligible.has(id)).map(id => MOB_BY_ID.get(id));
   const candidatesByRoom = Array.from({ length: 16 }, (_, room) => priority.reduce((total, mob) => total + mobCandidates(level, room, mob, occupiedFurniture).length, 0));
   const placements = [];
   for (const mob of priority) {
-    const typeIndex = typeIndexes.get(mob.id);
+    const typeIndex = mob.runtimeType;
     for (let instance = 0; instance < mob.minimum; instance++) {
       const selectionSalt = MOB_MANIFEST.population.selectionSalt ^ typeIndex * 0x101 ^ instance;
       const positionSalt = MOB_MANIFEST.population.positionSalt ^ typeIndex * 0x101 ^ instance;
@@ -451,14 +452,16 @@ function mobSelections(level) {
       });
     }
   }
-  const target = MOB_MANIFEST.mobs.reduce((total, mob) => total + mob.minimum, 0);
+  const target = priority.reduce((total, mob) => total + mob.minimum, 0);
   return { candidatesByRoom, placements, target };
 }
 
-export function addDiningRoomMobs(level) {
-  const selection = mobSelections(level);
+export function addDiningRoomMobs(level, levelKind = 'dining_room_1') {
+  if (!MOB_ROSTERS.has(levelKind)) throw new Error(`Unknown Dining Room level kind ${levelKind}`);
+  const selection = mobSelections(level, levelKind);
   return {
     ...level,
+    levelKind,
     roomMobCandidateCounts: selection.candidatesByRoom,
     mobPopulationTarget: selection.target,
     mobPlacements: selection.placements,
@@ -469,14 +472,16 @@ export function composeDiningRoomFixtures(level) {
   return addDiningRoomFurniture(addDiningRoomBackground(addDiningRoomPlacementReservations(level)));
 }
 
-export function composeDiningRoom(level) {
-  const composed = addDiningRoomMobs(addDiningRoomWallpaper(composeDiningRoomFixtures(level)));
+export function composeDiningRoom(level, levelKind = 'dining_room_1') {
+  const composed = addDiningRoomMobs(addDiningRoomWallpaper(composeDiningRoomFixtures(level)), levelKind);
   composed.compositionValidation = validateDiningRoomComposition(composed);
   return composed;
 }
 
 export function validateDiningRoomComposition(level) {
   const errors = [...validateDiningRoomPlacementReservations(level).errors];
+  const eligibleMobs = new Set(MOB_ROSTERS.get(level.levelKind) ?? []);
+  if (!MOB_ROSTERS.has(level.levelKind)) errors.push(`unknown Dining Room level kind ${level.levelKind}`);
   if (!Array.isArray(level.structuralTiles) || level.structuralTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('structural tile snapshot must contain 1,280 cells');
   if (!Array.isArray(level.roomBackgroundCandidateCounts) || level.roomBackgroundCandidateCounts.length !== 16) errors.push('room background candidate counts must contain 16 entries');
   if (!Array.isArray(level.roomFurnitureCandidateCounts) || level.roomFurnitureCandidateCounts.length !== 16) errors.push('room furniture candidate counts must contain 16 entries');
@@ -620,7 +625,7 @@ export function validateDiningRoomComposition(level) {
   }
   if (level.roomWallpaperCandidateCounts.some((count, room) => count !== expectedWallpaperCandidateCounts[room])) errors.push('room wallpaper candidate counts are inconsistent');
 
-  const expectedMobs = mobSelections(level);
+  const expectedMobs = mobSelections(level, level.levelKind);
   if (level.mobPopulationTarget !== expectedMobs.target) errors.push('mob population target is inconsistent');
   if (level.roomMobCandidateCounts.some((count, room) => count !== expectedMobs.candidatesByRoom[room])) errors.push('room mob candidate counts are inconsistent');
   if (JSON.stringify(level.mobPlacements) !== JSON.stringify(expectedMobs.placements)) errors.push('mob placements are inconsistent');
@@ -633,6 +638,7 @@ export function validateDiningRoomComposition(level) {
       errors.push(`room ${placement.room} uses unknown mob ${placement.mob}`);
       continue;
     }
+    if (!eligibleMobs.has(mob.id)) errors.push(`${mob.id} is not eligible for ${level.levelKind}`);
     mobCounts.set(placement.mob, (mobCounts.get(placement.mob) ?? 0) + 1);
     if (placement.room === level.spawnRoom || placement.room === level.exitRoom) errors.push(`protected endpoint room ${placement.room} contains a mob`);
     if (level.roomTraversalClasses[placement.room] === TRAVERSAL_LEDGE_CATCH) errors.push(`ledge-catch room ${placement.room} contains a mob`);
@@ -648,8 +654,6 @@ export function validateDiningRoomComposition(level) {
       }
     }
   }
-  for (const mob of MOB_MANIFEST.mobs) if (mob.id !== 'fried_egg' && (mobCounts.get(mob.id) ?? 0) < mob.minimum) errors.push(`${mob.id} population is below ${mob.minimum}`);
-
   for (let index = 0; index < level.tiles.length; index++) {
     if (!occupied.has(index) && level.tiles[index] !== level.structuralTiles[index]) errors.push(`composition changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);
     if (!wallpaperOccupied.has(index) && level.tiles[index] !== level.wallpaperSourceTiles[index]) errors.push(`wallpaper changed unoccupied cell ${index % LEVEL_WIDTH},${Math.floor(index / LEVEL_WIDTH)}`);

@@ -13,6 +13,9 @@ for (let y = 14; y < 29; y++) {
 }
 solid[28][14] = true;
 solid[28][26] = true;
+for (let y = 27; y <= 28; y++) {
+  for (let x = 20; x <= 25; x++) solid[y][x] = true;
+}
 
 const tiles = solid.map((row, y) => row.map((occupied, x) => {
   if (occupied) return 1 +
@@ -27,9 +30,9 @@ const tiles = solid.map((row, y) => row.map((occupied, x) => {
 
 writeFileSync('build/fried_egg_playtest.tilemap', Buffer.from(tiles.flat()));
 writeFileSync('build/fried_egg_playtest.inc', [
-  'DEF FRIED_EGG_PLAYTEST_PLAYER_X EQU 48',
-  'DEF FRIED_EGG_PLAYTEST_PLAYER_Y EQU 232',
-  'DEF FRIED_EGG_PLAYTEST_EGG_X EQU 152',
+  'DEF FRIED_EGG_PLAYTEST_PLAYER_X EQU 184',
+  'DEF FRIED_EGG_PLAYTEST_PLAYER_Y EQU 216',
+  'DEF FRIED_EGG_PLAYTEST_EGG_X EQU 120',
   'DEF FRIED_EGG_PLAYTEST_EGG_Y EQU 232',
   '',
 ].join('\n'));

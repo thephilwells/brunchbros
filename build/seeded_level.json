@@ -6183,6 +6183,7 @@
       "tile": 80
     }
   ],
+  "levelKind": "dining_room_1",
   "roomMobCandidateCounts": [
     10,
     8,
@@ -6190,18 +6191,18 @@
     0,
     0,
     0,
-    2,
+    0,
     10,
     0,
-    17,
+    14,
     8,
-    2,
-    2,
     0,
-    1,
-    16
+    0,
+    0,
+    0,
+    12
   ],
-  "mobPopulationTarget": 8,
+  "mobPopulationTarget": 6,
   "mobPlacements": [
     {
       "room": 9,
@@ -6240,26 +6241,6 @@
       "direction": "right",
       "x": 32,
       "y": 10,
-      "width": 2,
-      "height": 1
-    },
-    {
-      "room": 15,
-      "mob": "burger",
-      "frequency": 4,
-      "direction": "right",
-      "x": 36,
-      "y": 27,
-      "width": 2,
-      "height": 1
-    },
-    {
-      "room": 6,
-      "mob": "burger",
-      "frequency": 4,
-      "direction": "right",
-      "x": 26,
-      "y": 13,
       "width": 2,
       "height": 1
     },

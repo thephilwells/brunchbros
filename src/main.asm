@@ -86,6 +86,7 @@ DEF FRIED_EGG_RECORD_HIT_LATCH EQU 14
 DEF FRIED_EGG_FRAME_DURATION EQU 8
 DEF FRIED_EGG_LANDING_DURATION EQU 8
 DEF FRIED_EGG_LAUNCH_VELOCITY EQU -5
+DEF FRIED_EGG_ESCAPE_LAUNCH_VELOCITY EQU -8
 DEF FRIED_EGG_TERMINAL_VELOCITY EQU 8
 DEF FRIED_EGG_LEVEL_TOLERANCE EQU 28
 DEF FRIED_EGG_MAX_HORIZONTAL_VELOCITY EQU 16
@@ -161,6 +162,8 @@ DeathState: db
 DeathScreenY: dw
 DeathVelocity: db
 DeathHoldTimer: db
+LevelProgressionIndex: db
+CurrentLevelKind: db
 WeinerY: db
 WeinerX: dw
 WeinerAnimTimer: db
@@ -467,6 +470,7 @@ TitleLoop:
 StartGame:
 	ld a, HUD_MAX_HEALTH
 	ld [CurrentHealth], a
+	call InitializeLevelProgression
 	call LoadCurrentLevel
 	jp MainLoop
 
@@ -704,6 +708,34 @@ AdvanceLevelSeed:
 	ld a, [GenerationRandomState + 1]
 	ld [SelectedSeed + 1], a
 	ret
+
+InitializeLevelProgression:
+	xor a
+	ld [LevelProgressionIndex], a
+	jp LoadLevelKindFromProgression
+
+AdvanceLevelProgression:
+	ld a, [LevelProgressionIndex]
+	inc a
+	cp a, LevelProgressionEnd - LevelProgression
+	jr c, .store
+	xor a
+.store
+	ld [LevelProgressionIndex], a
+
+LoadLevelKindFromProgression:
+	ld a, [LevelProgressionIndex]
+	ld e, a
+	ld d, 0
+	ld hl, LevelProgression
+	add hl, de
+	ld a, [hl]
+	ld [CurrentLevelKind], a
+	ret
+
+LevelProgression:
+	db LEVEL_KIND_DINING_ROOM_1, LEVEL_KIND_DINING_ROOM_2
+LevelProgressionEnd:
 
 IF DEF(ROOM_VARIANT_PLAYTEST)
 LoadRoomVariantPlaytest:
@@ -1092,6 +1124,7 @@ MainLoop:
 
 .loadNextLevel
 	call AdvanceLevelSeed
+	call AdvanceLevelProgression
 	call LoadCurrentLevel
 	jp MainLoop
 
@@ -5474,6 +5507,11 @@ StartFriedEggFall:
 StartFriedEggJump:
 	ld a, FRIED_EGG_LAUNCH_VELOCITY
 	ld [FriedEggVelY], a
+	jr StartFriedEggAirborne
+
+StartFriedEggEscapeJump:
+	ld a, FRIED_EGG_ESCAPE_LAUNCH_VELOCITY
+	ld [FriedEggVelY], a
 StartFriedEggAirborne:
 	ld a, FRIED_EGG_STATE_AIRBORNE
 	ld [FriedEggState], a
@@ -5580,6 +5618,11 @@ MoveFriedEggHorizontal:
 	ret z
 	call FriedEggForwardTopBlocked
 	jp nz, StartFriedEggJump
+	call FriedEggPlayerAbove
+	jr nc, .stop
+	call FriedEggForwardEscapeClear
+	jp nz, StartFriedEggEscapeJump
+.stop
 	xor a
 	ld [FriedEggVelocityX], a
 	ld [FriedEggFractionX], a
@@ -5606,6 +5649,42 @@ FriedEggForwardTopBlocked:
 	ld c, a
 	ld a, [FriedEggY]
 	sub a, 15
+	ld d, a
+	jp IsWall
+
+FriedEggPlayerAbove:
+	ld a, [PlayerY]
+	ld b, a
+	ld a, [FriedEggY]
+	cp a, b
+	jr c, .notAbove
+	jr z, .notAbove
+	scf
+	ret
+.notAbove
+	and a
+	ret
+
+FriedEggForwardEscapeClear:
+	ld a, [FriedEggDirection]
+	bit 7, a
+	jr nz, .left
+	ld a, [FriedEggX]
+	add a, 16
+	ld e, a
+	ld a, [FriedEggX + 1]
+	adc a, 0
+	jr .probe
+.left
+	ld a, [FriedEggX]
+	sub a, 1
+	ld e, a
+	ld a, [FriedEggX + 1]
+	sbc a, 0
+.probe
+	ld c, a
+	ld a, [FriedEggY]
+	sub a, 23
 	ld d, a
 	jp IsWall
 

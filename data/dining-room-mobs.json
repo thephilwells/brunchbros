@@ -4,11 +4,23 @@
     "additionalMaximum": 0,
     "selectionSalt": 44257,
     "positionSalt": 57671,
-    "typeSalt": 61937
+    "typeSalt": 61937,
+    "placementOrder": ["fried_egg", "pancake", "burger", "weiner"]
   },
+  "levelKinds": [
+    {
+      "id": "dining_room_1",
+      "mobs": ["weiner", "pancake", "fried_egg"]
+    },
+    {
+      "id": "dining_room_2",
+      "mobs": ["burger", "pancake", "fried_egg"]
+    }
+  ],
   "mobs": [
     {
       "id": "weiner",
+      "runtimeType": 3,
       "minimum": 2,
       "frequency": 8,
       "width": 2,
@@ -17,6 +29,7 @@
     },
     {
       "id": "burger",
+      "runtimeType": 1,
       "minimum": 2,
       "frequency": 4,
       "width": 2,
@@ -25,6 +38,7 @@
     },
     {
       "id": "pancake",
+      "runtimeType": 0,
       "minimum": 2,
       "frequency": 3,
       "width": 2,
@@ -33,6 +47,7 @@
     },
     {
       "id": "fried_egg",
+      "runtimeType": 2,
       "minimum": 2,
       "frequency": 2,
       "width": 2,

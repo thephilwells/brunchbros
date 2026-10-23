@@ -102,6 +102,8 @@ MobSavedRandomState: dw
 SECTION "Level Generation", ROM0
 GenerateLevel:
 IF DEF(FURNITURE_PARITY_TEST)
+	ld a, GENERATED_LEVEL_KIND
+	ld [CurrentLevelKind], a
 	ld a, LOW(GENERATED_LEVEL_SEED)
 	ld [SelectedSeed], a
 	ld b, a
@@ -3079,23 +3081,26 @@ PlaceDiningRoomMobs:
 	ld [hl+], a
 	dec b
 	jr nz, .clearOccupied
-	xor a
-	ld a, 2
+	ld a, [CurrentLevelKind]
+	add a, a
+	ld e, a
+	ld d, 0
+	ld hl, DiningRoomMobRosterPointers
+	add hl, de
+	ld a, [hl+]
+	ld b, [hl]
+	ld l, a
+	ld h, b
+.roster
+	ld a, [hl+]
+	cp a, $ff
+	ret z
 	ld [MobType], a
-	ld a, DINING_FRIED_EGG_MINIMUM
+	ld a, [hl+]
+	push hl
 	call PlaceMobType
-	xor a
-	ld [MobType], a
-	ld a, DINING_PANCAKE_MINIMUM
-	call PlaceMobType
-	ld a, 1
-	ld [MobType], a
-	ld a, DINING_BURGER_MINIMUM
-	call PlaceMobType
-	ld a, 3
-	ld [MobType], a
-	ld a, DINING_WEINER_MINIMUM
-	jp PlaceMobType
+	pop hl
+	jr .roster
 
 PlaceMobType:
 	ld [MobTargetCount], a

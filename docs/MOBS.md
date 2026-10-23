@@ -1,4 +1,4 @@
-Every mob eligible for a specific level has a minimum population of two.
+Every mob eligible for a specific level has a target minimum population of two.
 Eligibility comes from the level identifiers in each mob's `BIOMES` list; mobs
 from the same biome do not automatically coexist. `FREQUENCY` is a relative
 selection weight for additional population beyond those guarantees; it does
@@ -6,26 +6,24 @@ not determine the minimum or the total number of enemies in a level. A weight
 of 8 is the common baseline: WEINER should appear with roughly the regularity
 of Spelunky's SNAKE. These initial weights remain tuning values.
 
-The current seeded Dining Room production build deliberately loads all
-implemented mobs together as an integration stress fixture. Safe placement is
-required, but this temporary roster need not fit two of every mob in every
-seed. New mobs should be added only to the level rosters named by `BIOMES`, not
-automatically added to this all-mob fixture. Performance tuning is deferred
-until representative level-specific rosters are active; the current slowdown
-with every mob alive is useful stress-test data rather than the target runtime
-load.
+Production alternates between `DINING_ROOM_1` and `DINING_ROOM_2`, generating a
+new seed at each exit and selecting only the mobs eligible for the next level
+kind. Safe placement is required, but a generated seed need not fit two of
+every eligible mob. New mobs should be added only to the level rosters named by
+`BIOMES`. Performance tuning remains deferred until these representative
+populations have been playtested.
 
-# Next population step
+# Dining Room population
 
-Replace the temporary all-mob Dining Room population with explicit level
-rosters before adding another mob to production:
+The current progression loops through these explicit level rosters:
 
 - `DINING_ROOM_1`: WEINER, PANCAKE, FRIED_EGG
 - `DINING_ROOM_2`: BURGER, PANCAKE, FRIED_EGG
 
-Apply the two-per-eligible-mob minimum within each roster, retain the documented
-frequency weights for later extra slots, and rerun spawn-safety, runtime-parity,
-and performance checks against those representative populations. DISCO_FRY is
+The runtime and host generator target two of each eligible mob and retain the
+documented frequency weights for later extra slots. Safe seeds without enough
+valid footprints may fall short until curated per-kind seed pools can exclude
+them. DISCO_FRY is
 the next unimplemented mob, but it belongs to the Kitchen roster rather than
 the Dining Room.
 

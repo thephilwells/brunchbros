@@ -4,11 +4,12 @@ import { generateLevel } from './lib/level-generation.mjs';
 import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
 const generated = JSON.parse(readFileSync('build/seeded_level.json', 'utf8'));
-const expected = composeDiningRoom(generateLevel(generated.seed));
+const expected = composeDiningRoom(generateLevel(generated.seed), generated.levelKind);
 const tilemap = readFileSync('build/seeded_level.tilemap');
 const runtimeParityTilemap = readFileSync('build/runtime_level_parity.tilemap');
 const runtimeTemplates = readFileSync('build/room_templates.bin');
 const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
+const mobManifest = JSON.parse(readFileSync('data/dining-room-mobs.json', 'utf8'));
 const include = readFileSync('build/seeded_level.inc', 'utf8');
 const tmx = readFileSync('gfx/seeded_level.tmx', 'utf8');
 
@@ -22,6 +23,7 @@ const semanticValues = { '.': 0, '#': 1, '=': 2 };
 const expectedRuntimeTemplates = templateSet.templates.flatMap(template => template.rows.flatMap(row => [...row].map(cell => semanticValues[cell])));
 assert.deepEqual([...runtimeTemplates], expectedRuntimeTemplates);
 assert.match(include, new RegExp(`GENERATED_LEVEL_SEED EQU ${expected.seed}`));
+assert.match(include, new RegExp(`GENERATED_LEVEL_KIND EQU ${mobManifest.levelKinds.findIndex(levelKind => levelKind.id === expected.levelKind)}`));
 assert.match(include, new RegExp(`GENERATED_PLAYER_X EQU ${expected.spawnPosition.x}`));
 assert.match(include, new RegExp(`GENERATED_PLAYER_Y EQU ${expected.spawnPosition.y}`));
 assert.match(tmx, /name="Seeded Terrain"/);

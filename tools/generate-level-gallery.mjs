@@ -9,18 +9,20 @@ import {
 import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
 function readArguments(args) {
-  const options = { biome: 'dining_room', seed: 0, count: 256, out: 'build/level-gallery' };
+  const options = { biome: 'dining_room', levelKind: 'alternating', seed: 0, count: 256, out: 'build/level-gallery' };
   for (let index = 0; index < args.length; index += 2) {
     const name = args[index];
     const value = args[index + 1];
     if (value === undefined) throw new Error(`Missing value for ${name}`);
     if (name === '--biome') options.biome = value;
+    else if (name === '--level-kind') options.levelKind = value;
     else if (name === '--seed') options.seed = Number(value);
     else if (name === '--count') options.count = Number(value);
     else if (name === '--out') options.out = value;
     else throw new Error(`Unknown argument ${name}`);
   }
   if (options.biome !== 'dining_room') throw new Error('Only dining_room is available');
+  if (!['alternating', 'dining_room_1', 'dining_room_2'].includes(options.levelKind)) throw new Error('Level kind must be alternating, dining_room_1, or dining_room_2');
   if (!Number.isInteger(options.seed) || options.seed < 0 || options.seed > 0xffff) throw new Error('Seed must be an integer from 0 through 65535');
   if (!Number.isInteger(options.count) || options.count < 1 || options.count > 0x10000) throw new Error('Count must be an integer from 1 through 65536');
   return options;
@@ -43,7 +45,7 @@ function renderGallery(levels, summary) {
     const horizontalDominoes = level.roomWidePorts.filter(ports => ports & 2).length;
     const verticalDominoes = level.roomWidePorts.filter(ports => ports & 8).length;
     const reservedCells = level.placementReservationMask.filter(Boolean).length;
-    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · ${horizontalDominoes}H/${verticalDominoes}V dominoes · ${boundaryRooms} boundary · ${reservedCells} reserved · ${level.backgroundPlacements.length} background · ${level.furniturePlacements.length} furniture · ${level.wallpaperPlacements.length} motifs · ${level.mobPlacements.length}/${level.mobPopulationTarget} mobs</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
+    return `<article class="card ${status}"><header><strong>Seed ${level.seed}</strong><span>${level.levelKind} · ${status} · ${level.criticalRouteLength} critical</span></header>${levelToSvg(level)}<p>columns ${level.columns.join(' → ')} · ${horizontalDominoes}H/${verticalDominoes}V dominoes · ${boundaryRooms} boundary · ${reservedCells} reserved · ${level.backgroundPlacements.length} background · ${level.furniturePlacements.length} furniture · ${level.wallpaperPlacements.length} motifs · ${level.mobPlacements.length}/${level.mobPopulationTarget} mobs</p><footer><a href="levels/${name}.tmx">TMX</a><a href="levels/${name}.json">JSON</a></footer></article>`;
   }).join('\n');
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Brunch Bros level gallery</title><style>
@@ -61,7 +63,8 @@ const tilesetSource = relative(levelsDirectory, resolve('gfx/dining_room.tsx')).
 const levels = [];
 for (let offset = 0; offset < options.count; offset++) {
   const seed = (options.seed + offset) & 0xffff;
-  const level = composeDiningRoom(generateLevel(seed));
+  const levelKind = options.levelKind === 'alternating' ? `dining_room_${offset % 2 + 1}` : options.levelKind;
+  const level = composeDiningRoom(generateLevel(seed), levelKind);
   levels.push(level);
   const name = String(seed).padStart(5, '0');
   writeFileSync(resolve(levelsDirectory, `${name}.tmx`), levelToTmx(level, tilesetSource));
@@ -73,6 +76,7 @@ const portEntries = levels.flatMap(level => level.roomPorts);
 const summary = {
   version: 8,
   biome: options.biome,
+  levelKind: options.levelKind,
   firstSeed: options.seed,
   count: options.count,
   validCount: levels.length - failures.length,

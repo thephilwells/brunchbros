@@ -12,3 +12,13 @@ DEF DINING_PANCAKE_MINIMUM EQU 2
 DEF DINING_FRIED_EGG_FREQUENCY EQU 2
 DEF DINING_FRIED_EGG_MINIMUM EQU 2
 DEF DINING_MOB_TOTAL_FREQUENCY EQU 17
+DEF DINING_ROOM_LEVEL_KIND_COUNT EQU 2
+DiningRoomMobRosterPointers:
+	dw DiningRoomMobRoster_dining_room_1
+	dw DiningRoomMobRoster_dining_room_2
+DEF LEVEL_KIND_DINING_ROOM_1 EQU 0
+DiningRoomMobRoster_dining_room_1:
+	db 2, 2, 0, 2, 3, 2, $ff
+DEF LEVEL_KIND_DINING_ROOM_2 EQU 1
+DiningRoomMobRoster_dining_room_2:
+	db 2, 2, 0, 2, 1, 2, $ff
