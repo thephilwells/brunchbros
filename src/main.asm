@@ -94,6 +94,12 @@ DEF FRIED_EGG_HORIZONTAL_ACCELERATION EQU 4
 DEF FRIED_EGG_TURN_COMMITMENT EQU 20
 DEF FRIED_EGG_HIT_KNOCKBACK_DISTANCE EQU 8
 DEF FRIED_EGG_HIT_STUN_DURATION EQU 20
+DEF TREASURE_EGG_FIRST_TILE EQU 220
+DEF TREASURE_EGG_UNCRACKED_TILE EQU TREASURE_EGG_FIRST_TILE
+DEF TREASURE_EGG_CRACKED_TILE EQU TREASURE_EGG_FIRST_TILE + 4
+DEF TREASURE_EGG_STATE_UNCRACKED EQU 1
+DEF TREASURE_EGG_MAX_COUNT EQU 4
+DEF TREASURE_EGG_RECORD_SIZE EQU 5
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
 DEF DEATH_STATE_GAME_OVER EQU 2
@@ -117,6 +123,9 @@ INCLUDE "build/pancake_playtest.inc"
 ENDC
 IF DEF(FRIED_EGG_PLAYTEST)
 INCLUDE "build/fried_egg_playtest.inc"
+ENDC
+IF DEF(TREASURE_EGG_PLAYTEST)
+INCLUDE "build/treasure_egg_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -234,6 +243,14 @@ FriedEggRecords: ds FRIED_EGG_MAX_COUNT * FRIED_EGG_RECORD_SIZE
 FriedEggCount: db
 FriedEggLoopIndex: db
 FriedEggOAMPointer: dw
+TreasureEggY: db
+TreasureEggX: dw
+TreasureEggState: db
+TreasureEggContents: db
+TreasureEggRecords: ds TREASURE_EGG_MAX_COUNT * TREASURE_EGG_RECORD_SIZE
+TreasureEggCount: db
+TreasureEggLoopIndex: db
+TreasureEggOAMPointer: dw
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -398,6 +415,15 @@ Start:
 	jr nz, .copyFriedEggTilesInner
 	dec b
 	jr nz, .copyFriedEggTilesOuter
+	ld de, TreasureEggTiles
+	ld hl, $8dc0
+	ld c, 8 * 16
+.copyTreasureEggTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyTreasureEggTiles
 
 	call LoadTitleScreen
 	xor a
@@ -480,13 +506,18 @@ LoadCurrentLevel:
 	call ClearBurgerRecords
 	call ClearPancakeRecords
 	call ClearFriedEggRecords
+	call ClearTreasureEggRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
+	IF DEF(TREASURE_EGG_PLAYTEST)
+	call LoadTreasureEggPlaytest
+	ELSE
 	IF DEF(FRIED_EGG_PLAYTEST)
 	call LoadFriedEggPlaytest
 	ELSE
 	call GenerateLevel
+	ENDC
 	ENDC
 ENDC
 IF DEF(PANCAKE_PLAYTEST)
@@ -575,6 +606,9 @@ ENDC
 IF DEF(FRIED_EGG_PLAYTEST)
 	call InitializePlaytestFriedEgg
 ENDC
+IF DEF(TREASURE_EGG_PLAYTEST)
+	call InitializePlaytestTreasureEggs
+ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
@@ -586,6 +620,7 @@ ENDC
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
+	call UpdateTreasureEggSprites
 	call hOAMDMA
 
 	ld a, %10000011
@@ -697,6 +732,30 @@ LoadFriedEggPlaytest:
 	ld a, HIGH(FRIED_EGG_PLAYTEST_PLAYER_X)
 	ld [GeneratedPlayerX + 1], a
 	ld a, FRIED_EGG_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
+
+IF DEF(TREASURE_EGG_PLAYTEST)
+LoadTreasureEggPlaytest:
+	ld de, TreasureEggPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(TREASURE_EGG_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(TREASURE_EGG_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, TREASURE_EGG_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
 	ret
 ENDC
@@ -942,6 +1001,7 @@ PrepareSpriteBuffer:
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
+	call UpdateTreasureEggSprites
 	ret
 .gameplay
 	call UpdateCameraState
@@ -955,6 +1015,7 @@ PrepareSpriteBuffer:
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
+	call UpdateTreasureEggSprites
 	ret
 
 ClearMobSpriteBuffer:
@@ -6461,6 +6522,181 @@ HideFriedEggSprite:
 	ld [hl], a
 	ret
 
+SECTION "Treasure Egg Runtime", ROMX
+
+ClearTreasureEggRecords:
+	ld hl, TreasureEggY
+	ld b, TREASURE_EGG_RECORD_SIZE
+	xor a
+.clearScratch
+	ld [hl+], a
+	dec b
+	jr nz, .clearScratch
+	ld hl, TreasureEggRecords
+	ld b, TREASURE_EGG_MAX_COUNT * TREASURE_EGG_RECORD_SIZE
+.clearRecords
+	ld [hl+], a
+	dec b
+	jr nz, .clearRecords
+	ld [TreasureEggCount], a
+	ret
+
+GetTreasureEggRecordPointer:
+	ld hl, TreasureEggRecords
+	and a
+	ret z
+	ld de, TREASURE_EGG_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadTreasureEggRecord:
+	call GetTreasureEggRecordPointer
+	ld de, TreasureEggY
+	ld b, TREASURE_EGG_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StoreTreasureEggRecord:
+	call GetTreasureEggRecordPointer
+	ld de, TreasureEggY
+	ld b, TREASURE_EGG_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+IF DEF(TREASURE_EGG_PLAYTEST)
+InitializePlaytestTreasureEggs:
+	ld a, TREASURE_EGG_PLAYTEST_EGG_Y
+	ld [TreasureEggY], a
+	ld a, LOW(TREASURE_EGG_PLAYTEST_HEART_X)
+	ld [TreasureEggX], a
+	ld a, HIGH(TREASURE_EGG_PLAYTEST_HEART_X)
+	ld [TreasureEggX + 1], a
+	ld a, TREASURE_EGG_STATE_UNCRACKED
+	ld [TreasureEggState], a
+	ld a, 1
+	ld [TreasureEggContents], a
+	xor a
+	call StoreTreasureEggRecord
+	ld a, LOW(TREASURE_EGG_PLAYTEST_EMPTY_X)
+	ld [TreasureEggX], a
+	ld a, HIGH(TREASURE_EGG_PLAYTEST_EMPTY_X)
+	ld [TreasureEggX + 1], a
+	xor a
+	ld [TreasureEggContents], a
+	ld a, 1
+	call StoreTreasureEggRecord
+	ld a, 2
+	ld [TreasureEggCount], a
+	ret
+ENDC
+
+UpdateTreasureEggSprites:
+	ld a, [FriedEggOAMPointer]
+	ld [TreasureEggOAMPointer], a
+	ld a, [FriedEggOAMPointer + 1]
+	ld [TreasureEggOAMPointer + 1], a
+	xor a
+	ld [TreasureEggLoopIndex], a
+.loop
+	ld a, [TreasureEggLoopIndex]
+	ld b, a
+	ld a, [TreasureEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadTreasureEggRecord
+	call UpdateTreasureEggSprite
+	pop af
+	inc a
+	ld [TreasureEggLoopIndex], a
+	ld a, [TreasureEggOAMPointer]
+	add a, 16
+	ld [TreasureEggOAMPointer], a
+	jr nc, .loop
+	ld hl, TreasureEggOAMPointer + 1
+	inc [hl]
+	jr .loop
+
+UpdateTreasureEggSprite:
+	ld a, [TreasureEggOAMPointer]
+	ld l, a
+	ld a, [TreasureEggOAMPointer + 1]
+	ld h, a
+	ld a, [TreasureEggState]
+	and a
+	ret z
+	ld d, TREASURE_EGG_UNCRACKED_TILE
+	cp a, TREASURE_EGG_STATE_UNCRACKED
+	jr z, .tileReady
+	ld d, TREASURE_EGG_CRACKED_TILE
+.tileReady
+	ld a, [CameraY]
+	ld b, a
+	ld a, [TreasureEggY]
+	add a, 2
+	sub a, b
+	ld e, a
+	ld a, [CameraX]
+	ld b, a
+	ld a, [TreasureEggX]
+	add a, 8
+	sub a, b
+	ld c, a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, d
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, d
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, d
+	add a, 3
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+
 SECTION "Main Continued", ROM0
 
 StartPlayerDeath:
@@ -7059,6 +7295,9 @@ PancakeTiles:
 FriedEggTiles:
 	INCBIN "build/fried_egg_motion.2bpp"
 
+TreasureEggTiles:
+	INCBIN "build/treasure_egg.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
@@ -7085,4 +7324,11 @@ FriedEggPlaytestMap:
 	INCBIN "build/fried_egg_playtest.tilemap"
 FriedEggPlaytestMapEnd:
 ASSERT FriedEggPlaytestMapEnd - FriedEggPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(TREASURE_EGG_PLAYTEST)
+TreasureEggPlaytestMap:
+	INCBIN "build/treasure_egg_playtest.tilemap"
+TreasureEggPlaytestMapEnd:
+ASSERT TreasureEggPlaytestMapEnd - TreasureEggPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC

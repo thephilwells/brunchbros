@@ -51,9 +51,13 @@ node tools/generate-weiner.mjs
 node tools/generate-enemy-destruction.mjs
 node tools/generate-burger.mjs
 node tools/generate-pancake.mjs
+node tools/generate-fried-egg.mjs
+node tools/generate-treasure-egg.mjs
 node tools/generate-combat-playtest.mjs
 node tools/generate-burger-playtest.mjs
 node tools/generate-pancake-playtest.mjs
+node tools/generate-fried-egg-playtest.mjs
+node tools/generate-treasure-egg-playtest.mjs
 node tools/generate-room-template-fixture.mjs
 node tools/generate-room-template-playtest.mjs
 node tools/generate-seeded-level.mjs --seed 0
@@ -64,6 +68,8 @@ rgbgfx -c dmg=E4 -o build/weiner_motion.2bpp gfx/weiner_motion.png
 rgbgfx -c dmg=E4 -o build/enemy_cloudburst.2bpp gfx/enemy_cloudburst.png
 rgbgfx -c dmg=E4 -o build/burger_motion.2bpp gfx/burger_motion.png
 rgbgfx -c dmg=E4 -o build/pancake_motion.2bpp gfx/pancake_motion.png
+rgbgfx -c dmg=E4 -o build/fried_egg_motion.2bpp gfx/fried_egg_motion.png
+rgbgfx -c dmg=E4 -o build/treasure_egg.2bpp gfx/treasure_egg.png
 node tools/verify-dining-room.mjs
 node tools/verify-dining-room-furniture.mjs
 node tools/verify-dining-room-background.mjs

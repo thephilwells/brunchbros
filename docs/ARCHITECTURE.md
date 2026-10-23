@@ -194,7 +194,8 @@ hearts use sprite indices 73–75 in `$8490–$84BF`; the WEINER surface-crawl s
 uses indices 76–171 in `$84C0–$8ABF`; the death frame uses indices 172–175 in
 `$8AC0–$8AFF`; the cloudburst uses indices 176–187 in `$8B00–$8BBF`; and the
 BURGER uses indices 188–195 in `$8BC0–$8C3F`, PANCAKE uses indices 196–203 in
-`$8C40–$8CBF`, and FRIED_EGG uses indices 204–219 in `$8CC0–$8DBF`. Signed background
+`$8C40–$8CBF`, FRIED_EGG uses indices 204–219 in `$8CC0–$8DBF`, and treasure
+eggs use indices 220–227 in `$8DC0–$8E3F`. Signed background
 addressing maps BG/Window IDs 0–127 to `$9000–$97FF`; the dining sheet loads
 all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. IDs
 116–127 form the shared title font. The selected runtime level lives in

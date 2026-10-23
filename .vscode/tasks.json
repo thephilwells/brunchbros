@@ -65,6 +65,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate Treasure Egg",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-treasure-egg.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Combat Playtest",
       "type": "shell",
       "command": "node",
@@ -90,6 +97,13 @@
       "type": "shell",
       "command": "node",
       "args": ["tools/generate-fried-egg-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate Treasure Egg Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-treasure-egg-playtest.mjs"],
       "problemMatcher": []
     },
     {
@@ -167,6 +181,13 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/fried_egg_motion.2bpp", "gfx/fried_egg_motion.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert Treasure Egg",
+      "type": "shell",
+      "command": "rgbgfx",
+      "args": ["-c", "dmg=E4", "-o", "build/treasure_egg.2bpp", "gfx/treasure_egg.png"],
       "problemMatcher": []
     },
     {
@@ -300,7 +321,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate Treasure Egg", "Generate Treasure Egg Playtest", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Convert Treasure Egg", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
       "group": {
         "kind": "build",
         "isDefault": true

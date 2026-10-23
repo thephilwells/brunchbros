@@ -51,7 +51,10 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | `$8AC0–$8AFF` | Chef death frame, indices 172–175 | 4 | 64 |
 | `$8B00–$8BBF` | Generic enemy cloudburst, indices 176–187 | 12 | 192 |
 | `$8BC0–$8C3F` | BURGER motion set, indices 188–195 | 8 | 128 |
-| `$8C40–$8FFF` | Remaining OBJ capacity, indices 196–255 | 60 | 960 |
+| `$8C40–$8CBF` | PANCAKE motion set, indices 196–203 | 8 | 128 |
+| `$8CC0–$8DBF` | FRIED_EGG motion set, indices 204–219 | 16 | 256 |
+| `$8DC0–$8E3F` | Treasure egg poses, indices 220–227 | 8 | 128 |
+| `$8E40–$8FFF` | Remaining OBJ capacity, indices 228–255 | 28 | 448 |
 | `$9000–$91FF` | Shared vocabulary, BG IDs 0–31 | 32 | 512 |
 | `$9200–$97FF` | Current biome allocation, BG IDs 32–127 | 96 | 1,536 |
 | `$9800–$9BFF` | Current scrolling background map | — | 1,024 |
@@ -61,8 +64,8 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 Recommendation: adopt this ownership split, start with at most **128
 environment slots resident**, and leave the upper BG ranges unused until
 content needs them. The sprite reserve is tile storage, not a promise about
-how many actors can be displayed at once. Sprites must not use indices
-128–255 under this allocation: those physical slots belong to BG/Window.
+how many actors can be displayed at once. OBJ indices 128–255 remain available
+while background maps stay within IDs 0–127.
 
 Why change addressing now: it keeps all current chef indices intact and
 separates the first 128 environment slots from sprite storage. Remaining
