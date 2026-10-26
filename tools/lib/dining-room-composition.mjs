@@ -19,6 +19,7 @@ const WALLPAPER_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-ro
 const MOB_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-mobs.json', import.meta.url), 'utf8'));
 const MOB_BY_ID = new Map(MOB_MANIFEST.mobs.map(mob => [mob.id, mob]));
 const MOB_ROSTERS = new Map(MOB_MANIFEST.levelKinds.map(levelKind => [levelKind.id, levelKind.mobs]));
+const TREASURE_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-treasure.json', import.meta.url), 'utf8'));
 
 function componentLayouts(component) {
   return component.orientations ?? [{ id: 'default', tiles: component.tiles }];
@@ -468,12 +469,111 @@ export function addDiningRoomMobs(level, levelKind = 'dining_room_1') {
   };
 }
 
+function placementCells(placements) {
+  const cells = new Set();
+  for (const placement of placements) {
+    for (let y = placement.y; y < placement.y + placement.height; y++) {
+      for (let x = placement.x; x < placement.x + placement.width; x++) cells.add(y * LEVEL_WIDTH + x);
+    }
+  }
+  return cells;
+}
+
+function roomDistancesFromCriticalRoute(level) {
+  const distances = Array(16).fill(Infinity);
+  const queue = [...level.criticalRoute];
+  for (const room of queue) distances[room] = 0;
+  for (let index = 0; index < queue.length; index++) {
+    const room = queue[index];
+    const row = Math.floor(room / 4);
+    const column = room % 4;
+    const neighbors = [];
+    if (column > 0 && level.roomPorts[room] & PORT_WEST) neighbors.push(room - 1);
+    if (column < 3 && level.roomPorts[room] & PORT_EAST) neighbors.push(room + 1);
+    if (row > 0 && level.roomPorts[room] & PORT_NORTH) neighbors.push(room - 4);
+    if (row < 3 && level.roomPorts[room] & PORT_SOUTH) neighbors.push(room + 4);
+    for (const neighbor of neighbors) {
+      if (distances[neighbor] <= distances[room] + 1) continue;
+      distances[neighbor] = distances[room] + 1;
+      queue.push(neighbor);
+    }
+  }
+  return distances;
+}
+
+function treasureCandidates(level, room, occupied) {
+  if (room === level.spawnRoom || room === level.exitRoom || level.roomTraversalClasses[room] === TRAVERSAL_LEDGE_CATCH) return [];
+  const roomX = room % 4 * ROOM_WIDTH;
+  const roomY = Math.floor(room / 4) * ROOM_HEIGHT;
+  const candidates = [];
+  for (let y = roomY; y + TREASURE_MANIFEST.height < roomY + ROOM_HEIGHT; y++) {
+    for (let x = roomX + 1; x + TREASURE_MANIFEST.width < roomX + ROOM_WIDTH; x++) {
+      let valid = true;
+      for (let bodyY = y; bodyY < y + TREASURE_MANIFEST.height; bodyY++) {
+        for (let bodyX = x; bodyX < x + TREASURE_MANIFEST.width; bodyX++) {
+          const index = bodyY * LEVEL_WIDTH + bodyX;
+          if (level.structuralTiles[index] !== 17 || occupied.has(index) || level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) valid = false;
+        }
+      }
+      for (let supportX = x; supportX < x + TREASURE_MANIFEST.width; supportX++) {
+        const index = (y + TREASURE_MANIFEST.height) * LEVEL_WIDTH + supportX;
+        const tile = level.structuralTiles[index];
+        if (!((tile >= 1 && tile <= 16) || ONE_WAY_TILES.has(level.tiles[index]))) valid = false;
+      }
+      if (valid) candidates.push({ room, x, y });
+    }
+  }
+  return candidates;
+}
+
+function treasureSelections(level) {
+  const occupied = placementCells([...(level.furniturePlacements ?? []), ...(level.mobPlacements ?? [])]);
+  const distances = roomDistancesFromCriticalRoute(level);
+  const candidatesByRoom = Array.from({ length: 16 }, (_, room) => treasureCandidates(level, room, occupied));
+  const target = TREASURE_MANIFEST.minimum + mixSelection(level.seed, 0, TREASURE_MANIFEST.countSalt) % (TREASURE_MANIFEST.maximum - TREASURE_MANIFEST.minimum + 1);
+  const placements = [];
+  for (let instance = 0; instance < target; instance++) {
+    const rooms = Array.from({ length: 16 }, (_, room) => ({ room, candidates: treasureCandidates(level, room, occupied) })).filter(entry => entry.candidates.length);
+    rooms.sort((left, right) => distances[right.room] - distances[left.room] || Number(placements.some(placement => placement.room === left.room)) - Number(placements.some(placement => placement.room === right.room)) || mixSelection(level.seed, left.room, TREASURE_MANIFEST.roomSalt ^ instance) - mixSelection(level.seed, right.room, TREASURE_MANIFEST.roomSalt ^ instance) || left.room - right.room);
+    const selected = rooms[0];
+    if (!selected) break;
+    const position = selected.candidates[mixSelection(level.seed, selected.room, TREASURE_MANIFEST.positionSalt ^ instance) % selected.candidates.length];
+    for (let y = position.y; y < position.y + TREASURE_MANIFEST.height; y++) {
+      for (let x = position.x; x < position.x + TREASURE_MANIFEST.width; x++) occupied.add(y * LEVEL_WIDTH + x);
+    }
+    placements.push({
+      room: selected.room,
+      distanceFromCriticalRoute: distances[selected.room],
+      contents: mixSelection(level.seed, selected.room, TREASURE_MANIFEST.contentsSalt ^ instance) & 1 ? 'heart' : 'empty',
+      x: position.x,
+      y: position.y,
+      width: TREASURE_MANIFEST.width,
+      height: TREASURE_MANIFEST.height,
+    });
+  }
+  if (placements.length && placements.every(placement => placement.contents === 'empty')) {
+    placements[mixSelection(level.seed, 0, TREASURE_MANIFEST.promotionSalt) % placements.length].contents = 'heart';
+  }
+  return { candidatesByRoom: candidatesByRoom.map(candidates => candidates.length), distances, placements, target };
+}
+
+export function addDiningRoomTreasure(level) {
+  const selection = treasureSelections(level);
+  return {
+    ...level,
+    roomTreasureCandidateCounts: selection.candidatesByRoom,
+    roomDistancesFromCriticalRoute: selection.distances,
+    treasurePopulationTarget: selection.target,
+    treasurePlacements: selection.placements,
+  };
+}
+
 export function composeDiningRoomFixtures(level) {
   return addDiningRoomFurniture(addDiningRoomBackground(addDiningRoomPlacementReservations(level)));
 }
 
 export function composeDiningRoom(level, levelKind = 'dining_room_1') {
-  const composed = addDiningRoomMobs(addDiningRoomWallpaper(composeDiningRoomFixtures(level)), levelKind);
+  const composed = addDiningRoomTreasure(addDiningRoomMobs(addDiningRoomWallpaper(composeDiningRoomFixtures(level)), levelKind));
   composed.compositionValidation = validateDiningRoomComposition(composed);
   return composed;
 }
@@ -488,6 +588,8 @@ export function validateDiningRoomComposition(level) {
   if (!Array.isArray(level.wallpaperSourceTiles) || level.wallpaperSourceTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('wallpaper source tile snapshot must contain 1,280 cells');
   if (!Array.isArray(level.roomWallpaperCandidateCounts) || level.roomWallpaperCandidateCounts.length !== 16) errors.push('room wallpaper candidate counts must contain 16 entries');
   if (!Array.isArray(level.roomMobCandidateCounts) || level.roomMobCandidateCounts.length !== 16) errors.push('room mob candidate counts must contain 16 entries');
+  if (!Array.isArray(level.roomTreasureCandidateCounts) || level.roomTreasureCandidateCounts.length !== 16) errors.push('room treasure candidate counts must contain 16 entries');
+  if (!Array.isArray(level.roomDistancesFromCriticalRoute) || level.roomDistancesFromCriticalRoute.length !== 16) errors.push('room distances from critical route must contain 16 entries');
   if (errors.length) return { valid: false, errors };
 
   const occupied = new Set();
@@ -651,6 +753,28 @@ export function validateDiningRoomComposition(level) {
         if (occupiedFurnitureCells.has(index)) errors.push(`${placement.mob} overlaps furniture at ${x},${y}`);
         if (occupiedMobCells.has(index)) errors.push(`${placement.mob} overlaps another mob at ${x},${y}`);
         occupiedMobCells.add(index);
+      }
+    }
+  }
+  const expectedTreasure = treasureSelections(level);
+  if (level.treasurePopulationTarget !== expectedTreasure.target) errors.push('treasure population target is inconsistent');
+  if (level.roomTreasureCandidateCounts.some((count, room) => count !== expectedTreasure.candidatesByRoom[room])) errors.push('room treasure candidate counts are inconsistent');
+  if (level.roomDistancesFromCriticalRoute.some((distance, room) => distance !== expectedTreasure.distances[room])) errors.push('room distances from critical route are inconsistent');
+  if (JSON.stringify(level.treasurePlacements) !== JSON.stringify(expectedTreasure.placements)) errors.push('treasure placements are inconsistent');
+  if (!(level.treasurePlacements ?? []).length) errors.push('level has no treasure eggs');
+  if (!(level.treasurePlacements ?? []).some(placement => placement.contents === 'heart')) errors.push('level has no treasure-bearing egg');
+  const occupiedTreasureCells = new Set();
+  for (const placement of level.treasurePlacements ?? []) {
+    if (!['heart', 'empty'].includes(placement.contents)) errors.push(`treasure egg in room ${placement.room} has unknown contents ${placement.contents}`);
+    if (placement.width !== TREASURE_MANIFEST.width || placement.height !== TREASURE_MANIFEST.height) errors.push(`treasure egg metadata is inconsistent in room ${placement.room}`);
+    if (placement.distanceFromCriticalRoute !== level.roomDistancesFromCriticalRoute[placement.room]) errors.push(`treasure egg has wrong route distance in room ${placement.room}`);
+    for (let y = placement.y; y < placement.y + placement.height; y++) {
+      for (let x = placement.x; x < placement.x + placement.width; x++) {
+        const index = y * LEVEL_WIDTH + x;
+        if (level.structuralTiles[index] !== 17) errors.push(`treasure egg body is obstructed at ${x},${y}`);
+        if (level.placementReservationMask[index] & ENCOUNTER_BLOCKING_RESERVATIONS) errors.push(`treasure egg occupies protected cell ${x},${y}`);
+        if (occupiedTreasureCells.has(index)) errors.push(`treasure eggs overlap at ${x},${y}`);
+        occupiedTreasureCells.add(index);
       }
     }
   }

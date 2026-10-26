@@ -50,6 +50,9 @@ assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
 assert.match(tmx, /name="Background Placements"/);
 if (expected.furniturePlacements.length) assert.match(tmx, /name="Furniture Placements"/);
 else assert.doesNotMatch(tmx, /name="Furniture Placements"/);
+assert.match(tmx, /name="Treasure Eggs"/);
+assert.match(tmx, /type="treasure_egg"/);
+assert.match(tmx, /name="contents" value="heart"/);
 
 const at = (x, y) => expected.tiles[y * 40 + x];
 const spawnFloorY = expected.spawnPosition.y / 8;

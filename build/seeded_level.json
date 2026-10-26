@@ -6264,5 +6264,71 @@
       "width": 2,
       "height": 2
     }
+  ],
+  "roomTreasureCandidateCounts": [
+    2,
+    2,
+    0,
+    0,
+    1,
+    0,
+    1,
+    2,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    2
+  ],
+  "roomDistancesFromCriticalRoute": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    1
+  ],
+  "treasurePopulationTarget": 3,
+  "treasurePlacements": [
+    {
+      "room": 7,
+      "distanceFromCriticalRoute": 2,
+      "contents": "heart",
+      "x": 36,
+      "y": 10,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "room": 0,
+      "distanceFromCriticalRoute": 1,
+      "contents": "heart",
+      "x": 6,
+      "y": 2,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "room": 6,
+      "distanceFromCriticalRoute": 1,
+      "contents": "heart",
+      "x": 21,
+      "y": 11,
+      "width": 2,
+      "height": 2
+    }
   ]
 }

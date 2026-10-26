@@ -209,7 +209,10 @@ combined change. Keep the gallery → review → runtime → parity → playtest
 4. **Reward exploration.** Introduce a collectible and optional-room placement,
    followed by breakable eggs and lifting/throwing. Prefer better treasure farther
    from the critical route, while keeping nearby side rooms worthwhile. Tune the
-   reward rule once actual items exist.
+   reward rule once actual items exist. Host composition now places two to four
+   breakable eggs, prefers rooms farthest from the critical route, rolls heart
+   contents at 50 percent, and guarantees at least one heart-bearing egg. RGBDS
+   placement and fixed-seed parity are next.
 5. **Expand the biome vocabulary.** Reuse the proven generation/composition
    contracts for Patio, Kitchen, and Freezer, reviewing assets in small groups.
    Freezer sliding, boss-arena exceptions, and the final boss remain explicit

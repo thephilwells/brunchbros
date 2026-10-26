@@ -26,6 +26,11 @@ let levelsWithMobs = 0;
 let minimumMobPlacements = 16;
 let maximumMobPlacements = 0;
 let totalMobPlacements = 0;
+let minimumTreasurePlacements = 4;
+let maximumTreasurePlacements = 0;
+let totalTreasurePlacements = 0;
+let totalHeartEggs = 0;
+let totalEmptyEggs = 0;
 const minimumMobTypeCounts = new Map([['weiner', 16], ['burger', 16], ['pancake', 16], ['fried_egg', 16]]);
 const maximumMobTypeCounts = new Map([['weiner', 0], ['burger', 0], ['pancake', 0], ['fried_egg', 0]]);
 const backgroundComponentCounts = new Map();
@@ -37,6 +42,7 @@ let chairExample;
 let sconceExample;
 let wallpaperExample;
 let mobExample;
+let treasureExample;
 const seedCount = 0x10000;
 
 for (let seed = 0; seed < seedCount; seed++) {
@@ -57,6 +63,10 @@ for (let seed = 0; seed < seedCount; seed++) {
   assert.deepEqual(first.roomMobCandidateCounts, second.roomMobCandidateCounts);
   assert.deepEqual(first.mobPlacements, second.mobPlacements);
   assert.equal(first.mobPopulationTarget, second.mobPopulationTarget);
+  assert.deepEqual(first.roomTreasureCandidateCounts, second.roomTreasureCandidateCounts);
+  assert.deepEqual(first.roomDistancesFromCriticalRoute, second.roomDistancesFromCriticalRoute);
+  assert.deepEqual(first.treasurePlacements, second.treasurePlacements);
+  assert.equal(first.treasurePopulationTarget, second.treasurePopulationTarget);
   assert.deepEqual(first.tiles, second.tiles);
   assert.deepEqual(first.structuralTiles, generated.tiles);
   assert.equal(first.compositionValidation.valid, true, `Seed ${seed}: ${first.compositionValidation.errors.join(', ')}`);
@@ -102,6 +112,15 @@ for (let seed = 0; seed < seedCount; seed++) {
     maximumMobTypeCounts.set(mobType, Math.max(maximumMobTypeCounts.get(mobType), count));
   }
 
+  const treasurePlacements = first.treasurePlacements.length;
+  minimumTreasurePlacements = Math.min(minimumTreasurePlacements, treasurePlacements);
+  maximumTreasurePlacements = Math.max(maximumTreasurePlacements, treasurePlacements);
+  totalTreasurePlacements += treasurePlacements;
+  totalHeartEggs += first.treasurePlacements.filter(placement => placement.contents === 'heart').length;
+  totalEmptyEggs += first.treasurePlacements.filter(placement => placement.contents === 'empty').length;
+  assert(first.treasurePlacements.some(placement => placement.contents === 'heart'));
+  treasureExample ??= first;
+
   const placements = first.furniturePlacements.length;
   minimumPlacements = Math.min(minimumPlacements, placements);
   maximumPlacements = Math.max(maximumPlacements, placements);
@@ -125,6 +144,10 @@ assert(levelsWithFurniture > 0);
 assert(levelsWithWallpaper > seedCount * .99);
 assert(levelsWithMobs > seedCount * .99);
 assert.deepEqual(Object.fromEntries(maximumMobTypeCounts), { weiner: 2, burger: 2, pancake: 2, fried_egg: 2 });
+assert.equal(minimumTreasurePlacements, 2);
+assert.equal(maximumTreasurePlacements, 4);
+assert(totalHeartEggs > 0);
+assert(totalEmptyEggs > 0);
 assert(minimumReservedCells > 0);
 assert.equal(maximumReservedCells, 1280);
 assert.deepEqual([...backgroundComponentCounts.keys()].sort(), ['menu_board', 'serving_hatch', 'wall_clock', 'wall_mirror', 'wall_sconce']);
@@ -198,6 +221,16 @@ const mob = protectedMob.mobPlacements[0];
 protectedMob.placementReservationMask[mob.y * 40 + mob.x] |= 2;
 assert.equal(validateDiningRoomComposition(protectedMob).valid, false);
 
+const emptyTreasure = structuredClone(treasureExample);
+for (const treasure of emptyTreasure.treasurePlacements) treasure.contents = 'empty';
+const emptyTreasureValidation = validateDiningRoomComposition(emptyTreasure);
+assert.equal(emptyTreasureValidation.valid, false);
+assert(emptyTreasureValidation.errors.some(error => error.includes('no treasure-bearing egg')));
+
+const missingTreasure = structuredClone(treasureExample);
+missingTreasure.treasurePlacements = [];
+assert.equal(validateDiningRoomComposition(missingTreasure).valid, false);
+
 const svg = levelToSvg(furnishedExample);
 const tmx = levelToTmx(furnishedExample, 'dining_room.tsx');
 assert.match(svg, /fill-opacity="\.34"/);
@@ -205,6 +238,7 @@ assert.match(svg, /fill-opacity="\.7"/);
 assert.match(svg, /fill-opacity="\.82"/);
 assert.match(svg, /r="\.25"/);
 assert.match(svg, /#ef7048/);
+assert.match(svg, /#d94d5c/);
 assert.match(tmx, /name="Placement Reservations" visible="0"/);
 assert.match(tmx, /name="Background Placements"/);
 assert.match(tmx, /type="background_placement"/);
@@ -216,9 +250,13 @@ assert.match(tmx, /name="Wallpaper Placements"/);
 assert.match(tmx, /type="wallpaper_placement"/);
 assert.match(tmx, /name="Mob Spawns"/);
 assert.match(tmx, /type="mob_spawn"/);
+assert.match(tmx, /name="Treasure Eggs"/);
+assert.match(tmx, /type="treasure_egg"/);
+assert.match(tmx, /name="contents"/);
 
 const averagePlacements = (totalPlacements / seedCount).toFixed(2);
 const averageBackgroundPlacements = (totalBackgroundPlacements / seedCount).toFixed(2);
 const averageWallpaperPlacements = (totalWallpaperPlacements / seedCount).toFixed(2);
 const averageMobPlacements = (totalMobPlacements / seedCount).toFixed(2);
-console.log(`Dining-room composition verified across all 65,536 seeds with alternating level-specific rosters; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} mob spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels).`);
+const averageTreasurePlacements = (totalTreasurePlacements / seedCount).toFixed(2);
+console.log(`Dining-room composition verified across all 65,536 seeds with alternating level-specific rosters; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} mob spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels); ${minimumTreasurePlacements}–${maximumTreasurePlacements} treasure eggs (${averageTreasurePlacements} average, ${totalHeartEggs} heart-bearing, ${totalEmptyEggs} empty).`);

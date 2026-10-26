@@ -16,7 +16,18 @@ Implemented fixture behavior:
 - Walking over a heart restores one whole heart, capped at three hearts.
 - A heart remains on the ground while Chef is at full health.
 
-Planned generation behavior:
+Host generation behavior:
 
-- Generated eggs roll contents independently at 50 percent, then promote one
-  egg if necessary so every level contains at least one treasure-bearing egg.
+- Generated levels place two to four eggs. Candidate bodies occupy two empty
+  tiles by two empty tiles above full-solid or one-way support and cannot
+  overlap furniture, mobs, protected transitions, spawn, exit, or ledge-catch
+  rooms.
+- Selection prefers rooms farthest from the critical route, then unused rooms,
+  with safe required-route rooms available when optional rooms cannot satisfy
+  the population target.
+- Generated eggs roll contents independently at 50 percent. If every result is
+  empty, one deterministic result is promoted so every level contains at least
+  one treasure-bearing egg.
+- JSON records candidate counts, route distances, the population target, and
+  contents. TMX and gallery overlays expose the same placements for review.
+- Runtime placement and fixed-seed parity remain the next implementation step.

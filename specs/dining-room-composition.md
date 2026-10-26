@@ -164,7 +164,23 @@ its timing-derived seed and does not embed the parity oracle.
 The runtime parity target includes wallpaper. A 160-byte footprint bitset keeps
 transparent cells inside fixtures unavailable without duplicating the complete
 tilemap. Fixed-seed parity covers seeds 0, 1, 77, `$1234`, and `$FFFF` across all
-1,280 cells. Loot eggs and movable objects remain later composition passes.
+1,280 cells.
+
+## Treasure placement
+
+The host composition pass places two to four 2×2 treasure eggs after encounter
+population. Candidates require an empty structural body and full-solid or
+one-way support, and reject furniture, mobs, protected transition cells,
+spawn/exit rooms, and ledge-catch rooms. Background art and wallpaper do not
+consume an OBJ placement footprint.
+
+Room selection first maximizes graph distance from the critical route, then
+prefers rooms without another egg, then uses a seed-local mix. Required-route
+rooms are fallback candidates so every topology can meet the two-egg minimum.
+Contents use independent deterministic 50-percent rolls; an all-empty result
+promotes one egg to a heart. Exhaustive host validation requires two to four
+eggs and at least one heart-bearing egg for every 16-bit seed. RGBDS placement
+and fixed-seed parity remain the next composition pass.
 
 ## Initial encounter population
 
