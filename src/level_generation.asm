@@ -137,6 +137,7 @@ ENDC
 	call ApplyRoomVariants
 	call ApplyProtectedEndpoints
 	call ConvertSemanticMap
+	call ClearIsolatedSolidTiles
 	call PlaceExitDoor
 	call ClearWallpaperBlockedTiles
 	call ClearFurnitureOccupiedTiles
@@ -1549,6 +1550,24 @@ SemanticSolidAtHL:
 	ret
 .solid
 	scf
+	ret
+
+ClearIsolatedSolidTiles:
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [hl]
+	cp a, 1
+	jr nz, .next
+	ld [hl], 17
+.next
+	inc hl
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
 	ret
 
 PlaceExitDoor:

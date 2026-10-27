@@ -6999,8 +6999,8 @@ UpdateTreasureEggSprites:
 	cp a, LOW(ShadowOAM + 160 - 15)
 	jr nc, .noSpace
 	call UpdateTreasureEggSprite
+	jr nc, .notVisible
 	pop af
-	jr nc, .next
 	push af
 	ld a, [TreasureEggOAMPointer]
 	add a, 16
@@ -7014,6 +7014,9 @@ UpdateTreasureEggSprites:
 	inc a
 	ld [TreasureEggLoopIndex], a
 	jr .loop
+.notVisible
+	pop af
+	jr .next
 .noSpace
 	pop af
 .clearUnused
