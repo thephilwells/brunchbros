@@ -1,8 +1,7 @@
 # Dining-room composition
 
-Status: **host/runtime floor furniture, background placement, and wallpaper
-accepted; host-side WEINER population and gallery overlays provisionally
-accepted on 2026-10-15**.
+Status: **host/runtime composition and fixed-seed parity include furniture,
+backgrounds, wallpaper, encounters, and treasure**.
 
 ## Purpose
 
@@ -22,7 +21,8 @@ connectivity or the selected domino matching.
 5. Place floor-anchored furniture outside reservations.
 6. Place sparse wallpaper motifs in remaining plain rear cells.
 7. Select encounter spawns from the remaining safe full-solid surfaces.
-8. Revalidate the finished tile map. Loot placement remains a later pass.
+8. Place treasure eggs in remaining eligible footprints.
+9. Revalidate the finished tile map.
 
 Furniture is optional traversal. Removing every furniture tile must leave the
 structural route valid. Furniture may create shortcuts, extra landing choices,
@@ -180,7 +180,9 @@ rooms are fallback candidates so every topology can meet the two-egg minimum.
 Contents use independent deterministic 50-percent rolls; an all-empty result
 promotes one egg to a heart. Exhaustive host validation requires two to four
 eggs and at least one heart-bearing egg for every 16-bit seed. RGBDS placement
-and fixed-seed parity remain the next composition pass.
+uses the same candidate ordering, room-distance preference, selection salts,
+and guaranteed-heart promotion. Fixed-seed parity covers seeds 0, 1, 77,
+`$1234`, and `$FFFF`.
 
 ## Initial encounter population
 

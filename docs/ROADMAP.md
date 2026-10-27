@@ -211,8 +211,9 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    from the critical route, while keeping nearby side rooms worthwhile. Tune the
    reward rule once actual items exist. Host composition now places two to four
    breakable eggs, prefers rooms farthest from the critical route, rolls heart
-   contents at 50 percent, and guarantees at least one heart-bearing egg. RGBDS
-   placement and fixed-seed parity are next.
+   contents at 50 percent, and guarantees at least one heart-bearing egg. The
+   RGBDS port mirrors placement and contents selection and passes fixed-seed
+   parity for seeds 0, 1, 77, `$1234`, and `$FFFF`.
 5. **Expand the biome vocabulary.** Reuse the proven generation/composition
    contracts for Patio, Kitchen, and Freezer, reviewing assets in small groups.
    Freezer sliding, boss-arena exceptions, and the final boss remain explicit

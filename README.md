@@ -105,9 +105,9 @@ open build/level-gallery/index.html
 
 The gallery shows seeded levels assembled from authored room templates,
 deterministic background fixtures, optional-room furniture, sparse wallpaper
-motifs, and seeded WEINER/BURGER/PANCAKE spawns. Its TMX files expose the critical route, room ports, spawn, exit, a
+motifs, seeded encounters, and treasure eggs. Its TMX files expose the critical route, room ports, spawn, exit, a
 hidden placement-reservation layer, and visible background, furniture, and
-wallpaper placement layers plus a visible mob-spawn layer. The HTML thumbnails overlay reservations and
+wallpaper placement layers plus visible mob-spawn and treasure layers. The HTML thumbnails overlay reservations and
 color-coded placements. Batch validation checks hard-limit mutual room
 reachability, declared critical-route traversal, and every selected placement.
 

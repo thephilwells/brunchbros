@@ -53,6 +53,12 @@ for (const placement of friedEggs) {
   mobParity.push((placement.y + 2) * 8, x & 0xff, x >> 8);
 }
 writeFileSync('build/runtime_mob_parity.bin', Buffer.from(mobParity));
+const treasureParity = [level.treasurePlacements.length];
+for (const placement of level.treasurePlacements) {
+  const x = placement.x * 8;
+  treasureParity.push((placement.y + placement.height) * 8, x & 0xff, x >> 8, placement.contents === 'heart' ? 1 : 0);
+}
+writeFileSync('build/runtime_treasure_parity.bin', Buffer.from(treasureParity));
 writeFileSync('build/room_templates.bin', Buffer.from(runtimeTemplates));
 writeFileSync('build/seeded_level.json', `${JSON.stringify(level, null, 2)}\n`);
 writeFileSync('build/seeded_level.inc', [

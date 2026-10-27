@@ -1666,15 +1666,23 @@ MainLoop:
 	ld a, PAN_ATTACK_WINDUP_TILE
 	ld [AttackPanTileBase], a
 .attackPoseDone
+	ld a, [AttackTimer]
+	and a
+	jr z, .panHitsDone
 	call TryPanHitWeiners
 	call TryPanHitBurgers
 	call TryPanHitPancakes
 	call TryPanHitFriedEggs
 	call TryPanHitTreasureEggs
+.panHitsDone
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	jr nz, .contactsDone
 	call TryWeinerContacts
 	call TryBurgerContacts
 	call TryPancakeContacts
 	call TryFriedEggContacts
+.contactsDone
 	call TryCollectTreasureHearts
 
 	jp MainLoop
@@ -6551,6 +6559,34 @@ ClearTreasureEggRecords:
 	ld [TreasureEggCount], a
 	ret
 
+CreateTreasureEggAtTile:
+	ld a, c
+	add a, a
+	add a, a
+	add a, a
+	ld [TreasureEggY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [TreasureEggX], a
+	ld a, h
+	ld [TreasureEggX + 1], a
+	ld a, TREASURE_EGG_STATE_UNCRACKED
+	ld [TreasureEggState], a
+	xor a
+	ld [TreasureEggTimer], a
+	ld [TreasureEggHitThisSwing], a
+	ld a, [TreasureEggCount]
+	push af
+	call StoreTreasureEggRecord
+	pop af
+	inc a
+	ld [TreasureEggCount], a
+	ret
+
 GetTreasureEggRecordPointer:
 	ld hl, TreasureEggRecords
 	and a
@@ -6952,21 +6988,51 @@ UpdateTreasureEggSprites:
 	ld b, a
 	ld a, [TreasureEggCount]
 	cp a, b
-	ret z
+	jr z, .clearUnused
 	ld a, b
 	push af
 	call LoadTreasureEggRecord
+	ld a, [TreasureEggOAMPointer + 1]
+	cp a, HIGH(ShadowOAM + 160)
+	jr nz, .noSpace
+	ld a, [TreasureEggOAMPointer]
+	cp a, LOW(ShadowOAM + 160 - 15)
+	jr nc, .noSpace
 	call UpdateTreasureEggSprite
 	pop af
-	inc a
-	ld [TreasureEggLoopIndex], a
+	jr nc, .next
+	push af
 	ld a, [TreasureEggOAMPointer]
 	add a, 16
 	ld [TreasureEggOAMPointer], a
-	jr nc, .loop
+	jr nc, .pointerReady
 	ld hl, TreasureEggOAMPointer + 1
 	inc [hl]
+.pointerReady
+	pop af
+.next
+	inc a
+	ld [TreasureEggLoopIndex], a
 	jr .loop
+.noSpace
+	pop af
+.clearUnused
+	ld a, [TreasureEggOAMPointer]
+	ld l, a
+	ld a, [TreasureEggOAMPointer + 1]
+	ld h, a
+.clearLoop
+	ld a, h
+	cp a, HIGH(ShadowOAM + 160)
+	ret nz
+	ld a, l
+	cp a, LOW(ShadowOAM + 160)
+	ret nc
+	xor a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	jr .clearLoop
 
 UpdateTreasureEggSprite:
 	ld a, [TreasureEggOAMPointer]
@@ -6975,7 +7041,56 @@ UpdateTreasureEggSprite:
 	ld h, a
 	ld a, [TreasureEggState]
 	and a
-	ret z
+	jp z, .hidden
+	ld a, [TreasureEggX + 1]
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .leftEdgeClear
+	jp nz, .hidden
+	ld a, [TreasureEggX]
+	ld e, a
+	ld a, [CameraX]
+	cp a, e
+	jr z, .leftEdgeClear
+	jp nc, .hidden
+.leftEdgeClear
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [TreasureEggX]
+	add a, 16
+	ld c, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	cp a, d
+	jr c, .vertical
+	jp nz, .hidden
+	ld a, c
+	cp a, e
+	jr c, .vertical
+	jp nz, .hidden
+.vertical
+	ld a, [TreasureEggY]
+	add a, 16
+	jr c, .bottomEdge
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	jp nc, .hidden
+.bottomEdge
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [TreasureEggY]
+	cp a, e
+	jp nc, .hidden
+.visible
+	ld a, [TreasureEggState]
 	cp a, TREASURE_EGG_STATE_HEART
 	jr z, .heart
 	cp a, TREASURE_EGG_STATE_BURST
@@ -7042,6 +7157,7 @@ UpdateTreasureEggSprite:
 	ld [hl+], a
 	xor a
 	ld [hl], a
+	scf
 	ret
 .heart
 	ld a, [CameraY]
@@ -7060,6 +7176,10 @@ UpdateTreasureEggSprite:
 	ld [hl+], a
 	xor a
 	ld [hl], a
+	scf
+	ret
+.hidden
+	and a
 	ret
 
 SECTION "Main Continued", ROM0

@@ -8,6 +8,7 @@ const furnitureManifest = JSON.parse(readFileSync('data/dining-room-furniture.js
 const backgroundManifest = JSON.parse(readFileSync('data/dining-room-background.json', 'utf8'));
 const wallpaperManifest = JSON.parse(readFileSync('data/dining-room-wallpaper.json', 'utf8'));
 const mobManifest = JSON.parse(readFileSync('data/dining-room-mobs.json', 'utf8'));
+const treasureManifest = JSON.parse(readFileSync('data/dining-room-treasure.json', 'utf8'));
 const pilot = readFileSync('gfx/structural_pilot.png');
 const compressed = [];
 for (let offset = 8; offset < pilot.length;) {
@@ -496,6 +497,18 @@ writeFileSync('build/dining_room_mobs.inc', [
   'DiningRoomMobRosterPointers:',
   ...mobManifest.levelKinds.map(levelKind => `\tdw ${rosterLabel(levelKind.id)}`),
   ...mobRosterLines,
+  '',
+].join('\n'));
+writeFileSync('build/dining_room_treasure.inc', [
+  `DEF DINING_TREASURE_MINIMUM EQU ${treasureManifest.minimum}`,
+  `DEF DINING_TREASURE_MAXIMUM EQU ${treasureManifest.maximum}`,
+  `DEF DINING_TREASURE_WIDTH EQU ${treasureManifest.width}`,
+  `DEF DINING_TREASURE_HEIGHT EQU ${treasureManifest.height}`,
+  `DEF DINING_TREASURE_COUNT_SALT EQU $${treasureManifest.countSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_TREASURE_ROOM_SALT EQU $${treasureManifest.roomSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_TREASURE_POSITION_SALT EQU $${treasureManifest.positionSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_TREASURE_CONTENTS_SALT EQU $${treasureManifest.contentsSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_TREASURE_PROMOTION_SALT EQU $${treasureManifest.promotionSalt.toString(16).padStart(4, '0')}`,
   '',
 ].join('\n'));
 

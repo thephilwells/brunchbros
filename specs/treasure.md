@@ -30,4 +30,7 @@ Host generation behavior:
   one treasure-bearing egg.
 - JSON records candidate counts, route distances, the population target, and
   contents. TMX and gallery overlays expose the same placements for review.
-- Runtime placement and fixed-seed parity remain the next implementation step.
+- Runtime placement mirrors the host selection and contents rules. Fixed-seed
+  parity covers seeds 0, 1, 77, `$1234`, and `$FFFF`.
+- Runtime rendering culls offscreen eggs and admits only complete four-entry
+  composites that fit in the OAM capacity remaining after Chef, HUD, and mobs.

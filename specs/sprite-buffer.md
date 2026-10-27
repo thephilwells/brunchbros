@@ -30,11 +30,18 @@ not consume the restricted OAM-access portion of VBlank.
 | 4–7 | Frying pan | 4 |
 | 8–10 | Health HUD | 3 |
 | 11–34 | Six production enemies or their cloudbursts | 24 |
-| 35–39 | Unassigned | 5 |
+| Remaining slots | Visible treasure eggs or dropped hearts | Capacity-limited |
 
 An inactive composite hides its entries by setting their Y bytes to zero.
 Unused slots remain zero after startup. The established ordering preserves
 Chef and pan priority over enemies when sprites overlap horizontally.
+
+Treasure is composed after enemies. Offscreen treasure consumes no entry, and
+an egg is drawn only when all four entries of its composite fit before the end
+of shadow OAM. The unused tail is cleared after composition so a previously
+visible egg cannot leave stale sprites. This preserves actor state when a
+six-enemy room leaves fewer entries than the level's complete treasure
+population would require.
 
 ## Remaining hardware limits
 

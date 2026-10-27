@@ -7,6 +7,7 @@ const generated = JSON.parse(readFileSync('build/seeded_level.json', 'utf8'));
 const expected = composeDiningRoom(generateLevel(generated.seed), generated.levelKind);
 const tilemap = readFileSync('build/seeded_level.tilemap');
 const runtimeParityTilemap = readFileSync('build/runtime_level_parity.tilemap');
+const runtimeTreasureParity = readFileSync('build/runtime_treasure_parity.bin');
 const runtimeTemplates = readFileSync('build/room_templates.bin');
 const templateSet = JSON.parse(readFileSync('data/room-templates/dining-room.json', 'utf8'));
 const mobManifest = JSON.parse(readFileSync('data/dining-room-mobs.json', 'utf8'));
@@ -18,6 +19,15 @@ assert.deepEqual([...tilemap], expected.tiles);
 assert.deepEqual([...runtimeParityTilemap], expected.tiles);
 assert.equal(tilemap.length, 40 * 32);
 assert.equal(runtimeParityTilemap.length, 40 * 32);
+assert.equal(runtimeTreasureParity.length, 1 + expected.treasurePlacements.length * 4);
+assert.equal(runtimeTreasureParity[0], expected.treasurePlacements.length);
+for (let index = 0; index < expected.treasurePlacements.length; index++) {
+  const placement = expected.treasurePlacements[index];
+  const offset = 1 + index * 4;
+  assert.equal(runtimeTreasureParity[offset], (placement.y + placement.height) * 8);
+  assert.equal(runtimeTreasureParity[offset + 1] | runtimeTreasureParity[offset + 2] << 8, placement.x * 8);
+  assert.equal(runtimeTreasureParity[offset + 3], placement.contents === 'heart' ? 1 : 0);
+}
 assert.equal(runtimeTemplates.length, 15 * 10 * 8);
 const semanticValues = { '.': 0, '#': 1, '=': 2 };
 const expectedRuntimeTemplates = templateSet.templates.flatMap(template => template.rows.flatMap(row => [...row].map(cell => semanticValues[cell])));

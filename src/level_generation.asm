@@ -98,6 +98,12 @@ MobBestFound: db
 MobBestScore: dw
 MobMixResult: dw
 MobSavedRandomState: dw
+TreasureRoomDistances: ds 16
+TreasureRoomUsed: ds 16
+TreasureBestDistance: db
+TreasureBestUsed: db
+TreasureContentsPresent: db
+TreasureRelaxPass: db
 
 SECTION "Level Generation", ROM0
 GenerateLevel:
@@ -138,9 +144,11 @@ ENDC
 	call PlaceDiningRoomFurniture
 	call PlaceDiningRoomWallpaper
 	call PlaceDiningRoomMobs
+	call PlaceDiningRoomTreasure
 IF DEF(FURNITURE_PARITY_TEST)
 	call VerifyFurnitureParity
 	call VerifyMobParity
+	call VerifyTreasureParity
 ENDC
 	ret
 
@@ -3962,6 +3970,464 @@ MobResultModulo:
 	jr nz, .loop
 	ret
 
+SECTION "Dining Room Treasure Generation", ROMX
+PlaceDiningRoomTreasure:
+	ld hl, TreasureRoomUsed
+	ld b, 16
+	xor a
+.clearUsed
+	ld [hl+], a
+	dec b
+	jr nz, .clearUsed
+	ld [TreasureContentsPresent], a
+	call BuildTreasureRoomDistances
+	ld de, DINING_TREASURE_COUNT_SALT
+	xor a
+	call MobSelectionMix
+	ld c, DINING_TREASURE_MAXIMUM - DINING_TREASURE_MINIMUM + 1
+	call MobResultModulo
+	add a, DINING_TREASURE_MINIMUM
+	ld [MobTargetCount], a
+	xor a
+	ld [MobSelectedCount], a
+	ld a, 2
+	ld [MobType], a
+.select
+	ld a, [MobSelectedCount]
+	ld b, a
+	ld a, [MobTargetCount]
+	cp a, b
+	jp z, .promoteIfNeeded
+	xor a
+	ld [GenerationRoom], a
+.countRooms
+	call IsMobRoomEligible
+	jr nc, .storeEmpty
+	call CountTreasureCandidates
+	jr .storeCount
+.storeEmpty
+	xor a
+.storeCount
+	ld b, a
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld [hl], b
+	ld a, [GenerationRoom]
+	inc a
+	ld [GenerationRoom], a
+	cp a, 16
+	jr c, .countRooms
+	call FindBestTreasureRoom
+	ld a, [MobBestFound]
+	and a
+	jr z, .promoteIfNeeded
+	ld a, [MobBestRoom]
+	ld [GenerationRoom], a
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld a, [hl]
+	ld [MobCandidateCount], a
+	ld de, DINING_TREASURE_POSITION_SALT
+	call ApplyTreasureInstanceSalt
+	ld a, [GenerationRoom]
+	call MobSelectionMix
+	ld a, [MobCandidateCount]
+	ld c, a
+	call MobResultModulo
+	ld [MobTargetOrdinal], a
+	call FindTreasureCandidate
+	call MarkMobCandidateOccupied
+	ld de, DINING_TREASURE_CONTENTS_SALT
+	call ApplyTreasureInstanceSalt
+	ld a, [GenerationRoom]
+	call MobSelectionMix
+	ld a, [MobMixResult]
+	and a, 1
+	ld [TreasureEggContents], a
+	jr z, .contentsReady
+	ld [TreasureContentsPresent], a
+.contentsReady
+	call CreateSelectedTreasureEgg
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, TreasureRoomUsed
+	add hl, de
+	ld [hl], 1
+	ld hl, MobSelectedCount
+	inc [hl]
+	jp .select
+.promoteIfNeeded
+	ld a, [TreasureContentsPresent]
+	and a
+	ret nz
+	ld a, [TreasureEggCount]
+	and a
+	ret z
+	ld c, a
+	ld de, DINING_TREASURE_PROMOTION_SALT
+	xor a
+	call MobSelectionMix
+	call MobResultModulo
+	call GetTreasureEggRecordPointer
+	ld de, 4
+	add hl, de
+	ld [hl], 1
+	ret
+
+BuildTreasureRoomDistances:
+	ld hl, TreasureRoomDistances
+	ld b, 16
+	ld a, $ff
+.clearDistances
+	ld [hl+], a
+	dec b
+	jr nz, .clearDistances
+	ld hl, CriticalRoute
+	ld a, [CriticalRouteLength]
+	ld b, a
+.markCritical
+	ld a, [hl+]
+	ld e, a
+	ld d, 0
+	push hl
+	ld hl, TreasureRoomDistances
+	add hl, de
+	xor a
+	ld [hl], a
+	pop hl
+	dec b
+	jr nz, .markCritical
+	ld a, 16
+	ld [TreasureRelaxPass], a
+.pass
+	xor a
+	ld [GenerationRoom], a
+.room
+	call RelaxTreasureRoomDistance
+	ld hl, GenerationRoom
+	inc [hl]
+	ld a, [hl]
+	cp a, 16
+	jp c, .room
+	ld hl, TreasureRelaxPass
+	dec [hl]
+	jr nz, .pass
+	ret
+
+RelaxTreasureRoomDistance:
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, TreasureRoomDistances
+	add hl, de
+	ld a, [hl]
+	ld [TreasureBestDistance], a
+	ld hl, RoomPorts
+	add hl, de
+	ld a, [hl]
+	ld [MobCandidateDirection], a
+	bit 0, a
+	jr z, .east
+	ld a, [GenerationRoom]
+	dec a
+	call ConsiderTreasureDistance
+.east
+	ld a, [MobCandidateDirection]
+	bit 1, a
+	jr z, .north
+	ld a, [GenerationRoom]
+	inc a
+	call ConsiderTreasureDistance
+.north
+	ld a, [MobCandidateDirection]
+	bit 2, a
+	jr z, .south
+	ld a, [GenerationRoom]
+	sub a, 4
+	call ConsiderTreasureDistance
+.south
+	ld a, [MobCandidateDirection]
+	bit 3, a
+	jr z, .store
+	ld a, [GenerationRoom]
+	add a, 4
+	call ConsiderTreasureDistance
+.store
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, TreasureRoomDistances
+	add hl, de
+	ld a, [TreasureBestDistance]
+	ld [hl], a
+	ret
+
+ConsiderTreasureDistance:
+	ld e, a
+	ld d, 0
+	ld hl, TreasureRoomDistances
+	add hl, de
+	ld a, [hl]
+	cp a, $ff
+	ret z
+	inc a
+	ld b, a
+	ld a, [TreasureBestDistance]
+	cp a, b
+	ret c
+	ret z
+	ld a, b
+	ld [TreasureBestDistance], a
+	ret
+
+CountTreasureCandidates:
+	xor a
+	ld [MobCandidateCount], a
+	ld [MobLocalY], a
+.row
+	xor a
+	ld [MobLocalX], a
+.column
+	call IsTreasureCandidate
+	jr nc, .next
+	ld hl, MobCandidateCount
+	inc [hl]
+.next
+	ld hl, MobLocalX
+	inc [hl]
+	ld a, [hl]
+	cp a, 9
+	jr c, .column
+	ld hl, MobLocalY
+	inc [hl]
+	ld a, [hl]
+	cp a, 6
+	jr c, .row
+	ld a, [MobCandidateCount]
+	ret
+
+FindTreasureCandidate:
+	xor a
+	ld [MobCandidateOrdinal], a
+	ld [MobLocalY], a
+.row
+	xor a
+	ld [MobLocalX], a
+.column
+	call IsTreasureCandidate
+	jr nc, .next
+	ld a, [MobCandidateOrdinal]
+	ld b, a
+	ld a, [MobTargetOrdinal]
+	cp a, b
+	ret z
+	ld hl, MobCandidateOrdinal
+	inc [hl]
+.next
+	ld hl, MobLocalX
+	inc [hl]
+	ld a, [hl]
+	cp a, 9
+	jr c, .column
+	ld hl, MobLocalY
+	inc [hl]
+	ld a, [hl]
+	cp a, 6
+	jr c, .row
+	ret
+
+IsTreasureCandidate:
+	call IsMobFootprintReserved
+	jr c, .invalid
+	ld a, [MobLocalX]
+	and a
+	jr z, .invalid
+	cp a, 8
+	jr nc, .invalid
+	call GetMobCandidatePointer
+	ld b, 2
+.bodyRow
+	ld c, 2
+.bodyCell
+	push bc
+	push hl
+	ld a, [hl]
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	pop hl
+	and a
+	jr nz, .invalidPop
+	push hl
+	call IsFurnitureCellOpen
+	pop hl
+	jr nc, .invalidPop
+	push hl
+	call IsMobCellOpen
+	pop hl
+	jr nc, .invalidPop
+	pop bc
+	inc hl
+	dec c
+	jr nz, .bodyCell
+	ld de, 38
+	add hl, de
+	dec b
+	jr nz, .bodyRow
+	call GetMobCandidatePointer
+	ld de, 80
+	add hl, de
+	ld b, 2
+.support
+	push hl
+	ld a, [hl+]
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	pop hl
+	and a
+	jr z, .invalid
+	inc hl
+	dec b
+	jr nz, .support
+	scf
+	ret
+.invalidPop
+	pop bc
+.invalid
+	and a
+	ret
+
+FindBestTreasureRoom:
+	xor a
+	ld [MobBestFound], a
+	ld [GenerationRoom], a
+.room
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, MobCandidateCounts
+	add hl, de
+	ld a, [hl]
+	and a
+	jp z, .next
+	ld hl, TreasureRoomDistances
+	add hl, de
+	ld a, [hl]
+	ld b, a
+	ld a, [MobBestFound]
+	and a
+	jr z, .chooseWithDistance
+	ld a, [TreasureBestDistance]
+	cp a, b
+	jr c, .chooseWithDistance
+	jr nz, .next
+	ld hl, TreasureRoomUsed
+	add hl, de
+	ld a, [hl]
+	ld b, a
+	ld a, [TreasureBestUsed]
+	and a
+	jr z, .bestUnused
+	ld a, b
+	and a
+	jr z, .choose
+	jr .score
+.bestUnused
+	ld a, b
+	and a
+	jr nz, .next
+.score
+	ld de, DINING_TREASURE_ROOM_SALT
+	call ApplyTreasureInstanceSalt
+	ld a, [GenerationRoom]
+	call MobSelectionMix
+	ld a, [MobMixResult + 1]
+	ld b, a
+	ld a, [MobBestScore + 1]
+	cp a, b
+	jr c, .next
+	jr nz, .choose
+	ld a, [MobMixResult]
+	ld b, a
+	ld a, [MobBestScore]
+	cp a, b
+	jr c, .next
+	jr z, .next
+	jr .choose
+.chooseWithDistance
+	ld a, b
+	ld [TreasureBestDistance], a
+.choose
+	ld a, [GenerationRoom]
+	ld e, a
+	ld d, 0
+	ld hl, TreasureRoomUsed
+	add hl, de
+	ld a, [hl]
+	ld [TreasureBestUsed], a
+	ld a, [GenerationRoom]
+	ld [MobBestRoom], a
+	ld de, DINING_TREASURE_ROOM_SALT
+	call ApplyTreasureInstanceSalt
+	ld a, [GenerationRoom]
+	call MobSelectionMix
+	ld a, [MobMixResult]
+	ld [MobBestScore], a
+	ld a, [MobMixResult + 1]
+	ld [MobBestScore + 1], a
+	ld a, 1
+	ld [MobBestFound], a
+.next
+	ld hl, GenerationRoom
+	inc [hl]
+	ld a, [hl]
+	cp a, 16
+	jp c, .room
+	ret
+
+ApplyTreasureInstanceSalt:
+	ld a, [MobSelectedCount]
+	xor a, e
+	ld e, a
+	ret
+
+CreateSelectedTreasureEgg:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	add a, c
+	add a, DINING_TREASURE_HEIGHT
+	ld c, a
+	jp CreateTreasureEggAtTile
+
 IF DEF(FURNITURE_PARITY_TEST)
 VerifyMobParity:
 	ld hl, MobParityData
@@ -4103,6 +4569,48 @@ VerifyMobParity:
 	jr .friedEgg
 .failed
 	jr .failed
+
+VerifyTreasureParity:
+	ld hl, TreasureParityData
+	ld a, [TreasureEggCount]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld b, a
+	ld de, TreasureEggRecords
+.egg
+	ld a, b
+	and a
+	ret z
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc de
+	inc hl
+	inc de
+	ld a, [de]
+	cp a, [hl]
+	jr nz, .failed
+	inc hl
+	ld a, TREASURE_EGG_RECORD_SIZE - 4
+.nextRecord
+	inc de
+	dec a
+	jr nz, .nextRecord
+	dec b
+	jr .egg
+.failed
+	jr .failed
 ENDC
 
 SECTION "Level Generation Continued", ROM0
@@ -4169,10 +4677,13 @@ INCLUDE "build/dining_room_background.inc"
 INCLUDE "build/dining_room_furniture.inc"
 INCLUDE "build/dining_room_wallpaper.inc"
 INCLUDE "build/dining_room_mobs.inc"
+INCLUDE "build/dining_room_treasure.inc"
 
 IF DEF(FURNITURE_PARITY_TEST)
 FurnitureParityMap:
 	INCBIN "build/runtime_level_parity.tilemap"
 MobParityData:
 	INCBIN "build/runtime_mob_parity.bin"
+TreasureParityData:
+	INCBIN "build/runtime_treasure_parity.bin"
 ENDC
