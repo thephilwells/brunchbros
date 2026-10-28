@@ -1704,8 +1704,13 @@ MainLoop:
 	ld [AttackPanTileBase], a
 .attackPoseDone
 	ld a, [AttackTimer]
-	and a
-	jr z, .panHitsDone
+	cp a, ATTACK_DURATION - 1
+	jr z, .checkPanHits
+	cp a, 12
+	jr z, .checkPanHits
+	cp a, 6
+	jr nz, .panHitsDone
+.checkPanHits
 	call TryPanHitWeiners
 	call TryPanHitBurgers
 	call TryPanHitPancakes
