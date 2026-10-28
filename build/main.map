@@ -1,6 +1,6 @@
 SUMMARY:
 	ROM0: 13479 bytes used / 2905 free
-	ROMX: 12501 bytes used / 3883 free in 1 bank
+	ROMX: 12562 bytes used / 3822 free in 1 bank
 	WRAM0: 2604 bytes used / 1492 free
 	HRAM: 10 bytes used / 117 free
 
@@ -1114,51 +1114,55 @@ ROMX bank #1:
 	         $6d99 = UpdateTreasureEggSprite.key
 	         $6d9b = UpdateTreasureEggSprite.pickup
 	         $6db7 = UpdateTreasureEggSprite.hidden
-	SECTION: $6db9-$70d4 ($031c bytes) ["Dining Room Treasure Generation"]
+	SECTION: $6db9-$7111 ($0359 bytes) ["Dining Room Treasure Generation"]
 	         $6db9 = PlaceDiningRoomTreasure
 	         $6dbf = PlaceDiningRoomTreasure.clearUsed
-	         $6de3 = PlaceDiningRoomTreasure.select
-	         $6df2 = PlaceDiningRoomTreasure.countRooms
-	         $6dfc = PlaceDiningRoomTreasure.storeEmpty
-	         $6dfd = PlaceDiningRoomTreasure.storeCount
-	         $6e63 = PlaceDiningRoomTreasure.contentsReady
-	         $6e79 = PlaceDiningRoomTreasure.promoteIfNeeded
-	         $6e98 = BuildTreasureRoomDistances
-	         $6e9f = BuildTreasureRoomDistances.clearDistances
-	         $6eaa = BuildTreasureRoomDistances.markCritical
-	         $6ebe = BuildTreasureRoomDistances.pass
-	         $6ec2 = BuildTreasureRoomDistances.room
-	         $6ed6 = RelaxTreasureRoomDistance
-	         $6ef7 = RelaxTreasureRoomDistance.east
-	         $6f05 = RelaxTreasureRoomDistance.north
-	         $6f14 = RelaxTreasureRoomDistance.south
-	         $6f23 = RelaxTreasureRoomDistance.store
-	         $6f32 = ConsiderTreasureDistance
-	         $6f4a = CountTreasureCandidates
-	         $6f51 = CountTreasureCandidates.row
-	         $6f55 = CountTreasureCandidates.column
-	         $6f5e = CountTreasureCandidates.next
-	         $6f74 = FindTreasureCandidate
-	         $6f7b = FindTreasureCandidate.row
-	         $6f7f = FindTreasureCandidate.column
-	         $6f91 = FindTreasureCandidate.next
-	         $6fa4 = IsTreasureCandidate
-	         $6fb8 = IsTreasureCandidate.bodyRow
-	         $6fba = IsTreasureCandidate.bodyCell
-	         $6fec = IsTreasureCandidate.support
-	         $7000 = IsTreasureCandidate.invalidPop
-	         $7001 = IsTreasureCandidate.invalid
-	         $7003 = FindBestTreasureRoom
-	         $700a = FindBestTreasureRoom.room
-	         $703f = FindBestTreasureRoom.bestUnused
-	         $7043 = FindBestTreasureRoom.score
-	         $7069 = FindBestTreasureRoom.chooseWithDistance
-	         $706d = FindBestTreasureRoom.choose
-	         $709e = FindBestTreasureRoom.next
-	         $70a9 = ApplyTreasureInstanceSalt
-	         $70af = CreateSelectedTreasureEgg
-	EMPTY: $70d5-$7fff ($0f2b bytes)
-	TOTAL EMPTY: $0f2b bytes
+	         $6de0 = PlaceDiningRoomTreasure.select
+	         $6def = PlaceDiningRoomTreasure.countRooms
+	         $6df9 = PlaceDiningRoomTreasure.storeEmpty
+	         $6dfa = PlaceDiningRoomTreasure.storeCount
+	         $6e71 = PlaceDiningRoomTreasure.assignKey
+	         $6e92 = PlaceDiningRoomTreasure.findHeart
+	         $6eaa = PlaceDiningRoomTreasure.nextHeart
+	         $6ead = PlaceDiningRoomTreasure.promoteHeart
+	         $6ec9 = PlaceDiningRoomTreasure.skipKey
+	         $6eca = PlaceDiningRoomTreasure.promotionReady
+	         $6ed5 = BuildTreasureRoomDistances
+	         $6edc = BuildTreasureRoomDistances.clearDistances
+	         $6ee7 = BuildTreasureRoomDistances.markCritical
+	         $6efb = BuildTreasureRoomDistances.pass
+	         $6eff = BuildTreasureRoomDistances.room
+	         $6f13 = RelaxTreasureRoomDistance
+	         $6f34 = RelaxTreasureRoomDistance.east
+	         $6f42 = RelaxTreasureRoomDistance.north
+	         $6f51 = RelaxTreasureRoomDistance.south
+	         $6f60 = RelaxTreasureRoomDistance.store
+	         $6f6f = ConsiderTreasureDistance
+	         $6f87 = CountTreasureCandidates
+	         $6f8e = CountTreasureCandidates.row
+	         $6f92 = CountTreasureCandidates.column
+	         $6f9b = CountTreasureCandidates.next
+	         $6fb1 = FindTreasureCandidate
+	         $6fb8 = FindTreasureCandidate.row
+	         $6fbc = FindTreasureCandidate.column
+	         $6fce = FindTreasureCandidate.next
+	         $6fe1 = IsTreasureCandidate
+	         $6ff5 = IsTreasureCandidate.bodyRow
+	         $6ff7 = IsTreasureCandidate.bodyCell
+	         $7029 = IsTreasureCandidate.support
+	         $703d = IsTreasureCandidate.invalidPop
+	         $703e = IsTreasureCandidate.invalid
+	         $7040 = FindBestTreasureRoom
+	         $7047 = FindBestTreasureRoom.room
+	         $707c = FindBestTreasureRoom.bestUnused
+	         $7080 = FindBestTreasureRoom.score
+	         $70a6 = FindBestTreasureRoom.chooseWithDistance
+	         $70aa = FindBestTreasureRoom.choose
+	         $70db = FindBestTreasureRoom.next
+	         $70e6 = ApplyTreasureInstanceSalt
+	         $70ec = CreateSelectedTreasureEgg
+	EMPTY: $7112-$7fff ($0eee bytes)
+	TOTAL EMPTY: $0eee bytes
 
 WRAM0 bank #0:
 	SECTION: $c000-$c09f ($00a0 bytes) ["Shadow OAM"]
@@ -1372,7 +1376,7 @@ WRAM0 bank #0:
 	         $ca18 = TreasureRoomUsed
 	         $ca28 = TreasureBestDistance
 	         $ca29 = TreasureBestUsed
-	         $ca2a = TreasureContentsPresent
+	         $ca2a = TreasureKeyIndex
 	         $ca2b = TreasureRelaxPass
 	EMPTY: $ca2c-$cfff ($05d4 bytes)
 	TOTAL EMPTY: $05d4 bytes

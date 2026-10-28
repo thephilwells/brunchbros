@@ -7,5 +7,6 @@
   "roomSalt": 51761,
   "positionSalt": 26749,
   "contentsSalt": 45691,
+  "keySalt": 27441,
   "promotionSalt": 60923
 }

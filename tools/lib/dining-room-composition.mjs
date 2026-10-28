@@ -551,8 +551,13 @@ function treasureSelections(level) {
       height: TREASURE_MANIFEST.height,
     });
   }
-  if (placements.length && placements.every(placement => placement.contents === 'empty')) {
-    placements[mixSelection(level.seed, 0, TREASURE_MANIFEST.promotionSalt) % placements.length].contents = 'heart';
+  if (placements.length) {
+    const keyIndex = mixSelection(level.seed, 0, TREASURE_MANIFEST.keySalt) % placements.length;
+    placements[keyIndex].contents = 'key';
+    const nonKeyPlacements = placements.filter((_, index) => index !== keyIndex);
+    if (nonKeyPlacements.every(placement => placement.contents === 'empty')) {
+      nonKeyPlacements[mixSelection(level.seed, 0, TREASURE_MANIFEST.promotionSalt) % nonKeyPlacements.length].contents = 'heart';
+    }
   }
   return { candidatesByRoom: candidatesByRoom.map(candidates => candidates.length), distances, placements, target };
 }
@@ -762,10 +767,11 @@ export function validateDiningRoomComposition(level) {
   if (level.roomDistancesFromCriticalRoute.some((distance, room) => distance !== expectedTreasure.distances[room])) errors.push('room distances from critical route are inconsistent');
   if (JSON.stringify(level.treasurePlacements) !== JSON.stringify(expectedTreasure.placements)) errors.push('treasure placements are inconsistent');
   if (!(level.treasurePlacements ?? []).length) errors.push('level has no treasure eggs');
-  if (!(level.treasurePlacements ?? []).some(placement => placement.contents === 'heart')) errors.push('level has no treasure-bearing egg');
+  if (!(level.treasurePlacements ?? []).some(placement => placement.contents === 'heart')) errors.push('level has no heart-bearing egg');
+  if ((level.treasurePlacements ?? []).filter(placement => placement.contents === 'key').length !== 1) errors.push('level does not have exactly one key-bearing egg');
   const occupiedTreasureCells = new Set();
   for (const placement of level.treasurePlacements ?? []) {
-    if (!['heart', 'empty'].includes(placement.contents)) errors.push(`treasure egg in room ${placement.room} has unknown contents ${placement.contents}`);
+    if (!['heart', 'empty', 'key'].includes(placement.contents)) errors.push(`treasure egg in room ${placement.room} has unknown contents ${placement.contents}`);
     if (placement.width !== TREASURE_MANIFEST.width || placement.height !== TREASURE_MANIFEST.height) errors.push(`treasure egg metadata is inconsistent in room ${placement.room}`);
     if (placement.distanceFromCriticalRoute !== level.roomDistancesFromCriticalRoute[placement.room]) errors.push(`treasure egg has wrong route distance in room ${placement.room}`);
     for (let y = placement.y; y < placement.y + placement.height; y++) {

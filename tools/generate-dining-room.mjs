@@ -510,6 +510,7 @@ writeFileSync('build/dining_room_treasure.inc', [
   `DEF DINING_TREASURE_ROOM_SALT EQU $${treasureManifest.roomSalt.toString(16).padStart(4, '0')}`,
   `DEF DINING_TREASURE_POSITION_SALT EQU $${treasureManifest.positionSalt.toString(16).padStart(4, '0')}`,
   `DEF DINING_TREASURE_CONTENTS_SALT EQU $${treasureManifest.contentsSalt.toString(16).padStart(4, '0')}`,
+  `DEF DINING_TREASURE_KEY_SALT EQU $${treasureManifest.keySalt.toString(16).padStart(4, '0')}`,
   `DEF DINING_TREASURE_PROMOTION_SALT EQU $${treasureManifest.promotionSalt.toString(16).padStart(4, '0')}`,
   '',
 ].join('\n'));

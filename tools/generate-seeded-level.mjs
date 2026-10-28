@@ -56,7 +56,7 @@ writeFileSync('build/runtime_mob_parity.bin', Buffer.from(mobParity));
 const treasureParity = [level.treasurePlacements.length];
 for (const placement of level.treasurePlacements) {
   const x = placement.x * 8;
-  treasureParity.push((placement.y + placement.height) * 8, x & 0xff, x >> 8, placement.contents === 'heart' ? 1 : 0);
+  treasureParity.push((placement.y + placement.height) * 8, x & 0xff, x >> 8, { empty: 0, heart: 1, key: 2 }[placement.contents]);
 }
 writeFileSync('build/runtime_treasure_parity.bin', Buffer.from(treasureParity));
 writeFileSync('build/room_templates.bin', Buffer.from(runtimeTemplates));

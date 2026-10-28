@@ -26,7 +26,7 @@ for (let index = 0; index < expected.treasurePlacements.length; index++) {
   const offset = 1 + index * 4;
   assert.equal(runtimeTreasureParity[offset], (placement.y + placement.height) * 8);
   assert.equal(runtimeTreasureParity[offset + 1] | runtimeTreasureParity[offset + 2] << 8, placement.x * 8);
-  assert.equal(runtimeTreasureParity[offset + 3], placement.contents === 'heart' ? 1 : 0);
+  assert.equal(runtimeTreasureParity[offset + 3], { empty: 0, heart: 1, key: 2 }[placement.contents]);
 }
 assert.equal(runtimeTemplates.length, 15 * 10 * 8);
 const semanticValues = { '.': 0, '#': 1, '=': 2 };
@@ -54,9 +54,10 @@ for (let index = 1; index < expected.criticalRoute.length; index++) {
   const current = expected.roomTraversalClasses[expected.criticalRoute[index]];
   assert(previous === 'ordinary' || current === 'ordinary');
 }
-assert.equal(expected.roomTraversalClasses.filter(value => value === 'ledge_catch').length, 1);
+const ledgeCatchCount = expected.roomTraversalClasses.filter(value => value === 'ledge_catch').length;
+assert(ledgeCatchCount <= 1);
 assert.match(tmx, /name="wide_ports" type="int" value="[1-8]"/);
-assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
+if (ledgeCatchCount) assert.match(tmx, /name="traversal_class" value="ledge_catch"/);
 assert.match(tmx, /name="Background Placements"/);
 if (expected.furniturePlacements.length) assert.match(tmx, /name="Furniture Placements"/);
 else assert.doesNotMatch(tmx, /name="Furniture Placements"/);

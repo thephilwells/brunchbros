@@ -102,7 +102,7 @@ TreasureRoomDistances: ds 16
 TreasureRoomUsed: ds 16
 TreasureBestDistance: db
 TreasureBestUsed: db
-TreasureContentsPresent: db
+TreasureKeyIndex: db
 TreasureRelaxPass: db
 
 SECTION "Level Generation", ROM0
@@ -3998,7 +3998,6 @@ PlaceDiningRoomTreasure:
 	ld [hl+], a
 	dec b
 	jr nz, .clearUsed
-	ld [TreasureContentsPresent], a
 	call BuildTreasureRoomDistances
 	ld de, DINING_TREASURE_COUNT_SALT
 	xor a
@@ -4016,7 +4015,7 @@ PlaceDiningRoomTreasure:
 	ld b, a
 	ld a, [MobTargetCount]
 	cp a, b
-	jp z, .promoteIfNeeded
+	jp z, .assignKey
 	xor a
 	ld [GenerationRoom], a
 .countRooms
@@ -4042,7 +4041,7 @@ PlaceDiningRoomTreasure:
 	call FindBestTreasureRoom
 	ld a, [MobBestFound]
 	and a
-	jr z, .promoteIfNeeded
+	jr z, .assignKey
 	ld a, [MobBestRoom]
 	ld [GenerationRoom], a
 	ld e, a
@@ -4068,9 +4067,6 @@ PlaceDiningRoomTreasure:
 	ld a, [MobMixResult]
 	and a, 1
 	ld [TreasureEggContents], a
-	jr z, .contentsReady
-	ld [TreasureContentsPresent], a
-.contentsReady
 	call CreateSelectedTreasureEgg
 	ld a, [GenerationRoom]
 	ld e, a
@@ -4081,22 +4077,62 @@ PlaceDiningRoomTreasure:
 	ld hl, MobSelectedCount
 	inc [hl]
 	jp .select
-.promoteIfNeeded
-	ld a, [TreasureContentsPresent]
-	and a
-	ret nz
+.assignKey
 	ld a, [TreasureEggCount]
 	and a
 	ret z
-	ld c, a
-	ld de, DINING_TREASURE_PROMOTION_SALT
+	ld de, DINING_TREASURE_KEY_SALT
 	xor a
 	call MobSelectionMix
+	ld a, [TreasureEggCount]
+	ld c, a
 	call MobResultModulo
+	ld [TreasureKeyIndex], a
 	call GetTreasureEggRecordPointer
 	ld de, 4
 	add hl, de
-	ld [hl], 1
+	ld [hl], TREASURE_EGG_CONTENT_KEY
+	ld b, 0
+.findHeart
+	ld a, [TreasureEggCount]
+	cp a, b
+	jr z, .promoteHeart
+	ld a, [TreasureKeyIndex]
+	cp a, b
+	jr z, .nextHeart
+	ld a, b
+	call GetTreasureEggRecordPointer
+	ld de, 4
+	add hl, de
+	ld a, [hl]
+	cp a, TREASURE_EGG_CONTENT_HEART
+	ret z
+.nextHeart
+	inc b
+	jr .findHeart
+.promoteHeart
+	ld a, [TreasureEggCount]
+	dec a
+	ld de, DINING_TREASURE_PROMOTION_SALT
+	xor a
+	call MobSelectionMix
+	ld a, [TreasureEggCount]
+	dec a
+	ld c, a
+	call MobResultModulo
+	ld b, a
+	ld a, [TreasureKeyIndex]
+	cp a, b
+	jr c, .skipKey
+	jr nz, .promotionReady
+.skipKey
+	inc b
+.promotionReady
+	ld a, b
+	call GetTreasureEggRecordPointer
+	ld de, 4
+	add hl, de
+	ld [hl], TREASURE_EGG_CONTENT_HEART
 	ret
 
 BuildTreasureRoomDistances:

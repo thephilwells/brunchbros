@@ -149,7 +149,7 @@
  </objectgroup>
  <objectgroup id="8" name="Treasure Eggs">
   <object id="98" name="treasure-egg-7-0" type="treasure_egg" x="288" y="80" width="16" height="16"><properties><property name="room" type="int" value="7"/><property name="distance_from_critical_route" type="int" value="2"/><property name="contents" value="heart"/></properties></object>
-  <object id="99" name="treasure-egg-0-1" type="treasure_egg" x="48" y="16" width="16" height="16"><properties><property name="room" type="int" value="0"/><property name="distance_from_critical_route" type="int" value="1"/><property name="contents" value="heart"/></properties></object>
+  <object id="99" name="treasure-egg-0-1" type="treasure_egg" x="48" y="16" width="16" height="16"><properties><property name="room" type="int" value="0"/><property name="distance_from_critical_route" type="int" value="1"/><property name="contents" value="key"/></properties></object>
   <object id="100" name="treasure-egg-6-2" type="treasure_egg" x="168" y="88" width="16" height="16"><properties><property name="room" type="int" value="6"/><property name="distance_from_critical_route" type="int" value="1"/><property name="contents" value="heart"/></properties></object>
  </objectgroup>
 </map>
