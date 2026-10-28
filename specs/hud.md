@@ -33,3 +33,11 @@ the DMG Window trigger remains active for the frame once drawing begins, and
 mid-frame cutoff attempts produced either a covered playfield or a vertical
 trigger seam. A robust top-edge Window HUD would require a more invasive raster
 system than the current polling loop warrants.
+
+## Key inventory
+
+A fixed screen-space 8×8 key icon appears immediately to the left of the three
+health hearts while Chef holds the current level's exit key. No icon is drawn
+before collection or after the key is consumed by an exit. The key uses one OAM
+entry and participates in the same shadow-OAM composition and scanline budget
+as the health HUD.

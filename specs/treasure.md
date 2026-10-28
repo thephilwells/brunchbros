@@ -34,3 +34,20 @@ Host generation behavior:
   parity covers seeds 0, 1, 77, `$1234`, and `$FFFF`.
 - Runtime rendering culls offscreen eggs and admits only complete four-entry
   composites that fit in the OAM capacity remaining after Chef, HUD, and mobs.
+
+## Exit key requirement
+
+Each generated level has exactly one key-bearing egg. The selected egg remains
+visually identical to every other egg until its second pan hit completes the
+cloudburst and leaves a key pickup. The key-bearing egg is selected
+deterministically and is exposed in JSON, TMX, gallery overlays, and fixed-seed
+runtime parity.
+
+The remaining eggs retain the independent 50-percent heart-or-empty roll. The
+existing guarantee of at least one heart-bearing egg applies in addition to the
+key egg, so every level contains exactly one key and at least one heart pickup.
+
+Walking over the key collects it, removes the world pickup, and sets the
+level-local key inventory flag. The flag starts clear on a new run and after
+every level load. A successful exit consumes the key before the next level is
+generated. Death also clears it.

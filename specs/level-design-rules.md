@@ -140,15 +140,20 @@ variation.
   movable objects. The object-placement pass also reserves a one-tile halo
   around their outer sides and top.
 - The final required-route transition lands on the approach apron using
-  ordinary tolerances. Reaching or entering the exit cannot depend on a
-  boundary jump, ledge catch, long drop, later ability, or consumable resource.
+  ordinary tolerances. Reaching the exit cannot depend on a boundary jump,
+  ledge catch, long drop, or later movement ability. Activating it requires the
+  current level's key.
 - Exit activation is a runtime interaction: overlap the doorway while grounded
-  at its threshold and press Down. A 32-frame diagonal descent opens the door,
-  masks the Chef behind its frame, and leaves him hidden. The runtime then
+  at its threshold and press Down while holding the key. Without the key, the
+  closed doorway remains inactive. A successful activation consumes the key,
+  starts a 32-frame diagonal descent, opens the door, masks the Chef behind its
+  frame, and leaves him hidden. The runtime then
   advances the seed and immediately generates another dining-room level,
   resetting player, camera, and streaming state at its spawn. This same-biome
   cycle proves the transition machinery; biome selection remains pending.
-  Generation validates only the structural footprint and safe approach.
+  Generation validates the structural footprint, safe approach, exactly one
+  key-bearing egg, and reachability of that egg without passing through the
+  locked exit.
 
 ## Room scale and biome dressing
 

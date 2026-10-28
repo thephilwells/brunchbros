@@ -4,6 +4,24 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-10-27 — Every level exit requires one egg-dropped key
+
+**Decision:** Every generated level contains exactly one key-bearing treasure
+egg. The other eggs keep the existing heart-or-empty roll, including the
+separate guarantee that at least one egg contains a heart. Collecting the key
+sets a level-local inventory flag and displays a fixed HUD icon. Down at the
+exit only starts the descent while that flag is set; successful activation
+consumes the key, and the next level begins without one.
+
+**Why:** Requiring the key turns optional-room exploration into a required
+level objective while preserving the critical route's geometric guarantees.
+Making the key level-local ensures every generated layout must be explored and
+prevents one pickup from bypassing later levels.
+
+**Status:** Approved requirement; implementation pending.
+
+---
+
 ## 2026-10-05 — Background fixtures are selected per visual chamber
 
 Menu boards, mirrors, clocks, sconces, and serving hatches are placed as

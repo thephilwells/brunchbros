@@ -213,7 +213,9 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    breakable eggs, prefers rooms farthest from the critical route, rolls heart
    contents at 50 percent, and guarantees at least one heart-bearing egg. The
    RGBDS port mirrors placement and contents selection and passes fixed-seed
-   parity for seeds 0, 1, 77, `$1234`, and `$FFFF`.
+   parity for seeds 0, 1, 77, `$1234`, and `$FFFF`. Next, add exactly one
+   deterministic key-bearing egg per level, its pickup and HUD icon, and require
+   and consume that level-local key when activating the exit.
 5. **Expand the biome vocabulary.** Reuse the proven generation/composition
    contracts for Patio, Kitchen, and Freezer, reviewing assets in small groups.
    Freezer sliding, boss-arena exceptions, and the final boss remain explicit
