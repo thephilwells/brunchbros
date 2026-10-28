@@ -51,6 +51,16 @@ const heart = [
   '   ##   ',
   '        ',
 ];
+const key = [
+  '  ####  ',
+  ' #....# ',
+  ' #.  .# ',
+  ' #....# ',
+  '  ####  ',
+  '   ##   ',
+  '   #### ',
+  '   ## # ',
+];
 
 let crcTable;
 function crc32(buffer) {
@@ -111,13 +121,19 @@ for (const egg of eggs) {
   if (egg.length !== 16 || egg.some(row => row.length !== 16)) throw new Error('Treasure egg poses must be 16x16');
 }
 if (heart.length !== 8 || heart.some(row => row.length !== 8)) throw new Error('Dropped heart must be 8x8');
+if (key.length !== 8 || key.some(row => row.length !== 8)) throw new Error('Dropped key must be 8x8');
 
 const heartPanel = Array.from({ length: 16 }, (_, y) => {
   if (y < 4 || y >= 12) return ' '.repeat(16);
   return `    ${heart[y - 4]}    `;
 });
-const review = eggs[0].map((_, y) => `${eggs[0][y]}  ${eggs[1][y]}  ${heartPanel[y]}`);
+const keyPanel = Array.from({ length: 16 }, (_, y) => {
+  if (y < 4 || y >= 12) return ' '.repeat(16);
+  return `    ${key[y - 4]}    `;
+});
+const review = eggs[0].map((_, y) => `${eggs[0][y]}  ${eggs[1][y]}  ${heartPanel[y]}  ${keyPanel[y]}`);
 
 writeFileSync('gfx/treasure_egg.png', encodePng(eggs.flat()));
 writeFileSync('gfx/dropped_heart.png', encodePng(heart));
+writeFileSync('gfx/dropped_key.png', encodePng(key));
 writeFileSync('gfx/treasure_egg_review.png', encodePng(scaleRows(review, 6)));
