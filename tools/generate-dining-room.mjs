@@ -82,11 +82,13 @@ for (let y = 0; y < 24; y++) for (let x = 0; x < 16; x++) {
   const interior = y >= 2 && y < 22 && x >= 2 && x <= 13;
   composite(25, 2, x, y, frame ? 3 : interior ? 2 : 1);
 }
-for (let y = 10; y <= 13; y++) for (let x = 6; x <= 9; x++) composite(25, 2, x, y, 0);
-for (let y = 14; y <= 17; y++) {
-  const inset = y - 14;
-  for (let x = 4 + inset; x <= 11 - inset; x++) composite(25, 2, x, y, 0);
+for (let x = 6; x <= 9; x++) composite(25, 2, x, 8, 0);
+for (let y = 9; y <= 11; y++) {
+  composite(25, 2, 5, y, 0);
+  composite(25, 2, 10, y, 0);
 }
+for (let y = 11; y <= 17; y++) for (let x = 4; x <= 11; x++) composite(25, 2, x, y, 0);
+for (const [x, y] of [[7, 13], [8, 13], [7, 14], [8, 14], [7, 15]]) composite(25, 2, x, y, 3);
 
 for (let id = 81; id <= 86; id++) fill(id, 1);
 for (let y = 0; y < 24; y++) for (let x = 0; x < 16; x++) {

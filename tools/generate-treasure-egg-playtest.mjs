@@ -22,6 +22,12 @@ const tiles = solid.map((row, y) => row.map((occupied, x) => {
   if ((x * 3 + y * 5) % 29 === 0) return 18;
   return 17;
 }));
+const exitX = 34;
+const exitY = 26;
+const exitTiles = [[25, 26], [27, 28], [29, 30]];
+for (let y = 0; y < exitTiles.length; y++) {
+  for (let x = 0; x < exitTiles[y].length; x++) tiles[exitY + y][exitX + x] = exitTiles[y][x];
+}
 
 writeFileSync('build/treasure_egg_playtest.tilemap', Buffer.from(tiles.flat()));
 writeFileSync('build/treasure_egg_playtest.inc', [
@@ -31,5 +37,7 @@ writeFileSync('build/treasure_egg_playtest.inc', [
   'DEF TREASURE_EGG_PLAYTEST_EMPTY_X EQU 128',
   'DEF TREASURE_EGG_PLAYTEST_KEY_X EQU 168',
   'DEF TREASURE_EGG_PLAYTEST_EGG_Y EQU 232',
+  `DEF TREASURE_EGG_PLAYTEST_EXIT_X EQU ${exitX}`,
+  `DEF TREASURE_EGG_PLAYTEST_EXIT_Y EQU ${exitY}`,
   '',
 ].join('\n'));

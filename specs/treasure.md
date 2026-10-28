@@ -18,6 +18,8 @@ Implemented fixture behavior:
 - A heart remains on the ground while Chef is at full health.
 - Walking over the key removes its world pickup and sets the level-local key
   inventory flag.
+- The fixture exit ignores Down until the key is collected. Starting the exit
+  descent consumes the key.
 
 Host generation behavior:
 

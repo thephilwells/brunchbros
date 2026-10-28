@@ -99,7 +99,7 @@ scenery behind the chef, whereas solid walls block movement.
 | 22 | trim_h_middle | trim | Horizontal band, repeats left/right |
 | 23 | trim_h_right | trim | Right cap matching the middle |
 | 24 | trim_h_single | trim | One-cell band with both ends finished |
-| 25–30 | `descent_exit` | exit | Shared 2×3 closed portal; passable, activated by Down at its threshold |
+| 25–30 | `descent_exit` | exit | Shared 2×3 closed portal; passable, activated by Down at its threshold while holding the level key |
 | 31 | reserved_shared | reserved | Opaque white; not placeable |
 
 Trim backgrounds must match rear_plain. They replace cells in the rendered
@@ -111,7 +111,7 @@ not supporting platforms. Apply the same principle to future props.
 
 The 2×3-tile (16×24 px) doorway uses closed IDs 25–30 and open IDs 81–86,
 both in row-major order. It is identical in every biome. The closed state's
-dark opening, frame, threshold, and downward arrow identify it as the run's
+dark opening, frame, threshold, and padlock identify it as the run's locked
 exit rather than an ordinary background door. All twelve tiles have
 `collision=empty` and `role=exit`; closed tiles also have
 `interaction=press_down`.

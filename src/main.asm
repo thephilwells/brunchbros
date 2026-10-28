@@ -778,6 +778,10 @@ LoadTreasureEggPlaytest:
 	ld [GeneratedPlayerX + 1], a
 	ld a, TREASURE_EGG_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
+	ld a, TREASURE_EGG_PLAYTEST_EXIT_X
+	ld [GeneratedExitX], a
+	ld a, TREASURE_EGG_PLAYTEST_EXIT_Y
+	ld [GeneratedExitY], a
 	ret
 ENDC
 
@@ -7424,6 +7428,9 @@ TryStartExitDescent:
 	ld a, [CurrentDpad]
 	bit 3, a
 	jr nz, .notStarted
+	ld a, [LevelKeyOwned]
+	and a
+	jr z, .notStarted
 	call LoadPlayerX
 	ld a, [PlayerY]
 	sub a, 8
@@ -7433,6 +7440,8 @@ TryStartExitDescent:
 	jr c, .notStarted
 	cp a, 31
 	jr nc, .notStarted
+	xor a
+	ld [LevelKeyOwned], a
 	call SetPlayerAtExitThreshold
 	call OpenExitDoor
 	ld a, EXIT_ANIMATION_FRAMES
