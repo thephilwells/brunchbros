@@ -1002,6 +1002,24 @@ UpdateHUDSprites:
 	ld e, a
 	dec c
 	jr nz, .heart
+	ld a, [LevelKeyOwned]
+	and a
+	jr z, .hideKey
+	ld a, 16
+	ld [hl+], a
+	ld a, 104
+	ld [hl+], a
+	ld a, TREASURE_KEY_TILE
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+.hideKey
+	xor a
+	ld [hl+], a
+	ld [hl+], a
+	ld [hl+], a
+	ld [hl], a
 	ret
 
 ReadActionButtons:
@@ -1041,8 +1059,8 @@ PrepareSpriteBuffer:
 	ret
 
 ClearMobSpriteBuffer:
-	ld hl, ShadowOAM + $2c
-	ld b, 160 - $2c
+	ld hl, ShadowOAM + $30
+	ld b, 160 - $30
 	xor a
 .loop
 	ld [hl+], a
@@ -2328,7 +2346,7 @@ TryWeinerContacts:
 	jr .loop
 
 UpdateWeinerSprites:
-	ld hl, ShadowOAM + $2c
+	ld hl, ShadowOAM + $30
 	ld a, l
 	ld [WeinerOAMPointer], a
 	ld a, h

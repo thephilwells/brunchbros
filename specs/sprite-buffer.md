@@ -29,7 +29,8 @@ not consume the restricted OAM-access portion of VBlank.
 | 0–3 | Chef | 4 |
 | 4–7 | Frying pan | 4 |
 | 8–10 | Health HUD | 3 |
-| 11–34 | Six production enemies or their cloudbursts | 24 |
+| 11 | Key HUD | 1 |
+| 12–35 | Six production enemies or their cloudbursts | 24 |
 | Remaining slots | Visible treasure eggs or dropped hearts | Capacity-limited |
 
 An inactive composite hides its entries by setting their Y bytes to zero.
