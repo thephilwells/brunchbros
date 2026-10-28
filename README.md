@@ -52,6 +52,7 @@ node tools/generate-enemy-destruction.mjs
 node tools/generate-burger.mjs
 node tools/generate-pancake.mjs
 node tools/generate-fried-egg.mjs
+node tools/generate-disco-fry.mjs
 node tools/generate-treasure-egg.mjs
 node tools/generate-combat-playtest.mjs
 node tools/generate-burger-playtest.mjs
@@ -69,6 +70,8 @@ rgbgfx -c dmg=E4 -o build/enemy_cloudburst.2bpp gfx/enemy_cloudburst.png
 rgbgfx -c dmg=E4 -o build/burger_motion.2bpp gfx/burger_motion.png
 rgbgfx -c dmg=E4 -o build/pancake_motion.2bpp gfx/pancake_motion.png
 rgbgfx -c dmg=E4 -o build/fried_egg_motion.2bpp gfx/fried_egg_motion.png
+rgbgfx -c dmg=E4 -o build/disco_fry_motion.2bpp gfx/disco_fry_motion.png
+rgbgfx -c dmg=E4 -o build/gravy_drop.2bpp gfx/gravy_drop.png
 rgbgfx -c dmg=E4 -o build/treasure_egg.2bpp gfx/treasure_egg.png
 rgbgfx -c dmg=E4 -o build/dropped_key.2bpp gfx/dropped_key.png
 node tools/verify-dining-room.mjs
