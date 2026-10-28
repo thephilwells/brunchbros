@@ -54,7 +54,8 @@ and [tile maps](https://github.com/gbdev/pandocs/blob/master/src/Tile_Maps.md).
 | `$8C40–$8CBF` | PANCAKE motion set, indices 196–203 | 8 | 128 |
 | `$8CC0–$8DBF` | FRIED_EGG motion set, indices 204–219 | 16 | 256 |
 | `$8DC0–$8E3F` | Treasure egg poses, indices 220–227 | 8 | 128 |
-| `$8E40–$8FFF` | Remaining OBJ capacity, indices 228–255 | 28 | 448 |
+| `$8E40–$8E4F` | Dropped key, index 228 | 1 | 16 |
+| `$8E50–$8FFF` | Remaining OBJ capacity, indices 229–255 | 27 | 432 |
 | `$9000–$91FF` | Shared vocabulary, BG IDs 0–31 | 32 | 512 |
 | `$9200–$97FF` | Current biome allocation, BG IDs 32–127 | 96 | 1,536 |
 | `$9800–$9BFF` | Current scrolling background map | — | 1,024 |

@@ -101,6 +101,11 @@ DEF TREASURE_EGG_STATE_UNCRACKED EQU 1
 DEF TREASURE_EGG_STATE_CRACKED EQU 2
 DEF TREASURE_EGG_STATE_BURST EQU 3
 DEF TREASURE_EGG_STATE_HEART EQU 4
+DEF TREASURE_EGG_STATE_KEY EQU 5
+DEF TREASURE_EGG_CONTENT_EMPTY EQU 0
+DEF TREASURE_EGG_CONTENT_HEART EQU 1
+DEF TREASURE_EGG_CONTENT_KEY EQU 2
+DEF TREASURE_KEY_TILE EQU 228
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -257,6 +262,7 @@ TreasureEggRecords: ds TREASURE_EGG_MAX_COUNT * TREASURE_EGG_RECORD_SIZE
 TreasureEggCount: db
 TreasureEggLoopIndex: db
 TreasureEggOAMPointer: dw
+LevelKeyOwned: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 
@@ -430,6 +436,15 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyTreasureEggTiles
+	ld de, TreasureKeyTile
+	ld hl, $8e40
+	ld c, 16
+.copyTreasureKeyTile
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyTreasureKeyTile
 
 	call LoadTitleScreen
 	xor a
@@ -1684,6 +1699,7 @@ MainLoop:
 	call TryFriedEggContacts
 .contactsDone
 	call TryCollectTreasureHearts
+	call TryCollectTreasureKeys
 
 	jp MainLoop
 
@@ -6557,6 +6573,7 @@ ClearTreasureEggRecords:
 	dec b
 	jr nz, .clearRecords
 	ld [TreasureEggCount], a
+	ld [LevelKeyOwned], a
 	ret
 
 CreateTreasureEggAtTile:
@@ -6632,7 +6649,7 @@ InitializePlaytestTreasureEggs:
 	ld [TreasureEggX + 1], a
 	ld a, TREASURE_EGG_STATE_UNCRACKED
 	ld [TreasureEggState], a
-	ld a, 1
+	ld a, TREASURE_EGG_CONTENT_HEART
 	ld [TreasureEggContents], a
 	xor a
 	call StoreTreasureEggRecord
@@ -6640,11 +6657,19 @@ InitializePlaytestTreasureEggs:
 	ld [TreasureEggX], a
 	ld a, HIGH(TREASURE_EGG_PLAYTEST_EMPTY_X)
 	ld [TreasureEggX + 1], a
-	xor a
+	ld a, TREASURE_EGG_CONTENT_EMPTY
 	ld [TreasureEggContents], a
 	ld a, 1
 	call StoreTreasureEggRecord
+	ld a, LOW(TREASURE_EGG_PLAYTEST_KEY_X)
+	ld [TreasureEggX], a
+	ld a, HIGH(TREASURE_EGG_PLAYTEST_KEY_X)
+	ld [TreasureEggX + 1], a
+	ld a, TREASURE_EGG_CONTENT_KEY
+	ld [TreasureEggContents], a
 	ld a, 2
+	call StoreTreasureEggRecord
+	ld a, 3
 	ld [TreasureEggCount], a
 	ld a, 4
 	ld [CurrentHealth], a
@@ -6693,10 +6718,15 @@ AdvanceTreasureEggBurst:
 	cp a, ENEMY_BURST_DURATION
 	ret c
 	ld a, [TreasureEggContents]
-	and a
+	cp a, TREASURE_EGG_CONTENT_KEY
+	jr z, .key
+	cp a, TREASURE_EGG_CONTENT_HEART
 	ld a, TREASURE_EGG_STATE_HEART
-	jr nz, .store
-	xor a
+	jr z, .store
+	ld a, TREASURE_EGG_CONTENT_EMPTY
+	jr .store
+.key
+	ld a, TREASURE_EGG_STATE_KEY
 .store
 	ld [TreasureEggState], a
 	ret
@@ -6916,6 +6946,53 @@ TryCollectTreasureHeart:
 	ld a, [TreasureEggState]
 	cp a, TREASURE_EGG_STATE_HEART
 	ret nz
+	call CheckTreasurePickupContact
+	ret nc
+	ld a, [CurrentHealth]
+	add a, 2
+	cp a, HUD_MAX_HEALTH + 1
+	jr c, .storeHealth
+	ld a, HUD_MAX_HEALTH
+.storeHealth
+	ld [CurrentHealth], a
+	xor a
+	ld [TreasureEggState], a
+	ret
+
+TryCollectTreasureKeys:
+	xor a
+	ld [TreasureEggLoopIndex], a
+.loop
+	ld a, [TreasureEggLoopIndex]
+	ld b, a
+	ld a, [TreasureEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadTreasureEggRecord
+	call TryCollectTreasureKey
+	pop af
+	push af
+	call StoreTreasureEggRecord
+	pop af
+	inc a
+	ld [TreasureEggLoopIndex], a
+	jr .loop
+
+TryCollectTreasureKey:
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_KEY
+	ret nz
+	call CheckTreasurePickupContact
+	ret nc
+	ld a, 1
+	ld [LevelKeyOwned], a
+	xor a
+	ld [TreasureEggState], a
+	ret
+
+CheckTreasurePickupContact:
 	ld a, [PlayerX]
 	add a, PLAYER_HITBOX_RIGHT
 	ld l, a
@@ -6933,7 +7010,7 @@ TryCollectTreasureHeart:
 	ld a, h
 	sbc a, d
 	bit 7, a
-	ret nz
+	jr nz, .miss
 	ld a, [TreasureEggX]
 	add a, 11
 	ld l, a
@@ -6951,29 +7028,24 @@ TryCollectTreasureHeart:
 	ld a, h
 	sbc a, d
 	bit 7, a
-	ret nz
+	jr nz, .miss
 	ld a, [PlayerY]
 	ld b, a
 	ld a, [TreasureEggY]
 	sub a, 8
 	cp a, b
-	ret nc
+	jr nc, .miss
 	ld a, [PlayerY]
 	sub a, PLAYER_HITBOX_TOP
 	ld b, a
 	ld a, [TreasureEggY]
 	dec a
 	cp a, b
-	ret c
-	ld a, [CurrentHealth]
-	add a, 2
-	cp a, HUD_MAX_HEALTH + 1
-	jr c, .storeHealth
-	ld a, HUD_MAX_HEALTH
-.storeHealth
-	ld [CurrentHealth], a
-	xor a
-	ld [TreasureEggState], a
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
 	ret
 
 UpdateTreasureEggSprites:
@@ -7096,6 +7168,8 @@ UpdateTreasureEggSprite:
 	ld a, [TreasureEggState]
 	cp a, TREASURE_EGG_STATE_HEART
 	jr z, .heart
+	cp a, TREASURE_EGG_STATE_KEY
+	jr z, .key
 	cp a, TREASURE_EGG_STATE_BURST
 	jr z, .burst
 	ld d, TREASURE_EGG_UNCRACKED_TILE
@@ -7163,6 +7237,11 @@ UpdateTreasureEggSprite:
 	scf
 	ret
 .heart
+	ld d, HUD_FULL_HEART_TILE
+	jr .pickup
+.key
+	ld d, TREASURE_KEY_TILE
+.pickup
 	ld a, [CameraY]
 	ld b, a
 	ld a, [TreasureEggY]
@@ -7175,7 +7254,7 @@ UpdateTreasureEggSprite:
 	add a, 12
 	sub a, b
 	ld [hl+], a
-	ld a, HUD_FULL_HEART_TILE
+	ld a, d
 	ld [hl+], a
 	xor a
 	ld [hl], a
@@ -7785,6 +7864,9 @@ FriedEggTiles:
 
 TreasureEggTiles:
 	INCBIN "build/treasure_egg.2bpp"
+
+TreasureKeyTile:
+	INCBIN "build/dropped_key.2bpp"
 
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:

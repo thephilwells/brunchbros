@@ -70,6 +70,7 @@ rgbgfx -c dmg=E4 -o build/burger_motion.2bpp gfx/burger_motion.png
 rgbgfx -c dmg=E4 -o build/pancake_motion.2bpp gfx/pancake_motion.png
 rgbgfx -c dmg=E4 -o build/fried_egg_motion.2bpp gfx/fried_egg_motion.png
 rgbgfx -c dmg=E4 -o build/treasure_egg.2bpp gfx/treasure_egg.png
+rgbgfx -c dmg=E4 -o build/dropped_key.2bpp gfx/dropped_key.png
 node tools/verify-dining-room.mjs
 node tools/verify-dining-room-furniture.mjs
 node tools/verify-dining-room-background.mjs

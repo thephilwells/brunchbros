@@ -2,19 +2,22 @@
 
 The first treasure container is a stationary 16×16 egg. Its uncracked and
 cracked poses use four OBJ tiles each. A dropped heart reuses the HUD full-heart
-tile.
+tile, while the dropped key uses one dedicated OBJ tile.
 
-The focused fixture contains two visually identical uncracked eggs. The left
-egg is heart-bearing and the right egg is empty. The fixture starts Chef at two
-hearts so the dropped heart's healing is visible.
+The focused fixture contains three visually identical uncracked eggs. From
+left to right they contain a heart, nothing, and a key. The fixture starts Chef
+at two hearts so the dropped heart's healing is visible.
 
 Implemented fixture behavior:
 
 - The first pan hit changes an uncracked egg to its cracked pose.
 - The second pan hit starts the generic cloudburst immediately.
 - A heart-bearing egg leaves one heart pickup; an empty egg leaves nothing.
+- A key-bearing egg leaves one key pickup.
 - Walking over a heart restores one whole heart, capped at three hearts.
 - A heart remains on the ground while Chef is at full health.
+- Walking over the key removes its world pickup and sets the level-local key
+  inventory flag.
 
 Host generation behavior:
 
