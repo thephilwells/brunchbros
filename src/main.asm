@@ -109,6 +109,7 @@ DEF TREASURE_KEY_TILE EQU 228
 DEF DISCO_FRY_FIRST_TILE EQU 229
 DEF DISCO_FRY_GRAVY_TILE EQU 233
 DEF DISCO_FRY_FRAME_DURATION EQU 8
+DEF DISCO_FRY_GRAVY_INTERVAL EQU 64
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -274,7 +275,12 @@ DiscoFryDirection: db
 DiscoFryAnimTimer: db
 DiscoFryTileBase: db
 DiscoFryActive: db
+DiscoFryDropTimer: db
 DiscoFryOAMPointer: dw
+GravyDropY: db
+GravyDropX: dw
+GravyDropActive: db
+GravyDropOAMPointer: dw
 LevelKeyOwned: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -680,6 +686,7 @@ ENDC
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
+	call UpdateGravyDropSprite
 	call UpdateTreasureEggSprites
 	call hOAMDMA
 
@@ -1108,6 +1115,7 @@ PrepareSpriteBuffer:
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
+	call UpdateGravyDropSprite
 	call UpdateTreasureEggSprites
 	ret
 .gameplay
@@ -1118,6 +1126,7 @@ PrepareSpriteBuffer:
 	call AdvancePancakes
 	call AdvanceFriedEggs
 	call AdvanceDiscoFry
+	call AdvanceGravyDrop
 	call AdvanceTreasureEggs
 	call UpdateSprites
 	call UpdateWeinerSprites
@@ -1125,6 +1134,7 @@ PrepareSpriteBuffer:
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
+	call UpdateGravyDropSprite
 	call UpdateTreasureEggSprites
 	ret
 
@@ -6652,7 +6662,7 @@ HideFriedEggSprite:
 SECTION "DISCO_FRY Runtime", ROMX
 ClearDiscoFry:
 	ld hl, DiscoFryY
-	ld b, 9
+	ld b, 16
 	xor a
 .loop
 	ld [hl+], a
@@ -6723,6 +6733,66 @@ AdvanceDiscoFry:
 	ld a, 1
 	ld [DiscoFryDirection], a
 	ret
+
+AdvanceGravyDrop:
+	ld a, [GravyDropActive]
+	and a
+	jr z, .waitToDrop
+	call GravyDropSupportBelow
+	jr z, .despawn
+	ld hl, GravyDropY
+	inc [hl]
+	ret nz
+.despawn
+	xor a
+	ld [GravyDropActive], a
+	ret
+.waitToDrop
+	ld a, [DiscoFryActive]
+	and a
+	ret z
+	ld hl, DiscoFryDropTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, DISCO_FRY_GRAVY_INTERVAL
+	ret c
+	xor a
+	ld [hl], a
+	ld a, [DiscoFryY]
+	add a, 8
+	ld [GravyDropY], a
+	ld a, [DiscoFryX]
+	add a, 6
+	ld [GravyDropX], a
+	ld a, [DiscoFryX + 1]
+	adc a, 0
+	ld [GravyDropX + 1], a
+	ld a, 1
+	ld [GravyDropActive], a
+	ret
+
+GravyDropSupportBelow:
+	ld a, [GravyDropX]
+	inc a
+	ld e, a
+	ld a, [GravyDropX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [GravyDropY]
+	add a, 8
+	ld d, a
+	call IsSupport
+	ret z
+	ld a, [GravyDropX]
+	add a, 2
+	ld e, a
+	ld a, [GravyDropX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [GravyDropY]
+	add a, 8
+	ld d, a
+	jp IsSupport
 
 DiscoFryWallRight:
 	ld a, [DiscoFryX]
@@ -6871,6 +6941,93 @@ UpdateDiscoFrySprite:
 	ld [hl], a
 	ret
 .hidden
+	ret
+
+UpdateGravyDropSprite:
+	ld a, [DiscoFryOAMPointer]
+	ld [GravyDropOAMPointer], a
+	ld a, [DiscoFryOAMPointer + 1]
+	ld [GravyDropOAMPointer + 1], a
+	ld a, [GravyDropActive]
+	and a
+	ret z
+	call DrawGravyDropSprite
+	ld a, [GravyDropOAMPointer]
+	add a, 4
+	ld [GravyDropOAMPointer], a
+	ret nc
+	ld hl, GravyDropOAMPointer + 1
+	inc [hl]
+	ret
+
+DrawGravyDropSprite:
+	ld a, [GravyDropX + 1]
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .leftEdgeClear
+	ret nz
+	ld a, [GravyDropX]
+	ld e, a
+	ld a, [CameraX]
+	cp a, e
+	jr z, .leftEdgeClear
+	ret nc
+.leftEdgeClear
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [GravyDropX]
+	add a, 8
+	ld c, a
+	ld a, [GravyDropX + 1]
+	adc a, 0
+	cp a, d
+	jr c, .vertical
+	ret nz
+	ld a, c
+	cp a, e
+	ret nc
+.vertical
+	ld a, [GravyDropY]
+	add a, 8
+	jr c, .bottomEdge
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	ret nc
+.bottomEdge
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [GravyDropY]
+	cp a, e
+	ret nc
+.visible
+	ld a, [GravyDropOAMPointer]
+	ld l, a
+	ld a, [GravyDropOAMPointer + 1]
+	ld h, a
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [GravyDropY]
+	add a, 16
+	sub a, b
+	ld [hl+], a
+	ld a, [GravyDropX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, DISCO_FRY_GRAVY_TILE
+	ld [hl+], a
+	xor a
+	ld [hl], a
 	ret
 
 SECTION "Treasure Egg Runtime", ROMX
@@ -7366,9 +7523,9 @@ CheckTreasurePickupContact:
 	ret
 
 UpdateTreasureEggSprites:
-	ld a, [DiscoFryOAMPointer]
+	ld a, [GravyDropOAMPointer]
 	ld [TreasureEggOAMPointer], a
-	ld a, [DiscoFryOAMPointer + 1]
+	ld a, [GravyDropOAMPointer + 1]
 	ld [TreasureEggOAMPointer + 1], a
 	xor a
 	ld [TreasureEggLoopIndex], a
