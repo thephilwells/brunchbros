@@ -106,6 +106,9 @@ DEF TREASURE_EGG_CONTENT_EMPTY EQU 0
 DEF TREASURE_EGG_CONTENT_HEART EQU 1
 DEF TREASURE_EGG_CONTENT_KEY EQU 2
 DEF TREASURE_KEY_TILE EQU 228
+DEF DISCO_FRY_FIRST_TILE EQU 229
+DEF DISCO_FRY_GRAVY_TILE EQU 233
+DEF DISCO_FRY_FRAME_DURATION EQU 8
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -135,6 +138,9 @@ INCLUDE "build/fried_egg_playtest.inc"
 ENDC
 IF DEF(TREASURE_EGG_PLAYTEST)
 INCLUDE "build/treasure_egg_playtest.inc"
+ENDC
+IF DEF(DISCO_FRY_PLAYTEST)
+INCLUDE "build/disco_fry_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -262,6 +268,13 @@ TreasureEggRecords: ds TREASURE_EGG_MAX_COUNT * TREASURE_EGG_RECORD_SIZE
 TreasureEggCount: db
 TreasureEggLoopIndex: db
 TreasureEggOAMPointer: dw
+DiscoFryY: db
+DiscoFryX: dw
+DiscoFryDirection: db
+DiscoFryAnimTimer: db
+DiscoFryTileBase: db
+DiscoFryActive: db
+DiscoFryOAMPointer: dw
 LevelKeyOwned: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -445,6 +458,23 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyTreasureKeyTile
+	ld de, DiscoFryTiles
+	ld hl, $8e50
+	ld c, 4 * 16
+.copyDiscoFryTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyDiscoFryTiles
+	ld de, GravyDropTile
+	ld c, 16
+.copyGravyDropTile
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyGravyDropTile
 
 	call LoadTitleScreen
 	xor a
@@ -528,9 +558,13 @@ LoadCurrentLevel:
 	call ClearPancakeRecords
 	call ClearFriedEggRecords
 	call ClearTreasureEggRecords
+	call ClearDiscoFry
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
+	IF DEF(DISCO_FRY_PLAYTEST)
+	call LoadDiscoFryPlaytest
+	ELSE
 	IF DEF(TREASURE_EGG_PLAYTEST)
 	call LoadTreasureEggPlaytest
 	ELSE
@@ -540,7 +574,8 @@ ELSE
 	call GenerateLevel
 	ENDC
 	ENDC
-ENDC
+	ENDC
+	ENDC
 IF DEF(PANCAKE_PLAYTEST)
 	call LoadPancakePlaytest
 	call ClearWeinerRecords
@@ -630,6 +665,9 @@ ENDC
 IF DEF(TREASURE_EGG_PLAYTEST)
 	call InitializePlaytestTreasureEggs
 ENDC
+IF DEF(DISCO_FRY_PLAYTEST)
+	call InitializePlaytestDiscoFry
+ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
@@ -641,6 +679,7 @@ ENDC
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
+	call UpdateDiscoFrySprites
 	call UpdateTreasureEggSprites
 	call hOAMDMA
 
@@ -782,6 +821,30 @@ LoadTreasureEggPlaytest:
 	ld [GeneratedExitX], a
 	ld a, TREASURE_EGG_PLAYTEST_EXIT_Y
 	ld [GeneratedExitY], a
+	ret
+ENDC
+
+IF DEF(DISCO_FRY_PLAYTEST)
+LoadDiscoFryPlaytest:
+	ld de, DiscoFryPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(DISCO_FRY_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(DISCO_FRY_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, DISCO_FRY_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
 	ret
 ENDC
 
@@ -1044,6 +1107,7 @@ PrepareSpriteBuffer:
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
+	call UpdateDiscoFrySprites
 	call UpdateTreasureEggSprites
 	ret
 .gameplay
@@ -1053,12 +1117,14 @@ PrepareSpriteBuffer:
 	call AdvanceBurgers
 	call AdvancePancakes
 	call AdvanceFriedEggs
+	call AdvanceDiscoFry
 	call AdvanceTreasureEggs
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
+	call UpdateDiscoFrySprites
 	call UpdateTreasureEggSprites
 	ret
 
@@ -6583,6 +6649,230 @@ HideFriedEggSprite:
 	ld [hl], a
 	ret
 
+SECTION "DISCO_FRY Runtime", ROMX
+ClearDiscoFry:
+	ld hl, DiscoFryY
+	ld b, 9
+	xor a
+.loop
+	ld [hl+], a
+	dec b
+	jr nz, .loop
+	ret
+
+IF DEF(DISCO_FRY_PLAYTEST)
+InitializePlaytestDiscoFry:
+	ld a, DISCO_FRY_PLAYTEST_FRY_Y
+	ld [DiscoFryY], a
+	ld a, LOW(DISCO_FRY_PLAYTEST_FRY_X)
+	ld [DiscoFryX], a
+	ld a, HIGH(DISCO_FRY_PLAYTEST_FRY_X)
+	ld [DiscoFryX + 1], a
+	ld a, 1
+	ld [DiscoFryDirection], a
+	ld [DiscoFryActive], a
+	ld a, DISCO_FRY_FIRST_TILE
+	ld [DiscoFryTileBase], a
+	ret
+ENDC
+
+AdvanceDiscoFry:
+	ld a, [DiscoFryActive]
+	and a
+	ret z
+	ld hl, DiscoFryAnimTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, DISCO_FRY_FRAME_DURATION
+	jr c, .move
+	xor a
+	ld [hl], a
+	ld a, [DiscoFryTileBase]
+	xor a, 2
+	ld [DiscoFryTileBase], a
+.move
+	ld a, [DiscoFryDirection]
+	bit 7, a
+	jr nz, .left
+	call DiscoFryWallRight
+	jr z, .reverseLeft
+	ld hl, DiscoFryX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.reverseLeft
+	ld a, -1
+	ld [DiscoFryDirection], a
+	ret
+.left
+	call DiscoFryWallLeft
+	jr z, .reverseRight
+	ld hl, DiscoFryX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+	ret
+.reverseRight
+	ld a, 1
+	ld [DiscoFryDirection], a
+	ret
+
+DiscoFryWallRight:
+	ld a, [DiscoFryX]
+	add a, 16
+	ld e, a
+	ld a, [DiscoFryX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [DiscoFryY]
+	inc a
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [DiscoFryY]
+	add a, 6
+	ld d, a
+	jp IsWall
+
+DiscoFryWallLeft:
+	ld a, [DiscoFryX]
+	sub a, 1
+	ld e, a
+	ld a, [DiscoFryX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [DiscoFryY]
+	inc a
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [DiscoFryY]
+	add a, 6
+	ld d, a
+	jp IsWall
+
+UpdateDiscoFrySprites:
+	ld a, [FriedEggOAMPointer]
+	ld [DiscoFryOAMPointer], a
+	ld a, [FriedEggOAMPointer + 1]
+	ld [DiscoFryOAMPointer + 1], a
+	ld a, [DiscoFryActive]
+	and a
+	ret z
+	call UpdateDiscoFrySprite
+	ld a, [DiscoFryOAMPointer]
+	add a, 8
+	ld [DiscoFryOAMPointer], a
+	ret nc
+	ld hl, DiscoFryOAMPointer + 1
+	inc [hl]
+	ret
+
+UpdateDiscoFrySprite:
+	ld a, [DiscoFryX + 1]
+	ld d, a
+	ld a, [CameraX + 1]
+	cp a, d
+	jr c, .leftEdgeClear
+	jp nz, .hidden
+	ld a, [DiscoFryX]
+	ld e, a
+	ld a, [CameraX]
+	cp a, e
+	jr z, .leftEdgeClear
+	jp nc, .hidden
+.leftEdgeClear
+	ld a, [CameraX]
+	add a, 160
+	ld e, a
+	ld a, [CameraX + 1]
+	adc a, 0
+	ld d, a
+	ld a, [DiscoFryX]
+	add a, 16
+	ld c, a
+	ld a, [DiscoFryX + 1]
+	adc a, 0
+	cp a, d
+	jr c, .vertical
+	jr nz, .hidden
+	ld a, c
+	cp a, e
+	jr nc, .hidden
+.vertical
+	ld a, [DiscoFryY]
+	add a, 8
+	jr c, .bottomEdge
+	ld e, a
+	ld a, [CameraY]
+	cp a, e
+	jr nc, .hidden
+.bottomEdge
+	ld a, [CameraY]
+	add a, 144
+	jr c, .visible
+	ld e, a
+	ld a, [DiscoFryY]
+	cp a, e
+	jr nc, .hidden
+.visible
+	ld a, [DiscoFryOAMPointer]
+	ld l, a
+	ld a, [DiscoFryOAMPointer + 1]
+	ld h, a
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [DiscoFryDirection]
+	bit 7, a
+	ld d, 0
+	jr z, .attributesReady
+	ld d, $20
+.attributesReady
+	ld a, [DiscoFryY]
+	add a, 16
+	sub a, b
+	ld [hl+], a
+	ld a, [DiscoFryX]
+	add a, 8
+	sub a, c
+	ld [hl+], a
+	ld a, [DiscoFryTileBase]
+	bit 5, d
+	jr z, .firstTileReady
+	inc a
+.firstTileReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, [DiscoFryY]
+	add a, 16
+	sub a, b
+	ld [hl+], a
+	ld a, [DiscoFryX]
+	add a, 16
+	sub a, c
+	ld [hl+], a
+	ld a, [DiscoFryTileBase]
+	bit 5, d
+	jr nz, .secondTileReady
+	inc a
+.secondTileReady
+	ld [hl+], a
+	ld a, d
+	ld [hl], a
+	ret
+.hidden
+	ret
+
 SECTION "Treasure Egg Runtime", ROMX
 
 ClearTreasureEggRecords:
@@ -7076,9 +7366,9 @@ CheckTreasurePickupContact:
 	ret
 
 UpdateTreasureEggSprites:
-	ld a, [FriedEggOAMPointer]
+	ld a, [DiscoFryOAMPointer]
 	ld [TreasureEggOAMPointer], a
-	ld a, [FriedEggOAMPointer + 1]
+	ld a, [DiscoFryOAMPointer + 1]
 	ld [TreasureEggOAMPointer + 1], a
 	xor a
 	ld [TreasureEggLoopIndex], a
@@ -7900,6 +8190,12 @@ TreasureEggTiles:
 TreasureKeyTile:
 	INCBIN "build/dropped_key.2bpp"
 
+DiscoFryTiles:
+	INCBIN "build/disco_fry_motion.2bpp"
+
+GravyDropTile:
+	INCBIN "build/gravy_drop.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
@@ -7933,4 +8229,11 @@ TreasureEggPlaytestMap:
 	INCBIN "build/treasure_egg_playtest.tilemap"
 TreasureEggPlaytestMapEnd:
 ASSERT TreasureEggPlaytestMapEnd - TreasureEggPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(DISCO_FRY_PLAYTEST)
+DiscoFryPlaytestMap:
+	INCBIN "build/disco_fry_playtest.tilemap"
+DiscoFryPlaytestMapEnd:
+ASSERT DiscoFryPlaytestMapEnd - DiscoFryPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC

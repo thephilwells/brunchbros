@@ -63,7 +63,7 @@ BIOMES: [ KITCHEN_1, KITCHEN_2 ]
 FREQUENCY: 1 (RARE)
 DAMAGE: 1 heart
 DIES TO: 3 hits
-DESCRIPTION: A crinkle-cut french fry flying back and forth thru the air at pancake height. The difference is it just flies back and forth in whatever room its in, bumping from wall to wall. It drops one-pixel drops of gravy that do .5 hearts of damage. Attacking the gravy does nothing, only the fry itself can be damaged by Chef.
+DESCRIPTION: A crinkle-cut french fry flying back and forth thru the air at pancake height. The difference is it just flies back and forth in whatever room its in, bumping from wall to wall. It drops three-pixel L-shaped drops of gravy that do .5 hearts of damage. Attacking the gravy does nothing, only the fry itself can be damaged by Chef.
 
 # ICE_CUBE
 BIOMES: [ FREEZER ]

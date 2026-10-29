@@ -107,6 +107,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate DISCO_FRY Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-disco-fry-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Room Template Fixture",
       "type": "shell",
       "command": "node",
@@ -750,6 +757,65 @@
         "${workspaceFolder}/build/brunchbros-fried-egg-playtest.gb"
       ],
       "dependsOn": "Build FRIED_EGG Playtest ROM",
+      "problemMatcher": []
+    },
+    {
+      "label": "Assemble DISCO_FRY Playtest",
+      "type": "shell",
+      "command": "rgbasm",
+      "args": [
+        "-Wall",
+        "-DFURNITURE_PARITY_TEST=1",
+        "-DDISCO_FRY_PLAYTEST=1",
+        "-o",
+        "build/disco_fry_playtest_main.o",
+        "src/main.asm"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Link DISCO_FRY Playtest",
+      "type": "shell",
+      "command": "rgblink",
+      "args": [
+        "-o",
+        "build/brunchbros-disco-fry-playtest.gb",
+        "-m",
+        "build/disco_fry_playtest_main.map",
+        "-n",
+        "build/disco_fry_playtest_main.sym",
+        "build/disco_fry_playtest_main.o"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Fix DISCO_FRY Playtest",
+      "type": "shell",
+      "command": "rgbfix",
+      "args": [
+        "-v",
+        "-p",
+        "0xFF",
+        "build/brunchbros-disco-fry-playtest.gb"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build DISCO_FRY Playtest ROM",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build ROM", "Generate DISCO_FRY Playtest", "Assemble DISCO_FRY Playtest", "Link DISCO_FRY Playtest", "Fix DISCO_FRY Playtest"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Run DISCO_FRY Playtest in SameBoy",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "/Applications/SameBoy.app",
+        "${workspaceFolder}/build/brunchbros-disco-fry-playtest.gb"
+      ],
+      "dependsOn": "Build DISCO_FRY Playtest ROM",
       "problemMatcher": []
     }
   ]
