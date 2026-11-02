@@ -112,6 +112,11 @@ DEF DISCO_FRY_FRAME_DURATION EQU 8
 DEF DISCO_FRY_GRAVY_INTERVAL EQU 64
 DEF DISCO_FRY_MAX_COUNT EQU 2
 DEF DISCO_FRY_RECORD_SIZE EQU 12
+DEF ICE_CUBE_FIRST_TILE EQU 234
+DEF ICE_CUBE_FRAME_DURATION EQU 8
+DEF ICE_CUBE_TERMINAL_VELOCITY EQU 8
+DEF ICE_CUBE_MAX_HORIZONTAL_VELOCITY EQU 20
+DEF ICE_CUBE_HORIZONTAL_ACCELERATION EQU 1
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -144,6 +149,9 @@ INCLUDE "build/treasure_egg_playtest.inc"
 ENDC
 IF DEF(DISCO_FRY_PLAYTEST)
 INCLUDE "build/disco_fry_playtest.inc"
+ENDC
+IF DEF(ICE_CUBE_PLAYTEST)
+INCLUDE "build/ice_cube_playtest.inc"
 ENDC
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
@@ -286,6 +294,16 @@ DiscoFryCount: db
 DiscoFryLoopIndex: db
 DiscoFryOAMPointer: dw
 GravyDropOAMPointer: dw
+IceCubeY: db
+IceCubeX: dw
+IceCubeVelocityY: db
+IceCubeVelocityX: db
+IceCubeFractionX: db
+IceCubeTargetDirection: db
+IceCubeDirection: db
+IceCubeAnimTimer: db
+IceCubeTileBase: db
+IceCubeActive: db
 LevelKeyOwned: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -486,6 +504,14 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyGravyDropTile
+	ld de, IceCubeTiles
+	ld c, 8 * 16
+.copyIceCubeTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyIceCubeTiles
 
 	call LoadTitleScreen
 	xor a
@@ -570,9 +596,13 @@ LoadCurrentLevel:
 	call ClearFriedEggRecords
 	call ClearTreasureEggRecords
 	call ClearDiscoFryRecords
+	call ClearIceCube
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
+	IF DEF(ICE_CUBE_PLAYTEST)
+	call LoadIceCubePlaytest
+	ELSE
 	IF DEF(DISCO_FRY_PLAYTEST)
 	call LoadDiscoFryPlaytest
 	ELSE
@@ -583,6 +613,7 @@ ELSE
 	call LoadFriedEggPlaytest
 	ELSE
 	call GenerateLevel
+	ENDC
 	ENDC
 	ENDC
 	ENDC
@@ -679,6 +710,9 @@ ENDC
 IF DEF(DISCO_FRY_PLAYTEST)
 	call InitializePlaytestDiscoFry
 ENDC
+IF DEF(ICE_CUBE_PLAYTEST)
+	call InitializePlaytestIceCube
+ENDC
 	call ReadActionButtons
 	ld [PrevButtons], a
 IF DEF(EXIT_ANIMATION_PLAYTEST)
@@ -692,6 +726,7 @@ ENDC
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
 	call UpdateTreasureEggSprites
+	call UpdateIceCubeSprite
 	call hOAMDMA
 
 	ld a, %10000011
@@ -855,6 +890,30 @@ LoadDiscoFryPlaytest:
 	ld a, HIGH(DISCO_FRY_PLAYTEST_PLAYER_X)
 	ld [GeneratedPlayerX + 1], a
 	ld a, DISCO_FRY_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
+
+IF DEF(ICE_CUBE_PLAYTEST)
+LoadIceCubePlaytest:
+	ld de, IceCubePlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(ICE_CUBE_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(ICE_CUBE_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, ICE_CUBE_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
 	ret
 ENDC
@@ -1120,6 +1179,7 @@ PrepareSpriteBuffer:
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
 	call UpdateTreasureEggSprites
+	call UpdateIceCubeSprite
 	ret
 .gameplay
 	call UpdateCameraState
@@ -1130,6 +1190,7 @@ PrepareSpriteBuffer:
 	call AdvanceFriedEggs
 	call AdvanceDiscoFries
 	call AdvanceTreasureEggs
+	call AdvanceIceCube
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
@@ -1137,6 +1198,7 @@ PrepareSpriteBuffer:
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
 	call UpdateTreasureEggSprites
+	call UpdateIceCubeSprite
 	ret
 
 ClearMobSpriteBuffer:
@@ -6661,6 +6723,357 @@ HideFriedEggSprite:
 	ld [hl], a
 	ret
 
+SECTION "ICE_CUBE Runtime", ROMX
+ClearIceCube:
+	ld hl, IceCubeY
+	ld b, 11
+	xor a
+.clear
+	ld [hl+], a
+	dec b
+	jr nz, .clear
+	ret
+
+IF DEF(ICE_CUBE_PLAYTEST)
+InitializePlaytestIceCube:
+	ld a, ICE_CUBE_PLAYTEST_CUBE_Y
+	ld [IceCubeY], a
+	ld a, LOW(ICE_CUBE_PLAYTEST_CUBE_X)
+	ld [IceCubeX], a
+	ld a, HIGH(ICE_CUBE_PLAYTEST_CUBE_X)
+	ld [IceCubeX + 1], a
+	ld a, 1
+	ld [IceCubeActive], a
+	ld a, -1
+	ld [IceCubeDirection], a
+	ld [IceCubeTargetDirection], a
+	ld a, -ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+	ld [IceCubeVelocityX], a
+	ld a, ICE_CUBE_FIRST_TILE
+	ld [IceCubeTileBase], a
+	ret
+ENDC
+
+AdvanceIceCube:
+	ld a, [IceCubeActive]
+	and a
+	ret z
+	ld hl, IceCubeAnimTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ICE_CUBE_FRAME_DURATION
+	jr c, .chooseDirection
+	xor a
+	ld [hl], a
+	ld a, [IceCubeTileBase]
+	xor a, 4
+	ld [IceCubeTileBase], a
+.chooseDirection
+	ld a, [PlayerX + 1]
+	ld d, a
+	ld a, [IceCubeX + 1]
+	cp a, d
+	jr c, .right
+	jr nz, .left
+	ld a, [PlayerX]
+	ld d, a
+	ld a, [IceCubeX]
+	cp a, d
+	jr c, .right
+.left
+	ld a, -1
+	ld [IceCubeTargetDirection], a
+	jr .accelerate
+.right
+	ld a, 1
+	ld [IceCubeTargetDirection], a
+.accelerate
+	ld a, [IceCubeAnimTimer]
+	and a, 1
+	call z, AccelerateIceCubeVelocity
+	call AdvanceIceCubeHorizontal
+	jp ApplyIceCubeGravity
+
+AccelerateIceCubeVelocity:
+	ld a, [IceCubeTargetDirection]
+	bit 7, a
+	jr nz, .left
+	ld a, [IceCubeVelocityX]
+	add a, ICE_CUBE_HORIZONTAL_ACCELERATION
+	bit 7, a
+	jr nz, .store
+	cp a, ICE_CUBE_MAX_HORIZONTAL_VELOCITY + 1
+	jr c, .store
+	ld a, ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+	jr .store
+.left
+	ld a, [IceCubeVelocityX]
+	sub a, ICE_CUBE_HORIZONTAL_ACCELERATION
+	bit 7, a
+	jr z, .store
+	cp a, -ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+	jr nc, .store
+	ld a, -ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+.store
+	ld [IceCubeVelocityX], a
+	and a
+	ret z
+	bit 7, a
+	ld a, 1
+	jr z, .storeDirection
+	ld a, -1
+.storeDirection
+	ld [IceCubeDirection], a
+	ret
+
+AdvanceIceCubeHorizontal:
+	ld a, [IceCubeVelocityX]
+	and a
+	ret z
+	bit 7, a
+	jr z, .magnitudeReady
+	cpl
+	inc a
+.magnitudeReady
+	ld b, a
+	ld a, [IceCubeFractionX]
+	add a, b
+	cp a, 16
+	jr nc, .move
+	ld [IceCubeFractionX], a
+	ret
+.move
+	sub a, 16
+	ld [IceCubeFractionX], a
+	call MoveIceCubeHorizontal
+	ld a, [IceCubeFractionX]
+	cp a, 16
+	ret c
+	sub a, 16
+	ld [IceCubeFractionX], a
+	jp MoveIceCubeHorizontal
+
+MoveIceCubeHorizontal:
+	ld a, [IceCubeDirection]
+	bit 7, a
+	jr nz, .left
+	call IceCubeWallRight
+	jr z, .reverseLeft
+	ld hl, IceCubeX
+	inc [hl]
+	ret nz
+	inc hl
+	inc [hl]
+	ret
+.reverseLeft
+	ld a, -1
+	ld [IceCubeDirection], a
+	ld a, [IceCubeVelocityX]
+	bit 7, a
+	ret nz
+	cpl
+	inc a
+	ld [IceCubeVelocityX], a
+	ret
+.left
+	call IceCubeWallLeft
+	jr z, .reverseRight
+	ld hl, IceCubeX
+	ld a, [hl]
+	and a
+	jr nz, .decrementLow
+	inc hl
+	dec [hl]
+	dec hl
+.decrementLow
+	dec [hl]
+	ret
+.reverseRight
+	ld a, 1
+	ld [IceCubeDirection], a
+	ld a, [IceCubeVelocityX]
+	bit 7, a
+	ret z
+	cpl
+	inc a
+	ld [IceCubeVelocityX], a
+	ret
+
+IceCubeWallRight:
+	ld a, [IceCubeX]
+	add a, 16
+	ld e, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld c, a
+	ld a, [IceCubeY]
+	add a, 2
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [IceCubeY]
+	add a, 13
+	ld d, a
+	jp IsWall
+
+IceCubeWallLeft:
+	ld a, [IceCubeX]
+	sub a, 1
+	ld e, a
+	ld a, [IceCubeX + 1]
+	sbc a, 0
+	ld c, a
+	ld a, [IceCubeY]
+	add a, 2
+	ld d, a
+	call IsWall
+	ret z
+	ld a, [IceCubeY]
+	add a, 13
+	ld d, a
+	jp IsWall
+
+ApplyIceCubeGravity:
+	ld a, [IceCubeVelocityY]
+	inc a
+	cp a, ICE_CUBE_TERMINAL_VELOCITY + 1
+	jr c, .velocityReady
+	ld a, ICE_CUBE_TERMINAL_VELOCITY
+.velocityReady
+	ld [IceCubeVelocityY], a
+	ld b, a
+	ld a, [IceCubeY]
+	add a, b
+	ld b, a
+	add a, 16
+	ld d, a
+	ld a, [IceCubeX]
+	add a, 2
+	ld e, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld c, a
+	push bc
+	call IsWall
+	pop bc
+	jr z, .land
+	ld a, [IceCubeX]
+	add a, 13
+	ld e, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld c, a
+	ld a, b
+	add a, 16
+	ld d, a
+	push bc
+	call IsWall
+	pop bc
+	jr z, .land
+	ld a, b
+	ld [IceCubeY], a
+	ret
+.land
+	ld a, b
+	add a, 16
+	and a, $f8
+	sub a, 16
+	ld [IceCubeY], a
+	xor a
+	ld [IceCubeVelocityY], a
+	ret
+
+UpdateIceCubeSprite:
+	ld a, [IceCubeActive]
+	and a
+	ret z
+	ld hl, ShadowOAM + $30
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [IceCubeY]
+	add a, 16
+	sub a, b
+	ld e, a
+	ld a, [IceCubeX]
+	add a, 8
+	sub a, c
+	ld c, a
+	ld a, [IceCubeDirection]
+	bit 7, a
+	ld d, 0
+	jr z, .attributesReady
+	ld d, $20
+.attributesReady
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, [IceCubeTileBase]
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr z, .topLeftReady
+	inc a
+.topLeftReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, [IceCubeTileBase]
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr nz, .topRightReady
+	inc a
+.topRightReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, [IceCubeTileBase]
+	add a, 2
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr z, .bottomLeftReady
+	inc a
+.bottomLeftReady
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, [IceCubeTileBase]
+	add a, 2
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	jr nz, .bottomRightReady
+	inc a
+.bottomRightReady
+	ld [hl+], a
+	ld a, d
+	ld [hl], a
+	ret
+
 SECTION "DISCO_FRY Runtime", ROMX
 ClearDiscoFryRecords:
 	ld hl, DiscoFryY
@@ -8627,6 +9040,9 @@ DiscoFryTiles:
 GravyDropTile:
 	INCBIN "build/gravy_drop.2bpp"
 
+IceCubeTiles:
+	INCBIN "build/ice_cube_motion.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
@@ -8667,4 +9083,11 @@ DiscoFryPlaytestMap:
 	INCBIN "build/disco_fry_playtest.tilemap"
 DiscoFryPlaytestMapEnd:
 ASSERT DiscoFryPlaytestMapEnd - DiscoFryPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(ICE_CUBE_PLAYTEST)
+IceCubePlaytestMap:
+	INCBIN "build/ice_cube_playtest.tilemap"
+IceCubePlaytestMapEnd:
+ASSERT IceCubePlaytestMapEnd - IceCubePlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC

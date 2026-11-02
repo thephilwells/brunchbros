@@ -72,7 +72,7 @@ BIOMES: [ FREEZER ]
 FREQUENCY: 5 (COMMON)
 DAMAGE: .5 heart
 DIES TO: 5 hits
-DESCRIPTION: An ice skating ice cube. It can't jump. It skates back and forth on the floor, attempting to collide with Chef. It moves faster than Chef can run.
+DESCRIPTION: An ice skating ice cube. It can't jump. It skates back and forth on solid floors, attempting to collide with Chef. It moves faster than Chef can run. It ignores one-way platforms and falls through them, eventually collecting on the lowest solid floor it can reach.
 
 # BOSS_MAN
 BIOMES: [ FREEZER ]

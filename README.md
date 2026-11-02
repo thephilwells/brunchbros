@@ -53,6 +53,7 @@ node tools/generate-burger.mjs
 node tools/generate-pancake.mjs
 node tools/generate-fried-egg.mjs
 node tools/generate-disco-fry.mjs
+node tools/generate-ice-cube.mjs
 node tools/generate-treasure-egg.mjs
 node tools/generate-combat-playtest.mjs
 node tools/generate-burger-playtest.mjs
@@ -60,6 +61,7 @@ node tools/generate-pancake-playtest.mjs
 node tools/generate-fried-egg-playtest.mjs
 node tools/generate-treasure-egg-playtest.mjs
 node tools/generate-disco-fry-playtest.mjs
+node tools/generate-ice-cube-playtest.mjs
 node tools/generate-room-template-fixture.mjs
 node tools/generate-room-template-playtest.mjs
 node tools/generate-seeded-level.mjs --seed 0
@@ -73,6 +75,7 @@ rgbgfx -c dmg=E4 -o build/pancake_motion.2bpp gfx/pancake_motion.png
 rgbgfx -c dmg=E4 -o build/fried_egg_motion.2bpp gfx/fried_egg_motion.png
 rgbgfx -c dmg=E4 -o build/disco_fry_motion.2bpp gfx/disco_fry_motion.png
 rgbgfx -c dmg=E4 -o build/gravy_drop.2bpp gfx/gravy_drop.png
+rgbgfx -c dmg=E4 -o build/ice_cube_motion.2bpp gfx/ice_cube_motion.png
 rgbgfx -c dmg=E4 -o build/treasure_egg.2bpp gfx/treasure_egg.png
 rgbgfx -c dmg=E4 -o build/dropped_key.2bpp gfx/dropped_key.png
 node tools/verify-dining-room.mjs
