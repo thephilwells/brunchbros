@@ -5,7 +5,7 @@
     "selectionSalt": 44257,
     "positionSalt": 57671,
     "typeSalt": 61937,
-    "placementOrder": ["fried_egg", "pancake", "burger", "weiner"]
+    "placementOrder": ["disco_fry", "fried_egg", "pancake", "burger", "weiner"]
   },
   "levelKinds": [
     {
@@ -14,7 +14,7 @@
     },
     {
       "id": "dining_room_2",
-      "mobs": ["burger", "pancake", "fried_egg"]
+      "mobs": ["burger", "pancake", "fried_egg", "disco_fry"]
     }
   ],
   "mobs": [
@@ -52,6 +52,15 @@
       "frequency": 2,
       "width": 2,
       "height": 2,
+      "direction": "right"
+    },
+    {
+      "id": "disco_fry",
+      "runtimeType": 4,
+      "minimum": 2,
+      "frequency": 1,
+      "width": 2,
+      "height": 1,
       "direction": "right"
     }
   ]

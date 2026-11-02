@@ -110,6 +110,8 @@ DEF DISCO_FRY_FIRST_TILE EQU 229
 DEF DISCO_FRY_GRAVY_TILE EQU 233
 DEF DISCO_FRY_FRAME_DURATION EQU 8
 DEF DISCO_FRY_GRAVY_INTERVAL EQU 64
+DEF DISCO_FRY_MAX_COUNT EQU 2
+DEF DISCO_FRY_RECORD_SIZE EQU 12
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -276,10 +278,13 @@ DiscoFryAnimTimer: db
 DiscoFryTileBase: db
 DiscoFryActive: db
 DiscoFryDropTimer: db
-DiscoFryOAMPointer: dw
 GravyDropY: db
 GravyDropX: dw
 GravyDropActive: db
+DiscoFryRecords: ds DISCO_FRY_MAX_COUNT * DISCO_FRY_RECORD_SIZE
+DiscoFryCount: db
+DiscoFryLoopIndex: db
+DiscoFryOAMPointer: dw
 GravyDropOAMPointer: dw
 LevelKeyOwned: db
 TitleSeedCounter: dw
@@ -564,7 +569,7 @@ LoadCurrentLevel:
 	call ClearPancakeRecords
 	call ClearFriedEggRecords
 	call ClearTreasureEggRecords
-	call ClearDiscoFry
+	call ClearDiscoFryRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -686,7 +691,6 @@ ENDC
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
-	call UpdateGravyDropSprite
 	call UpdateTreasureEggSprites
 	call hOAMDMA
 
@@ -1115,7 +1119,6 @@ PrepareSpriteBuffer:
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
-	call UpdateGravyDropSprite
 	call UpdateTreasureEggSprites
 	ret
 .gameplay
@@ -1125,8 +1128,7 @@ PrepareSpriteBuffer:
 	call AdvanceBurgers
 	call AdvancePancakes
 	call AdvanceFriedEggs
-	call AdvanceDiscoFry
-	call AdvanceGravyDrop
+	call AdvanceDiscoFries
 	call AdvanceTreasureEggs
 	call UpdateSprites
 	call UpdateWeinerSprites
@@ -1134,7 +1136,6 @@ PrepareSpriteBuffer:
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
-	call UpdateGravyDropSprite
 	call UpdateTreasureEggSprites
 	ret
 
@@ -1800,6 +1801,7 @@ MainLoop:
 	call TryBurgerContacts
 	call TryPancakeContacts
 	call TryFriedEggContacts
+	call TryGravyDropContacts
 .contactsDone
 	call TryCollectTreasureHearts
 	call TryCollectTreasureKeys
@@ -6660,14 +6662,98 @@ HideFriedEggSprite:
 	ret
 
 SECTION "DISCO_FRY Runtime", ROMX
-ClearDiscoFry:
+ClearDiscoFryRecords:
 	ld hl, DiscoFryY
-	ld b, 16
+	ld b, DISCO_FRY_RECORD_SIZE
 	xor a
-.loop
+.clearScratch
 	ld [hl+], a
 	dec b
-	jr nz, .loop
+	jr nz, .clearScratch
+	ld hl, DiscoFryRecords
+	ld b, DISCO_FRY_MAX_COUNT * DISCO_FRY_RECORD_SIZE
+.clearRecords
+	ld [hl+], a
+	dec b
+	jr nz, .clearRecords
+	ld [DiscoFryCount], a
+	ret
+
+GetDiscoFryRecordPointer:
+	ld hl, DiscoFryRecords
+	and a
+	ret z
+	ld de, DISCO_FRY_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadDiscoFryRecord:
+	call GetDiscoFryRecordPointer
+	ld de, DiscoFryY
+	ld b, DISCO_FRY_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StoreDiscoFryRecord:
+	call GetDiscoFryRecordPointer
+	ld de, DiscoFryY
+	ld b, DISCO_FRY_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+InitializeDiscoFryScratch:
+	ld hl, DiscoFryDirection
+	ld b, DISCO_FRY_RECORD_SIZE - 3
+	xor a
+.clear
+	ld [hl+], a
+	dec b
+	jr nz, .clear
+	ld a, 1
+	ld [DiscoFryDirection], a
+	ld [DiscoFryActive], a
+	ld a, DISCO_FRY_FIRST_TILE
+	ld [DiscoFryTileBase], a
+	ret
+
+CreateDiscoFryAtTile:
+	ld a, [DiscoFryCount]
+	cp a, DISCO_FRY_MAX_COUNT
+	ret nc
+	ld a, c
+	add a, a
+	add a, a
+	add a, a
+	ld [DiscoFryY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [DiscoFryX], a
+	ld a, h
+	ld [DiscoFryX + 1], a
+	call InitializeDiscoFryScratch
+	ld a, [DiscoFryCount]
+	push af
+	call StoreDiscoFryRecord
+	pop af
+	inc a
+	ld [DiscoFryCount], a
 	ret
 
 IF DEF(DISCO_FRY_PLAYTEST)
@@ -6678,13 +6764,35 @@ InitializePlaytestDiscoFry:
 	ld [DiscoFryX], a
 	ld a, HIGH(DISCO_FRY_PLAYTEST_FRY_X)
 	ld [DiscoFryX + 1], a
+	call InitializeDiscoFryScratch
+	xor a
+	call StoreDiscoFryRecord
 	ld a, 1
-	ld [DiscoFryDirection], a
-	ld [DiscoFryActive], a
-	ld a, DISCO_FRY_FIRST_TILE
-	ld [DiscoFryTileBase], a
+	ld [DiscoFryCount], a
 	ret
 ENDC
+
+AdvanceDiscoFries:
+	xor a
+	ld [DiscoFryLoopIndex], a
+.loop
+	ld a, [DiscoFryLoopIndex]
+	ld b, a
+	ld a, [DiscoFryCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadDiscoFryRecord
+	call AdvanceDiscoFry
+	call AdvanceGravyDrop
+	pop af
+	push af
+	call StoreDiscoFryRecord
+	pop af
+	inc a
+	ld [DiscoFryLoopIndex], a
+	jr .loop
 
 AdvanceDiscoFry:
 	ld a, [DiscoFryActive]
@@ -6738,8 +6846,14 @@ AdvanceGravyDrop:
 	ld a, [GravyDropActive]
 	and a
 	jr z, .waitToDrop
+	ld a, [GravyDropY]
+	add a, 8
+; Terrain can only change when the drop's bottom enters a new tile row
+	and a, 7
+	jr nz, .fall
 	call GravyDropSupportBelow
 	jr z, .despawn
+.fall
 	ld hl, GravyDropY
 	inc [hl]
 	ret nz
@@ -6794,6 +6908,153 @@ GravyDropSupportBelow:
 	ld d, a
 	jp IsSupport
 
+TryGravyDropContacts:
+	xor a
+	ld [DiscoFryLoopIndex], a
+.loop
+	ld a, [DiscoFryLoopIndex]
+	ld b, a
+	ld a, [DiscoFryCount]
+	cp a, b
+	ret z
+	ld a, b
+	call GetDiscoFryRecordPointer
+	ld de, DISCO_FRY_RECORD_SIZE - 1
+	add hl, de
+	ld a, [hl]
+	and a
+	jr z, .next
+	push hl
+	ld [GravyDropActive], a
+	dec hl
+	ld a, [hld]
+	ld [GravyDropX + 1], a
+	ld a, [hld]
+	ld [GravyDropX], a
+	ld a, [hl]
+	ld [GravyDropY], a
+	call TryGravyDropContact
+	pop hl
+	ld a, [GravyDropActive]
+	ld [hl], a
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	ret nz
+.next
+	ld hl, DiscoFryLoopIndex
+	inc [hl]
+	jr .loop
+
+TryGravyDropContact:
+	ld a, [GravyDropActive]
+	and a
+	ret z
+	ld a, [PlayerY]
+	dec a
+	ld b, a
+	ld a, [GravyDropY]
+	add a, 3
+	ld c, a
+	ld a, b
+	cp a, c
+	jp c, .miss
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, [GravyDropY]
+	add a, 4
+	cp a, b
+	jp c, .miss
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [GravyDropX]
+	add a, 3
+	ld e, a
+	ld a, [GravyDropX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	jp nz, .miss
+	ld a, [GravyDropX]
+	add a, 4
+	ld l, a
+	ld a, [GravyDropX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT
+	ld e, a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	jr nz, .miss
+	xor a
+	ld [GravyDropActive], a
+	ld a, [CurrentHealth]
+	and a
+	ret z
+	dec a
+	ld [CurrentHealth], a
+	and a
+	jr nz, .survived
+	call StartPlayerDeath
+	ret
+.survived
+	ld a, 60
+	ld [PlayerInvulnerabilityTimer], a
+	ld a, 4
+	ld [PlayerKnockbackRemaining], a
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [GravyDropX]
+	add a, 4
+	ld e, a
+	ld a, [GravyDropX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	ld a, h
+	or a, l
+	jr z, .knockLeft
+	bit 7, h
+	jr nz, .knockLeft
+	ld a, 1
+	jr .storeKnockback
+.knockLeft
+	ld a, -1
+.storeKnockback
+	ld [PlayerKnockbackDirection], a
+	xor a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	ret
+.miss
+	ret
+
 DiscoFryWallRight:
 	ld a, [DiscoFryX]
 	add a, 16
@@ -6833,16 +7094,46 @@ UpdateDiscoFrySprites:
 	ld [DiscoFryOAMPointer], a
 	ld a, [FriedEggOAMPointer + 1]
 	ld [DiscoFryOAMPointer + 1], a
+	xor a
+	ld [DiscoFryLoopIndex], a
+.loop
+	ld a, [DiscoFryLoopIndex]
+	ld b, a
+	ld a, [DiscoFryCount]
+	cp a, b
+	jr z, .done
+	ld a, b
+	call LoadDiscoFryRecord
 	ld a, [DiscoFryActive]
 	and a
-	ret z
+	jr z, .gravy
 	call UpdateDiscoFrySprite
 	ld a, [DiscoFryOAMPointer]
 	add a, 8
 	ld [DiscoFryOAMPointer], a
-	ret nc
+	jr nc, .gravy
 	ld hl, DiscoFryOAMPointer + 1
 	inc [hl]
+.gravy
+	ld a, [GravyDropActive]
+	and a
+	jr z, .next
+	call DrawGravyDropSprite
+	ld a, [DiscoFryOAMPointer]
+	add a, 4
+	ld [DiscoFryOAMPointer], a
+	jr nc, .next
+	ld hl, DiscoFryOAMPointer + 1
+	inc [hl]
+.next
+	ld hl, DiscoFryLoopIndex
+	inc [hl]
+	jr .loop
+.done
+	ld a, [DiscoFryOAMPointer]
+	ld [GravyDropOAMPointer], a
+	ld a, [DiscoFryOAMPointer + 1]
+	ld [GravyDropOAMPointer + 1], a
 	ret
 
 UpdateDiscoFrySprite:
@@ -6943,23 +7234,6 @@ UpdateDiscoFrySprite:
 .hidden
 	ret
 
-UpdateGravyDropSprite:
-	ld a, [DiscoFryOAMPointer]
-	ld [GravyDropOAMPointer], a
-	ld a, [DiscoFryOAMPointer + 1]
-	ld [GravyDropOAMPointer + 1], a
-	ld a, [GravyDropActive]
-	and a
-	ret z
-	call DrawGravyDropSprite
-	ld a, [GravyDropOAMPointer]
-	add a, 4
-	ld [GravyDropOAMPointer], a
-	ret nc
-	ld hl, GravyDropOAMPointer + 1
-	inc [hl]
-	ret
-
 DrawGravyDropSprite:
 	ld a, [GravyDropX + 1]
 	ld d, a
@@ -7008,9 +7282,9 @@ DrawGravyDropSprite:
 	cp a, e
 	ret nc
 .visible
-	ld a, [GravyDropOAMPointer]
+	ld a, [DiscoFryOAMPointer]
 	ld l, a
-	ld a, [GravyDropOAMPointer + 1]
+	ld a, [DiscoFryOAMPointer + 1]
 	ld h, a
 	ld a, [CameraY]
 	ld b, a

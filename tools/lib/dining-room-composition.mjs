@@ -403,7 +403,7 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
         if (level.structuralTiles[leftIndex] !== 17 || ONE_WAY_TILES.has(level.tiles[leftIndex]) || level.structuralTiles[rightIndex] !== 17 || ONE_WAY_TILES.has(level.tiles[rightIndex])) valid = false;
       }
       if (!valid) continue;
-      if (mob.id === 'pancake') {
+      if (mob.id === 'pancake' || mob.id === 'disco_fry') {
         const floorY = y + 5;
         const hasRoomFloor = floorY < roomY + ROOM_HEIGHT && Array.from({ length: ROOM_WIDTH - 2 }, (_, offset) => roomX + 1 + offset).some(floorX => {
           const tile = level.structuralTiles[floorY * LEVEL_WIDTH + floorX];

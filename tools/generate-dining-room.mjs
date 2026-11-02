@@ -494,6 +494,8 @@ writeFileSync('build/dining_room_mobs.inc', [
   `DEF DINING_PANCAKE_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'pancake').minimum}`,
   `DEF DINING_FRIED_EGG_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'fried_egg').frequency}`,
   `DEF DINING_FRIED_EGG_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'fried_egg').minimum}`,
+  `DEF DINING_DISCO_FRY_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'disco_fry').frequency}`,
+  `DEF DINING_DISCO_FRY_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'disco_fry').minimum}`,
   `DEF DINING_MOB_TOTAL_FREQUENCY EQU ${mobManifest.mobs.reduce((total, mob) => total + mob.frequency, 0)}`,
   `DEF DINING_ROOM_LEVEL_KIND_COUNT EQU ${mobManifest.levelKinds.length}`,
   'DiningRoomMobRosterPointers:',

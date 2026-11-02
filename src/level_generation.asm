@@ -3194,6 +3194,8 @@ PlaceMobType:
 	jr z, .createBurger
 	cp a, 2
 	jr z, .createFriedEgg
+	cp a, 4
+	jr z, .createDiscoFry
 	call CreateSelectedWeiner
 	jr .created
 .createFriedEgg
@@ -3204,6 +3206,9 @@ PlaceMobType:
 	jr .created
 .createBurger
 	call CreateSelectedBurger
+	jr .created
+.createDiscoFry
+	call CreateSelectedDiscoFry
 .created
 	ld hl, MobSelectedCount
 	inc [hl]
@@ -3309,7 +3314,10 @@ CountMobCandidates:
 	ld b, 7
 	ld a, [MobType]
 	cp a, 2
-	jr c, .rowLimitReady
+	jr z, .tall
+	cp a, 3
+	jr nz, .rowLimitReady
+.tall
 	dec b
 .rowLimitReady
 	ld a, [MobLocalY]
@@ -3347,7 +3355,10 @@ FindMobCandidate:
 	ld b, 7
 	ld a, [MobType]
 	cp a, 2
-	jr c, .rowLimitReady
+	jr z, .tall
+	cp a, 3
+	jr nz, .rowLimitReady
+.tall
 	dec b
 .rowLimitReady
 	ld a, [MobLocalY]
@@ -3367,7 +3378,10 @@ IsMobCandidate:
 	ld a, [MobType]
 	ld b, 1
 	cp a, 2
-	jr c, .bodyRow
+	jr z, .tallBody
+	cp a, 3
+	jr nz, .bodyRow
+.tallBody
 	ld b, 2
 .bodyRow
 	ld c, 2
@@ -3406,9 +3420,14 @@ IsMobCandidate:
 	jp z, ResolveWeinerCandidateDirection
 	and a
 	jp z, ResolvePancakeCandidate
+	cp a, 4
+	jp z, ResolvePancakeCandidate
 	ld a, [MobType]
 	cp a, 2
-	jr c, .singleSupportRow
+	jr z, .doubleSupportRow
+	cp a, 3
+	jr nz, .singleSupportRow
+.doubleSupportRow
 	ld a, [MobLocalY]
 	add a, 2
 	jr .supportRowReady
@@ -3422,7 +3441,10 @@ IsMobCandidate:
 	ld de, 40
 	ld a, [MobType]
 	cp a, 2
-	jr c, .supportPointerReady
+	jr z, .doubleSupportPointer
+	cp a, 3
+	jr nz, .supportPointerReady
+.doubleSupportPointer
 	ld de, 80
 .supportPointerReady
 	add hl, de
@@ -3545,7 +3567,10 @@ AreMobCandidateSidesClear:
 	ld a, [MobType]
 	ld b, 1
 	cp a, 2
-	jr c, .row
+	jr z, .tall
+	cp a, 3
+	jr nz, .row
+.tall
 	ld b, 2
 .row
 	dec hl
@@ -3662,7 +3687,10 @@ MarkMobCandidateOccupied:
 	ld a, [MobType]
 	ld b, 1
 	cp a, 2
-	jr c, .row
+	jr z, .tall
+	cp a, 3
+	jr nz, .row
+.tall
 	ld b, 2
 .row
 	ld c, 2
@@ -3901,6 +3929,31 @@ CreateSelectedFriedEgg:
 	add a, c
 	ld c, a
 	jp CreateFriedEggAtTile
+
+CreateSelectedDiscoFry:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	add a, c
+	ld c, a
+	jp CreateDiscoFryAtTile
 
 LoadMobSelectionSalt:
 	push af
@@ -4600,7 +4653,7 @@ VerifyMobParity:
 .friedEgg
 	ld a, b
 	and a
-	ret z
+	jr z, .discoFries
 	ld a, [de]
 	cp a, [hl]
 	jp nz, .failed
@@ -4622,6 +4675,38 @@ VerifyMobParity:
 	jr nz, .skipFriedEgg
 	dec b
 	jr .friedEgg
+.discoFries
+	ld a, [DiscoFryCount]
+	cp a, [hl]
+	jp nz, .failed
+	inc hl
+	ld b, a
+	ld de, DiscoFryRecords
+.discoFry
+	ld a, b
+	and a
+	ret z
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc hl
+	ld a, DISCO_FRY_RECORD_SIZE - 2
+.skipDiscoFry
+	inc de
+	dec a
+	jr nz, .skipDiscoFry
+	dec b
+	jr .discoFry
 .failed
 	jr .failed
 

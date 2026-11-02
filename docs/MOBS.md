@@ -65,6 +65,8 @@ DAMAGE: 1 heart
 DIES TO: 3 hits
 DESCRIPTION: A crinkle-cut french fry flying back and forth thru the air at pancake height. The difference is it just flies back and forth in whatever room its in, bumping from wall to wall. It drops three-pixel L-shaped drops of gravy that do .5 hearts of damage. Attacking the gravy does nothing, only the fry itself can be damaged by Chef.
 
+Until Kitchen level generation exists, DINING_ROOM_2 includes DISCO_FRY as an explicit production playtest stand-in.
+
 # ICE_CUBE
 BIOMES: [ FREEZER ]
 FREQUENCY: 5 (COMMON)
