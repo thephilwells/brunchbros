@@ -117,6 +117,9 @@ DEF ICE_CUBE_FRAME_DURATION EQU 8
 DEF ICE_CUBE_TERMINAL_VELOCITY EQU 8
 DEF ICE_CUBE_MAX_HORIZONTAL_VELOCITY EQU 20
 DEF ICE_CUBE_HORIZONTAL_ACCELERATION EQU 1
+DEF ICE_CUBE_STATE_ACTIVE EQU 1
+DEF ICE_CUBE_STATE_BURST EQU 2
+DEF ICE_CUBE_HIT_KNOCKBACK_DISTANCE EQU 8
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -304,6 +307,12 @@ IceCubeDirection: db
 IceCubeAnimTimer: db
 IceCubeTileBase: db
 IceCubeActive: db
+IceCubeHealth: db
+IceCubeHitThisSwing: db
+IceCubeHitFlashTimer: db
+IceCubeBurstTimer: db
+IceCubeKnockbackRemaining: db
+IceCubeKnockbackDirection: db
 LevelKeyOwned: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -1405,6 +1414,7 @@ MainLoop:
 	call ResetPancakeHitLatch
 	call ResetFriedEggHitLatches
 	call ResetTreasureEggHitLatches
+	call ResetIceCubeHitLatch
 	pop de
 	pop bc
 .attackInputDone
@@ -1855,6 +1865,7 @@ MainLoop:
 	call TryPanHitPancakes
 	call TryPanHitFriedEggs
 	call TryPanHitTreasureEggs
+	call TryPanHitIceCube
 .panHitsDone
 	ld a, [PlayerInvulnerabilityTimer]
 	and a
@@ -1864,6 +1875,7 @@ MainLoop:
 	call TryPancakeContacts
 	call TryFriedEggContacts
 	call TryGravyDropContacts
+	call TryIceCubeContact
 .contactsDone
 	call TryCollectTreasureHearts
 	call TryCollectTreasureKeys
@@ -6726,7 +6738,7 @@ HideFriedEggSprite:
 SECTION "ICE_CUBE Runtime", ROMX
 ClearIceCube:
 	ld hl, IceCubeY
-	ld b, 11
+	ld b, 17
 	xor a
 .clear
 	ld [hl+], a
@@ -6742,8 +6754,10 @@ InitializePlaytestIceCube:
 	ld [IceCubeX], a
 	ld a, HIGH(ICE_CUBE_PLAYTEST_CUBE_X)
 	ld [IceCubeX + 1], a
-	ld a, 1
+	ld a, ICE_CUBE_STATE_ACTIVE
 	ld [IceCubeActive], a
+	ld a, 5
+	ld [IceCubeHealth], a
 	ld a, -1
 	ld [IceCubeDirection], a
 	ld [IceCubeTargetDirection], a
@@ -6758,6 +6772,21 @@ AdvanceIceCube:
 	ld a, [IceCubeActive]
 	and a
 	ret z
+	ld hl, IceCubeHitFlashTimer
+	ld a, [hl]
+	and a
+	jr z, .state
+	dec [hl]
+.state
+	ld a, [IceCubeActive]
+	cp a, ICE_CUBE_STATE_BURST
+	jp z, AdvanceIceCubeBurst
+	ld a, [IceCubeKnockbackRemaining]
+	and a
+	jr z, .animate
+	call ApplyIceCubeKnockback
+	jp ApplyIceCubeGravity
+.animate
 	ld hl, IceCubeAnimTimer
 	inc [hl]
 	ld a, [hl]
@@ -6793,6 +6822,35 @@ AdvanceIceCube:
 	call z, AccelerateIceCubeVelocity
 	call AdvanceIceCubeHorizontal
 	jp ApplyIceCubeGravity
+
+AdvanceIceCubeBurst:
+	ld hl, IceCubeBurstTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	jr nc, .finished
+	and a, ENEMY_BURST_FRAME_DURATION - 1
+	ret nz
+	ld hl, IceCubeTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+.finished
+	xor a
+	ld [IceCubeActive], a
+	ret
+
+ApplyIceCubeKnockback:
+	ld a, [IceCubeKnockbackDirection]
+	ld [IceCubeDirection], a
+	call MoveIceCubeHorizontal
+	ld hl, IceCubeKnockbackRemaining
+	ld a, [hl]
+	and a
+	ret z
+	dec [hl]
+	ret
 
 AccelerateIceCubeVelocity:
 	ld a, [IceCubeTargetDirection]
@@ -6983,10 +7041,317 @@ ApplyIceCubeGravity:
 	ld [IceCubeVelocityY], a
 	ret
 
+ResetIceCubeHitLatch:
+	xor a
+	ld [IceCubeHitThisSwing], a
+	ret
+
+TryPanHitIceCube:
+	ld a, [IceCubeActive]
+	cp a, ICE_CUBE_STATE_ACTIVE
+	ret nz
+	ld a, [IceCubeHitThisSwing]
+	and a
+	ret nz
+	ld a, [AttackTimer]
+	and a
+	ret z
+	ld a, [AttackPanTileBase]
+	and a
+	ret z
+	call CheckIceCubeAttackX
+	ret nc
+	call CheckIceCubeAttackY
+	ret nc
+	ld a, 1
+	ld [IceCubeHitThisSwing], a
+	ld hl, IceCubeHealth
+	dec [hl]
+	jr z, StartIceCubeBurst
+	ld a, 12
+	ld [IceCubeHitFlashTimer], a
+	jp StartIceCubeKnockback
+
+StartIceCubeBurst:
+	xor a
+	ld [IceCubeBurstTimer], a
+	ld [IceCubeHitFlashTimer], a
+	ld [IceCubeKnockbackRemaining], a
+	ld a, ENEMY_BURST_FIRST_TILE
+	ld [IceCubeTileBase], a
+	ld a, ICE_CUBE_STATE_BURST
+	ld [IceCubeActive], a
+	ret
+
+StartIceCubeKnockback:
+	ld a, ICE_CUBE_HIT_KNOCKBACK_DISTANCE
+	ld [IceCubeKnockbackRemaining], a
+	ld a, [IceCubeX]
+	add a, 8
+	ld l, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	ld a, 1
+	jr z, .store
+	ld a, -1
+.store
+	ld [IceCubeKnockbackDirection], a
+	ld [IceCubeDirection], a
+	ld [IceCubeTargetDirection], a
+	bit 7, a
+	ld a, ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+	jr z, .velocityReady
+	ld a, -ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+.velocityReady
+	ld [IceCubeVelocityX], a
+	xor a
+	ld [IceCubeFractionX], a
+	ret
+
+CheckIceCubeAttackX:
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr z, .close
+	ld a, [FacingFlip]
+	and a
+	jr nz, .left
+	ld a, [IceCubeX]
+	add a, 8
+	ld l, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	ld e, a
+	ld a, [PlayerX + 1]
+	ld d, a
+	jr .compare
+.left
+	ld a, [PlayerX]
+	ld l, a
+	ld a, [PlayerX + 1]
+	ld h, a
+	ld a, [IceCubeX]
+	add a, 8
+	ld e, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld d, a
+.compare
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr nz, .miss
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 21
+	ret
+.close
+	ld a, [IceCubeX]
+	add a, 8
+	ld l, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	add a, 6
+	ld e, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld l, a
+	ld a, h
+	sbc a, d
+	ld h, a
+	bit 7, h
+	jr z, .closeCompare
+	ld a, l
+	cpl
+	inc a
+	ld l, a
+	ld a, h
+	cpl
+	adc a, 0
+	ld h, a
+.closeCompare
+	ld a, h
+	and a
+	jr nz, .miss
+	ld a, l
+	cp a, 13
+	ret
+.miss
+	and a
+	ret
+
+CheckIceCubeAttackY:
+	ld a, [PlayerY]
+	ld b, a
+	ld c, a
+	dec c
+	ld a, [AttackPanTileBase]
+	cp a, PAN_ATTACK_WINDUP_TILE
+	jr nz, .strike
+	ld a, b
+	sub a, 24
+	ld b, a
+	ld a, c
+	sub a, 16
+	ld c, a
+	jr .boundsReady
+.strike
+	cp a, PAN_ATTACK_STRIKE_TILE
+	jr nz, .recovery
+	ld a, b
+	sub a, 16
+	ld b, a
+	jr .boundsReady
+.recovery
+	ld a, b
+	sub a, 8
+	ld b, a
+.boundsReady
+	ld a, [IceCubeY]
+	add a, 15
+	cp a, b
+	jr c, .miss
+	ld a, [IceCubeY]
+	ld b, a
+	ld a, c
+	cp a, b
+	jr c, .miss
+	scf
+	ret
+.miss
+	and a
+	ret
+
+TryIceCubeContact:
+	ld a, [IceCubeActive]
+	cp a, ICE_CUBE_STATE_ACTIVE
+	ret nz
+	ld a, [PlayerInvulnerabilityTimer]
+	and a
+	ret nz
+	ld a, [PlayerX]
+	add a, PLAYER_HITBOX_RIGHT
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [IceCubeX]
+	add a, 2
+	ld e, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	ret nz
+	ld a, [IceCubeX]
+	add a, 13
+	ld l, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [PlayerX]
+	sub a, PLAYER_HITBOX_LEFT
+	ld e, a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	ret nz
+	ld a, [PlayerY]
+	dec a
+	ld b, a
+	ld a, [IceCubeY]
+	add a, 2
+	cp a, b
+	ret nc
+	ld a, [PlayerY]
+	sub a, PLAYER_HITBOX_TOP
+	ld b, a
+	ld a, [IceCubeY]
+	add a, 15
+	cp a, b
+	ret c
+	ld a, [CurrentHealth]
+	and a
+	ret z
+	dec a
+	ld [CurrentHealth], a
+	and a
+	jp z, StartPlayerDeath
+	ld a, 60
+	ld [PlayerInvulnerabilityTimer], a
+	ld a, 4
+	ld [PlayerKnockbackRemaining], a
+	ld a, [PlayerX]
+	add a, 6
+	ld l, a
+	ld a, [PlayerX + 1]
+	adc a, 0
+	ld h, a
+	ld a, [IceCubeX]
+	add a, 8
+	ld e, a
+	ld a, [IceCubeX + 1]
+	adc a, 0
+	ld d, a
+	ld a, l
+	sub a, e
+	ld a, h
+	sbc a, d
+	bit 7, a
+	ld a, 1
+	jr z, .storeKnockback
+	ld a, -1
+.storeKnockback
+	ld [PlayerKnockbackDirection], a
+	xor a
+	ld [AttackTimer], a
+	ld [AttackPanTileBase], a
+	ld [LedgeSide], a
+	ld [AnimTimer], a
+	ld a, 41
+	ld [PlayerTileBase], a
+	ret
+
 UpdateIceCubeSprite:
 	ld a, [IceCubeActive]
 	and a
 	ret z
+	ld a, [IceCubeHitFlashTimer]
+	bit 1, a
+	ret nz
 	ld hl, ShadowOAM + $30
 	ld a, [CameraY]
 	ld b, a
@@ -7717,7 +8082,7 @@ DrawGravyDropSprite:
 	ld [hl], a
 	ret
 
-SECTION "Treasure Egg Runtime", ROMX
+SECTION "Treasure Egg Runtime", ROM0
 
 ClearTreasureEggRecords:
 	ld hl, TreasureEggY
