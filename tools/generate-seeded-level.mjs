@@ -32,6 +32,7 @@ const burgers = level.mobPlacements.filter(placement => placement.mob === 'burge
 const pancakes = level.mobPlacements.filter(placement => placement.mob === 'pancake');
 const friedEggs = level.mobPlacements.filter(placement => placement.mob === 'fried_egg');
 const discoFries = level.mobPlacements.filter(placement => placement.mob === 'disco_fry');
+const iceCubes = level.mobPlacements.filter(placement => placement.mob === 'ice_cube');
 const directions = { right: 0, down: 1, left: 2, up: 3 };
 const mobParity = [weiners.length];
 for (const placement of weiners) {
@@ -55,6 +56,11 @@ for (const placement of friedEggs) {
 }
 mobParity.push(discoFries.length);
 for (const placement of discoFries) {
+  const x = placement.x * 8;
+  mobParity.push(placement.y * 8, x & 0xff, x >> 8);
+}
+mobParity.push(iceCubes.length);
+for (const placement of iceCubes) {
   const x = placement.x * 8;
   mobParity.push(placement.y * 8, x & 0xff, x >> 8);
 }

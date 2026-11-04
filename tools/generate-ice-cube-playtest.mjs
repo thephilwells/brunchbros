@@ -30,7 +30,7 @@ writeFileSync('build/ice_cube_playtest.tilemap', Buffer.from(tiles.flat()));
 writeFileSync('build/ice_cube_playtest.inc', [
   'DEF ICE_CUBE_PLAYTEST_PLAYER_X EQU 160',
   'DEF ICE_CUBE_PLAYTEST_PLAYER_Y EQU 232',
-  'DEF ICE_CUBE_PLAYTEST_CUBE_X EQU 160',
+  'DEF ICE_CUBE_PLAYTEST_CUBE_X EQU 236',
   'DEF ICE_CUBE_PLAYTEST_CUBE_Y EQU 112',
   '',
 ].join('\n'));

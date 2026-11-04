@@ -3196,6 +3196,8 @@ PlaceMobType:
 	jr z, .createFriedEgg
 	cp a, 4
 	jr z, .createDiscoFry
+	cp a, 5
+	jr z, .createIceCube
 	call CreateSelectedWeiner
 	jr .created
 .createFriedEgg
@@ -3209,6 +3211,9 @@ PlaceMobType:
 	jr .created
 .createDiscoFry
 	call CreateSelectedDiscoFry
+	jr .created
+.createIceCube
+	call CreateSelectedIceCube
 .created
 	ld hl, MobSelectedCount
 	inc [hl]
@@ -3316,6 +3321,8 @@ CountMobCandidates:
 	cp a, 2
 	jr z, .tall
 	cp a, 3
+	jr z, .tall
+	cp a, 5
 	jr nz, .rowLimitReady
 .tall
 	dec b
@@ -3357,6 +3364,8 @@ FindMobCandidate:
 	cp a, 2
 	jr z, .tall
 	cp a, 3
+	jr z, .tall
+	cp a, 5
 	jr nz, .rowLimitReady
 .tall
 	dec b
@@ -3380,6 +3389,8 @@ IsMobCandidate:
 	cp a, 2
 	jr z, .tallBody
 	cp a, 3
+	jr z, .tallBody
+	cp a, 5
 	jr nz, .bodyRow
 .tallBody
 	ld b, 2
@@ -3422,6 +3433,8 @@ IsMobCandidate:
 	jp z, ResolvePancakeCandidate
 	cp a, 4
 	jp z, ResolvePancakeCandidate
+	cp a, 5
+	jp z, ResolveIceCubeCandidate
 	ld a, [MobType]
 	cp a, 2
 	jr z, .doubleSupportRow
@@ -3546,6 +3559,42 @@ ResolveWeinerCandidateDirection:
 	and a
 	ret
 
+ResolveIceCubeCandidate:
+	ld a, [MobLocalY]
+	add a, 2
+	call IsMobRowReserved
+	jr c, .invalid
+	call GetMobCandidatePointer
+	ld de, 80
+	add hl, de
+	call IsTwoMobSupport
+	ret c
+.invalid
+	and a
+	ret
+
+IsTwoMobSupport:
+	ld b, 2
+.loop
+	push hl
+	ld a, [hl+]
+	ld e, a
+	ld d, 0
+	ld hl, CollisionTypes
+	add hl, de
+	ld a, [hl]
+	pop hl
+	and a
+	jr z, .invalid
+	inc hl
+	dec b
+	jr nz, .loop
+	scf
+	ret
+.invalid
+	and a
+	ret
+
 IsTwoSolidMobSupport:
 	ld b, 2
 .loop
@@ -3569,6 +3618,8 @@ AreMobCandidateSidesClear:
 	cp a, 2
 	jr z, .tall
 	cp a, 3
+	jr z, .tall
+	cp a, 5
 	jr nz, .row
 .tall
 	ld b, 2
@@ -3689,6 +3740,8 @@ MarkMobCandidateOccupied:
 	cp a, 2
 	jr z, .tall
 	cp a, 3
+	jr z, .tall
+	cp a, 5
 	jr nz, .row
 .tall
 	ld b, 2
@@ -3744,7 +3797,11 @@ IsMobFootprintReserved:
 	ret c
 	ld a, [MobType]
 	cp a, 2
-	jr c, .singleRow
+	jr z, .secondRow
+	cp a, 3
+	jr z, .secondRow
+	cp a, 5
+	jr nz, .singleRow
 .secondRow
 	ld a, [MobLocalY]
 	inc a
@@ -3954,6 +4011,31 @@ CreateSelectedDiscoFry:
 	add a, c
 	ld c, a
 	jp CreateDiscoFryAtTile
+
+CreateSelectedIceCube:
+	ld a, [GenerationRoom]
+	and a, 3
+	ld b, a
+	add a, a
+	ld c, a
+	add a, a
+	add a, a
+	add a, c
+	ld b, a
+	ld a, [MobLocalX]
+	add a, b
+	ld b, a
+	ld a, [GenerationRoom]
+	srl a
+	srl a
+	add a, a
+	add a, a
+	add a, a
+	ld c, a
+	ld a, [MobLocalY]
+	add a, c
+	ld c, a
+	jp CreateIceCubeAtTile
 
 LoadMobSelectionSalt:
 	push af
@@ -4685,7 +4767,7 @@ VerifyMobParity:
 .discoFry
 	ld a, b
 	and a
-	ret z
+	jr z, .iceCubes
 	ld a, [de]
 	cp a, [hl]
 	jp nz, .failed
@@ -4707,6 +4789,38 @@ VerifyMobParity:
 	jr nz, .skipDiscoFry
 	dec b
 	jr .discoFry
+.iceCubes
+	ld a, [IceCubeCount]
+	cp a, [hl]
+	jp nz, .failed
+	inc hl
+	ld b, a
+	ld de, IceCubeRecords
+.iceCube
+	ld a, b
+	and a
+	ret z
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc de
+	inc hl
+	ld a, [de]
+	cp a, [hl]
+	jp nz, .failed
+	inc hl
+	ld a, ICE_CUBE_RECORD_SIZE - 2
+.skipIceCube
+	inc de
+	dec a
+	jr nz, .skipIceCube
+	dec b
+	jr .iceCube
 .failed
 	jr .failed
 

@@ -120,6 +120,9 @@ DEF ICE_CUBE_HORIZONTAL_ACCELERATION EQU 1
 DEF ICE_CUBE_STATE_ACTIVE EQU 1
 DEF ICE_CUBE_STATE_BURST EQU 2
 DEF ICE_CUBE_HIT_KNOCKBACK_DISTANCE EQU 8
+DEF ICE_CUBE_MAX_COUNT EQU 2
+DEF ICE_CUBE_RECORD_SIZE EQU 17
+DEF ICE_CUBE_RECORD_HIT_LATCH EQU 12
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -313,6 +316,10 @@ IceCubeHitFlashTimer: db
 IceCubeBurstTimer: db
 IceCubeKnockbackRemaining: db
 IceCubeKnockbackDirection: db
+IceCubeRecords: ds ICE_CUBE_MAX_COUNT * ICE_CUBE_RECORD_SIZE
+IceCubeCount: db
+IceCubeLoopIndex: db
+IceCubeOAMPointer: dw
 LevelKeyOwned: db
 TitleSeedCounter: dw
 LevelMap: ds LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
@@ -605,7 +612,7 @@ LoadCurrentLevel:
 	call ClearFriedEggRecords
 	call ClearTreasureEggRecords
 	call ClearDiscoFryRecords
-	call ClearIceCube
+	call ClearIceCubeRecords
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -734,8 +741,8 @@ ENDC
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
+	call UpdateIceCubeSprites
 	call UpdateTreasureEggSprites
-	call UpdateIceCubeSprite
 	call hOAMDMA
 
 	ld a, %10000011
@@ -1187,8 +1194,8 @@ PrepareSpriteBuffer:
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
+	call UpdateIceCubeSprites
 	call UpdateTreasureEggSprites
-	call UpdateIceCubeSprite
 	ret
 .gameplay
 	call UpdateCameraState
@@ -1199,15 +1206,15 @@ PrepareSpriteBuffer:
 	call AdvanceFriedEggs
 	call AdvanceDiscoFries
 	call AdvanceTreasureEggs
-	call AdvanceIceCube
+	call AdvanceIceCubes
 	call UpdateSprites
 	call UpdateWeinerSprites
 	call UpdateBurgerSprites
 	call UpdatePancakeSprites
 	call UpdateFriedEggSprites
 	call UpdateDiscoFrySprites
+	call UpdateIceCubeSprites
 	call UpdateTreasureEggSprites
-	call UpdateIceCubeSprite
 	ret
 
 ClearMobSpriteBuffer:
@@ -1414,7 +1421,7 @@ MainLoop:
 	call ResetPancakeHitLatch
 	call ResetFriedEggHitLatches
 	call ResetTreasureEggHitLatches
-	call ResetIceCubeHitLatch
+	call ResetIceCubeHitLatches
 	pop de
 	pop bc
 .attackInputDone
@@ -1865,7 +1872,7 @@ MainLoop:
 	call TryPanHitPancakes
 	call TryPanHitFriedEggs
 	call TryPanHitTreasureEggs
-	call TryPanHitIceCube
+	call TryPanHitIceCubes
 .panHitsDone
 	ld a, [PlayerInvulnerabilityTimer]
 	and a
@@ -1875,7 +1882,7 @@ MainLoop:
 	call TryPancakeContacts
 	call TryFriedEggContacts
 	call TryGravyDropContacts
-	call TryIceCubeContact
+	call TryIceCubeContacts
 .contactsDone
 	call TryCollectTreasureHearts
 	call TryCollectTreasureKeys
@@ -6736,14 +6743,104 @@ HideFriedEggSprite:
 	ret
 
 SECTION "ICE_CUBE Runtime", ROMX
-ClearIceCube:
+ClearIceCubeRecords:
 	ld hl, IceCubeY
-	ld b, 17
+	ld b, ICE_CUBE_RECORD_SIZE
+	xor a
+.clearScratch
+	ld [hl+], a
+	dec b
+	jr nz, .clearScratch
+	ld hl, IceCubeRecords
+	ld b, ICE_CUBE_MAX_COUNT * ICE_CUBE_RECORD_SIZE
+.clearRecords
+	ld [hl+], a
+	dec b
+	jr nz, .clearRecords
+	ld [IceCubeCount], a
+	ret
+
+GetIceCubeRecordPointer:
+	ld hl, IceCubeRecords
+	and a
+	ret z
+	ld de, ICE_CUBE_RECORD_SIZE
+.advance
+	add hl, de
+	dec a
+	jr nz, .advance
+	ret
+
+LoadIceCubeRecord:
+	call GetIceCubeRecordPointer
+	ld de, IceCubeY
+	ld b, ICE_CUBE_RECORD_SIZE
+.copy
+	ld a, [hl+]
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .copy
+	ret
+
+StoreIceCubeRecord:
+	call GetIceCubeRecordPointer
+	ld de, IceCubeY
+	ld b, ICE_CUBE_RECORD_SIZE
+.copy
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec b
+	jr nz, .copy
+	ret
+
+InitializeIceCubeScratch:
+	ld hl, IceCubeVelocityY
+	ld b, ICE_CUBE_RECORD_SIZE - 3
 	xor a
 .clear
 	ld [hl+], a
 	dec b
 	jr nz, .clear
+	ld a, ICE_CUBE_STATE_ACTIVE
+	ld [IceCubeActive], a
+	ld a, 5
+	ld [IceCubeHealth], a
+	ld a, 1
+	ld [IceCubeDirection], a
+	ld [IceCubeTargetDirection], a
+	ld a, ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+	ld [IceCubeVelocityX], a
+	ld a, ICE_CUBE_FIRST_TILE
+	ld [IceCubeTileBase], a
+	ret
+
+CreateIceCubeAtTile:
+	ld a, [IceCubeCount]
+	cp a, ICE_CUBE_MAX_COUNT
+	ret nc
+	ld a, c
+	add a, a
+	add a, a
+	add a, a
+	ld [IceCubeY], a
+	ld h, 0
+	ld l, b
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	ld a, l
+	ld [IceCubeX], a
+	ld a, h
+	ld [IceCubeX + 1], a
+	call InitializeIceCubeScratch
+	ld a, [IceCubeCount]
+	push af
+	call StoreIceCubeRecord
+	pop af
+	inc a
+	ld [IceCubeCount], a
 	ret
 
 IF DEF(ICE_CUBE_PLAYTEST)
@@ -6754,19 +6851,39 @@ InitializePlaytestIceCube:
 	ld [IceCubeX], a
 	ld a, HIGH(ICE_CUBE_PLAYTEST_CUBE_X)
 	ld [IceCubeX + 1], a
-	ld a, ICE_CUBE_STATE_ACTIVE
-	ld [IceCubeActive], a
-	ld a, 5
-	ld [IceCubeHealth], a
+	call InitializeIceCubeScratch
 	ld a, -1
 	ld [IceCubeDirection], a
 	ld [IceCubeTargetDirection], a
 	ld a, -ICE_CUBE_MAX_HORIZONTAL_VELOCITY
 	ld [IceCubeVelocityX], a
-	ld a, ICE_CUBE_FIRST_TILE
-	ld [IceCubeTileBase], a
+	xor a
+	call StoreIceCubeRecord
+	ld a, 1
+	ld [IceCubeCount], a
 	ret
 ENDC
+
+AdvanceIceCubes:
+	xor a
+	ld [IceCubeLoopIndex], a
+.loop
+	ld a, [IceCubeLoopIndex]
+	ld b, a
+	ld a, [IceCubeCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadIceCubeRecord
+	call AdvanceIceCube
+	pop af
+	push af
+	call StoreIceCubeRecord
+	pop af
+	inc a
+	ld [IceCubeLoopIndex], a
+	jr .loop
 
 AdvanceIceCube:
 	ld a, [IceCubeActive]
@@ -7006,27 +7123,12 @@ ApplyIceCubeGravity:
 	add a, 16
 	ld d, a
 	ld a, [IceCubeX]
-	add a, 2
+	add a, 8
 	ld e, a
 	ld a, [IceCubeX + 1]
 	adc a, 0
 	ld c, a
-	push bc
 	call IsWall
-	pop bc
-	jr z, .land
-	ld a, [IceCubeX]
-	add a, 13
-	ld e, a
-	ld a, [IceCubeX + 1]
-	adc a, 0
-	ld c, a
-	ld a, b
-	add a, 16
-	ld d, a
-	push bc
-	call IsWall
-	pop bc
 	jr z, .land
 	ld a, b
 	ld [IceCubeY], a
@@ -7041,10 +7143,38 @@ ApplyIceCubeGravity:
 	ld [IceCubeVelocityY], a
 	ret
 
-ResetIceCubeHitLatch:
+ResetIceCubeHitLatches:
+	ld hl, IceCubeRecords + ICE_CUBE_RECORD_HIT_LATCH
+	ld de, ICE_CUBE_RECORD_SIZE
+	ld b, ICE_CUBE_MAX_COUNT
 	xor a
-	ld [IceCubeHitThisSwing], a
+.loop
+	ld [hl], a
+	add hl, de
+	dec b
+	jr nz, .loop
 	ret
+
+TryPanHitIceCubes:
+	xor a
+	ld [IceCubeLoopIndex], a
+.loop
+	ld a, [IceCubeLoopIndex]
+	ld b, a
+	ld a, [IceCubeCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadIceCubeRecord
+	call TryPanHitIceCube
+	pop af
+	push af
+	call StoreIceCubeRecord
+	pop af
+	inc a
+	ld [IceCubeLoopIndex], a
+	jr .loop
 
 TryPanHitIceCube:
 	ld a, [IceCubeActive]
@@ -7246,6 +7376,27 @@ CheckIceCubeAttackY:
 	and a
 	ret
 
+TryIceCubeContacts:
+	xor a
+	ld [IceCubeLoopIndex], a
+.loop
+	ld a, [IceCubeLoopIndex]
+	ld b, a
+	ld a, [IceCubeCount]
+	cp a, b
+	ret z
+	ld a, b
+	push af
+	call LoadIceCubeRecord
+	call TryIceCubeContact
+	pop af
+	push af
+	call StoreIceCubeRecord
+	pop af
+	inc a
+	ld [IceCubeLoopIndex], a
+	jr .loop
+
 TryIceCubeContact:
 	ld a, [IceCubeActive]
 	cp a, ICE_CUBE_STATE_ACTIVE
@@ -7345,6 +7496,42 @@ TryIceCubeContact:
 	ld [PlayerTileBase], a
 	ret
 
+UpdateIceCubeSprites:
+	ld a, [GravyDropOAMPointer]
+	ld [IceCubeOAMPointer], a
+	ld a, [GravyDropOAMPointer + 1]
+	ld [IceCubeOAMPointer + 1], a
+	xor a
+	ld [IceCubeLoopIndex], a
+.loop
+	ld a, [IceCubeLoopIndex]
+	ld b, a
+	ld a, [IceCubeCount]
+	cp a, b
+	ret z
+	ld a, b
+	call LoadIceCubeRecord
+	ld a, [IceCubeActive]
+	and a
+	jr z, .next
+	ld a, [IceCubeOAMPointer + 1]
+	cp a, HIGH(ShadowOAM + 160)
+	ret nz
+	ld a, [IceCubeOAMPointer]
+	cp a, LOW(ShadowOAM + 160 - 15)
+	ret nc
+	call UpdateIceCubeSprite
+	ld a, [IceCubeOAMPointer]
+	add a, 16
+	ld [IceCubeOAMPointer], a
+	jr nc, .next
+	ld hl, IceCubeOAMPointer + 1
+	inc [hl]
+.next
+	ld hl, IceCubeLoopIndex
+	inc [hl]
+	jr .loop
+
 UpdateIceCubeSprite:
 	ld a, [IceCubeActive]
 	and a
@@ -7352,7 +7539,10 @@ UpdateIceCubeSprite:
 	ld a, [IceCubeHitFlashTimer]
 	bit 1, a
 	ret nz
-	ld hl, ShadowOAM + $30
+	ld a, [IceCubeOAMPointer]
+	ld l, a
+	ld a, [IceCubeOAMPointer + 1]
+	ld h, a
 	ld a, [CameraY]
 	ld b, a
 	ld a, [CameraX]
@@ -8575,9 +8765,9 @@ CheckTreasurePickupContact:
 	ret
 
 UpdateTreasureEggSprites:
-	ld a, [GravyDropOAMPointer]
+	ld a, [IceCubeOAMPointer]
 	ld [TreasureEggOAMPointer], a
-	ld a, [GravyDropOAMPointer + 1]
+	ld a, [IceCubeOAMPointer + 1]
 	ld [TreasureEggOAMPointer + 1], a
 	xor a
 	ld [TreasureEggLoopIndex], a

@@ -82,17 +82,19 @@ landing; the third hit starts the shared cloudburst.
 
 Production alternates between two level-specific rosters. `DINING_ROOM_1`
 attempts two WEINERs, two PANCAKEs, and two FRIED_EGGs; `DINING_ROOM_2`
-attempts two BURGERs, two PANCAKEs, and two FRIED_EGGs. WEINERs
+attempts two BURGERs, two PANCAKEs, two FRIED_EGGs, and two ICE_CUBEs. WEINERs
 may begin on full-solid floors or ceilings; BURGERs and FRIED_EGGs begin on
-solid or one-way support. PANCAKEs begin five tiles above a structural floor
-row and oscillate across a three-tile span. All four require one collision-free
-tile beside each side. Frequency weights eight, four, three, and two remain
+solid or one-way support. ICE_CUBEs may begin above either support type but
+fall through one-way platforms during play. PANCAKEs begin five tiles above a
+structural floor row and oscillate across a three-tile span. Every species
+requires one collision-free tile beside each side. Frequency weights remain
 available for later additional slots. BURGER and PANCAKE reserve two
 shadow-OAM entries normally and expand to four during their cloudbursts.
 Layouts without enough safe footprints may fall short of the population target;
 future curated seed pools can exclude those seeds. Performance should be
-reassessed against these six-mob level-specific populations before runtime
-optimization is scheduled.
+reassessed after final biome rosters and population counts are selected.
+DISCO_FRY remains fixture-only until a later Kitchen roster so the Dining Room
+stress fixture does not accumulate every implemented moving actor.
 
 ## Accepted initial rules
 

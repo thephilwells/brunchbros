@@ -18,14 +18,14 @@ populations have been playtested.
 The current progression loops through these explicit level rosters:
 
 - `DINING_ROOM_1`: WEINER, PANCAKE, FRIED_EGG
-- `DINING_ROOM_2`: BURGER, PANCAKE, FRIED_EGG
+- `DINING_ROOM_2`: BURGER, PANCAKE, FRIED_EGG, ICE_CUBE
 
 The runtime and host generator target two of each eligible mob and retain the
 documented frequency weights for later extra slots. Safe seeds without enough
 valid footprints may fall short until curated per-kind seed pools can exclude
-them. DISCO_FRY is
-the next unimplemented mob, but it belongs to the Kitchen roster rather than
-the Dining Room.
+them. ICE_CUBE temporarily occupies the fourth `DINING_ROOM_2` slot for
+production playtesting. DISCO_FRY remains reserved for the Kitchen roster so
+the Dining Room does not run both actors simultaneously.
 
 # WEINER
 BIOMES: [ PATIO_1, PATIO_2, DINING_ROOM_1, KITCHEN_1, FREEZER ]
@@ -65,7 +65,7 @@ DAMAGE: 1 heart
 DIES TO: 3 hits
 DESCRIPTION: A crinkle-cut french fry flying back and forth thru the air at pancake height. The difference is it just flies back and forth in whatever room its in, bumping from wall to wall. It drops three-pixel L-shaped drops of gravy that do .5 hearts of damage. Attacking the gravy does nothing, only the fry itself can be damaged by Chef.
 
-Until Kitchen level generation exists, DINING_ROOM_2 includes DISCO_FRY as an explicit production playtest stand-in.
+DISCO_FRY remains fixture-only until Kitchen level generation exists.
 
 # ICE_CUBE
 BIOMES: [ FREEZER ]
@@ -73,6 +73,9 @@ FREQUENCY: 5 (COMMON)
 DAMAGE: .5 heart
 DIES TO: 5 hits
 DESCRIPTION: An ice skating ice cube. It can't jump. It skates back and forth on solid floors, attempting to collide with Chef. It moves faster than Chef can run. It ignores one-way platforms and falls through them, eventually collecting on the lowest solid floor it can reach.
+
+Until Freezer level generation exists, DINING_ROOM_2 includes ICE_CUBE as an
+explicit production playtest stand-in.
 
 # BOSS_MAN
 BIOMES: [ FREEZER ]

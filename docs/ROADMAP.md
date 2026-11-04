@@ -200,9 +200,12 @@ combined change. Keep the gallery → review → runtime → parity → playtest
    Chef's visual edge and terrain hitbox respectively. The same 18-frame swing
    travels from an overhead opening capable of catching a flying enemy one tile
    above, through a forward slash, to the accepted waist-height finish.
-   Host and RGBDS dining-room population now guarantee two WEINERs and two
-   BURGERs per level. Species-specific candidates allow WEINER floor, ceiling,
-   and wall starts plus BURGER solid and one-way support. JSON/TMX spawn
+   Host and RGBDS dining-room population now uses level-specific rosters.
+   Dining Room 1 guarantees WEINER, PANCAKE, and FRIED_EGG populations; Dining
+   Room 2 guarantees BURGER, PANCAKE, FRIED_EGG, and ICE_CUBE populations.
+   DISCO_FRY is reserved for a later Kitchen roster. Species-specific candidates
+   allow WEINER floor, ceiling, and wall starts plus supported starts for the
+   other grounded mobs. JSON/TMX spawn
    metadata and gallery overlays expose every placement; exhaustive host
    validation covers all 65,536 seeds. Additional weighted slots remain a
    later density-tuning pass.

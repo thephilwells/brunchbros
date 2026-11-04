@@ -416,6 +416,10 @@ function mobCandidates(level, room, mob, occupiedFurniture, occupiedMobs = new S
         if ([0, 1].every(offset => burgerSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
         continue;
       }
+      if (mob.id === 'ice_cube') {
+        if ([0, 1].every(offset => burgerSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
+        continue;
+      }
       if ([0, 1].every(offset => solidSupport(x + offset, y + mob.height))) candidates.push({ room, x, y, direction: 'right' });
       else if (y > roomY && [0, 1].every(offset => solidSupport(x + offset, y - 1))) candidates.push({ room, x, y, direction: 'left' });
     }
