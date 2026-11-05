@@ -114,8 +114,10 @@ DEF DISCO_FRY_FIRST_TILE EQU 229
 DEF DISCO_FRY_GRAVY_TILE EQU 233
 DEF DISCO_FRY_FRAME_DURATION EQU 8
 DEF DISCO_FRY_GRAVY_INTERVAL EQU 64
+DEF DISCO_FRY_STATE_ACTIVE EQU 1
+DEF DISCO_FRY_STATE_BURST EQU 2
 DEF DISCO_FRY_MAX_COUNT EQU 2
-DEF DISCO_FRY_RECORD_SIZE EQU 12
+DEF DISCO_FRY_RECORD_SIZE EQU 15
 DEF ICE_CUBE_FIRST_TILE EQU 234
 DEF ICE_CUBE_FRAME_DURATION EQU 8
 DEF ICE_CUBE_TERMINAL_VELOCITY EQU 8
@@ -129,8 +131,8 @@ DEF ICE_CUBE_RECORD_SIZE EQU 17
 DEF ICE_CUBE_RECORD_HIT_LATCH EQU 12
 DEF HEAVE_LIFT_DURATION EQU 12
 DEF HEAVE_TOSS_DURATION EQU 6
-DEF TREASURE_EGG_TOSS_VELOCITY_X EQU 3
-DEF TREASURE_EGG_TOSS_VELOCITY_Y EQU -7
+DEF TREASURE_EGG_TOSS_VELOCITY_X EQU 4
+DEF TREASURE_EGG_TOSS_VELOCITY_Y EQU -5
 DEF TREASURE_EGG_TERMINAL_VELOCITY EQU 8
 DEF HEAVE_CARRY_UPPER_TILE EQU 242
 DEF HEAVE_REACH_LOWER_TILE EQU 244
@@ -145,7 +147,7 @@ DEF HEAVE_POSE_CARRY_MOVE0 EQU 3
 DEF HEAVE_POSE_CARRY_MOVE1 EQU 4
 DEF HEAVE_POSE_CARRY_JUMP EQU 5
 DEF TREASURE_EGG_MAX_COUNT EQU 4
-DEF TREASURE_EGG_RECORD_SIZE EQU 9
+DEF TREASURE_EGG_RECORD_SIZE EQU 10
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
 DEF PLAYER_DEATH_TILE EQU 172
 DEF DEATH_STATE_ACTIVE EQU 1
@@ -176,6 +178,9 @@ INCLUDE "build/treasure_egg_playtest.inc"
 ENDC
 IF DEF(HEAVE_PLAYTEST)
 INCLUDE "build/heave_playtest.inc"
+ENDC
+IF DEF(MOB_IMPACT_PLAYTEST)
+INCLUDE "build/mob_impact_playtest.inc"
 ENDC
 IF DEF(DISCO_FRY_PLAYTEST)
 INCLUDE "build/disco_fry_playtest.inc"
@@ -314,6 +319,7 @@ TreasureEggTimer: db
 TreasureEggHitThisSwing: db
 TreasureEggVelocityY: db
 TreasureEggVelocityX: db
+TreasureEggMobHit: db
 TreasureEggRecords: ds TREASURE_EGG_MAX_COUNT * TREASURE_EGG_RECORD_SIZE
 TreasureEggCount: db
 TreasureEggLoopIndex: db
@@ -328,6 +334,9 @@ DiscoFryDropTimer: db
 GravyDropY: db
 GravyDropX: dw
 GravyDropActive: db
+DiscoFryHealth: db
+DiscoFryHitFlashTimer: db
+DiscoFryBurstTimer: db
 DiscoFryRecords: ds DISCO_FRY_MAX_COUNT * DISCO_FRY_RECORD_SIZE
 DiscoFryCount: db
 DiscoFryLoopIndex: db
@@ -654,6 +663,9 @@ LoadCurrentLevel:
 	call ClearTreasureEggRecords
 	call ClearDiscoFryRecords
 	call ClearIceCubeRecords
+IF DEF(MOB_IMPACT_PLAYTEST)
+	call LoadMobImpactPlaytest
+ELSE
 IF DEF(ROOM_VARIANT_PLAYTEST)
 	call LoadRoomVariantPlaytest
 ELSE
@@ -673,6 +685,7 @@ ELSE
 	call LoadFriedEggPlaytest
 	ELSE
 	call GenerateLevel
+	ENDC
 	ENDC
 	ENDC
 	ENDC
@@ -771,6 +784,9 @@ IF DEF(TREASURE_EGG_PLAYTEST)
 ENDC
 IF DEF(HEAVE_PLAYTEST)
 	call InitializePlaytestHeave
+ENDC
+IF DEF(MOB_IMPACT_PLAYTEST)
+	call InitializeMobImpactPlaytest
 ENDC
 IF DEF(DISCO_FRY_PLAYTEST)
 	call InitializePlaytestDiscoFry
@@ -1937,12 +1953,14 @@ MainLoop:
 	ld a, [PlayerInvulnerabilityTimer]
 	and a
 	jr nz, .contactsDone
+IF !DEF(MOB_IMPACT_PLAYTEST)
 	call TryWeinerContacts
 	call TryBurgerContacts
 	call TryPancakeContacts
 	call TryFriedEggContacts
 	call TryGravyDropContacts
 	call TryIceCubeContacts
+ENDC
 .contactsDone
 	call TryCollectTreasureHearts
 	call TryCollectTreasureKeys
@@ -7810,9 +7828,11 @@ InitializeDiscoFryScratch:
 	ld [hl+], a
 	dec b
 	jr nz, .clear
-	ld a, 1
+	ld a, DISCO_FRY_STATE_ACTIVE
 	ld [DiscoFryDirection], a
 	ld [DiscoFryActive], a
+	ld a, 3
+	ld [DiscoFryHealth], a
 	ld a, DISCO_FRY_FIRST_TILE
 	ld [DiscoFryTileBase], a
 	ret
@@ -7886,6 +7906,15 @@ AdvanceDiscoFry:
 	ld a, [DiscoFryActive]
 	and a
 	ret z
+	ld hl, DiscoFryHitFlashTimer
+	ld a, [hl]
+	and a
+	jr z, .state
+	dec [hl]
+.state
+	ld a, [DiscoFryActive]
+	cp a, DISCO_FRY_STATE_BURST
+	jr z, AdvanceDiscoFryBurst
 	ld hl, DiscoFryAnimTimer
 	inc [hl]
 	ld a, [hl]
@@ -7928,6 +7957,35 @@ AdvanceDiscoFry:
 .reverseRight
 	ld a, 1
 	ld [DiscoFryDirection], a
+	ret
+
+AdvanceDiscoFryBurst:
+	ld hl, DiscoFryBurstTimer
+	inc [hl]
+	ld a, [hl]
+	cp a, ENEMY_BURST_DURATION
+	jr nc, .finished
+	and a, ENEMY_BURST_FRAME_DURATION - 1
+	ret nz
+	ld hl, DiscoFryTileBase
+	ld a, [hl]
+	add a, 4
+	ld [hl], a
+	ret
+.finished
+	xor a
+	ld [DiscoFryActive], a
+	ret
+
+StartDiscoFryBurst:
+	xor a
+	ld [DiscoFryBurstTimer], a
+	ld [DiscoFryHitFlashTimer], a
+	ld [GravyDropActive], a
+	ld a, ENEMY_BURST_FIRST_TILE
+	ld [DiscoFryTileBase], a
+	ld a, DISCO_FRY_STATE_BURST
+	ld [DiscoFryActive], a
 	ret
 
 AdvanceGravyDrop:
@@ -8196,8 +8254,15 @@ UpdateDiscoFrySprites:
 	and a
 	jr z, .gravy
 	call UpdateDiscoFrySprite
+	ld a, [DiscoFryActive]
+	cp a, DISCO_FRY_STATE_BURST
+	ld a, 8
+	jr nz, .strideReady
+	ld a, 16
+.strideReady
+	ld b, a
 	ld a, [DiscoFryOAMPointer]
-	add a, 8
+	add a, b
 	ld [DiscoFryOAMPointer], a
 	jr nc, .gravy
 	ld hl, DiscoFryOAMPointer + 1
@@ -8225,6 +8290,13 @@ UpdateDiscoFrySprites:
 	ret
 
 UpdateDiscoFrySprite:
+	ld a, [DiscoFryOAMPointer]
+	ld l, a
+	ld a, [DiscoFryOAMPointer + 1]
+	ld h, a
+	ld a, [DiscoFryHitFlashTimer]
+	bit 1, a
+	jp nz, HideDiscoFrySprite
 	ld a, [DiscoFryX + 1]
 	ld d, a
 	ld a, [CameraX + 1]
@@ -8272,10 +8344,9 @@ UpdateDiscoFrySprite:
 	cp a, e
 	jr nc, .hidden
 .visible
-	ld a, [DiscoFryOAMPointer]
-	ld l, a
-	ld a, [DiscoFryOAMPointer + 1]
-	ld h, a
+	ld a, [DiscoFryActive]
+	cp a, DISCO_FRY_STATE_BURST
+	jp z, UpdateDiscoFryBurstSprite
 	ld a, [CameraY]
 	ld b, a
 	ld a, [CameraX]
@@ -8320,6 +8391,74 @@ UpdateDiscoFrySprite:
 	ld [hl], a
 	ret
 .hidden
+	jp HideDiscoFrySprite
+
+UpdateDiscoFryBurstSprite:
+	ld a, [CameraY]
+	ld b, a
+	ld a, [CameraX]
+	ld c, a
+	ld a, [DiscoFryY]
+	add a, 16
+	sub a, b
+	ld e, a
+	ld a, [DiscoFryX]
+	add a, 8
+	sub a, c
+	ld c, a
+	ld a, [DiscoFryTileBase]
+	ld d, a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, d
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, d
+	inc a
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	ld [hl+], a
+	ld a, d
+	add a, 2
+	ld [hl+], a
+	xor a
+	ld [hl+], a
+	ld a, e
+	add a, 8
+	ld [hl+], a
+	ld a, c
+	add a, 8
+	ld [hl+], a
+	ld a, d
+	add a, 3
+	ld [hl+], a
+	xor a
+	ld [hl], a
+	ret
+
+HideDiscoFrySprite:
+	xor a
+	ld [hl], a
+	ld de, 4
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
+	add hl, de
+	ld [hl], a
 	ret
 
 DrawGravyDropSprite:
@@ -8393,6 +8532,373 @@ DrawGravyDropSprite:
 	ret
 
 SECTION "Treasure Egg Runtime", ROMX
+
+TryThrownEggHitMobs:
+	ld a, [TreasureEggMobHit]
+	and a
+	ret nz
+	call TryThrownEggHitWeiners
+	jr c, .hit
+	call TryThrownEggHitBurgers
+	jr c, .hit
+	call TryThrownEggHitPancakes
+	jr c, .hit
+	call TryThrownEggHitFriedEggs
+	jr c, .hit
+	call TryThrownEggHitDiscoFries
+	jr c, .hit
+	call TryThrownEggHitIceCubes
+	ret nc
+.hit
+	ld a, 1
+	ld [TreasureEggMobHit], a
+	xor a
+	ld [TreasureEggVelocityX], a
+	ret
+
+TryThrownEggHitWeiners:
+	xor a
+	ld [WeinerLoopIndex], a
+.loop
+	ld a, [WeinerLoopIndex]
+	ld b, a
+	ld a, [WeinerCount]
+	cp a, b
+	jr z, .miss
+	ld a, b
+	push af
+	call LoadWeinerRecord
+	ld a, [WeinerActive]
+	cp a, WEINER_STATE_ACTIVE
+	jr nz, .next
+	ld a, [WeinerX]
+	ld l, a
+	ld a, [WeinerX + 1]
+	ld h, a
+	ld a, [WeinerY]
+	ld b, a
+	add a, 15
+	ld c, a
+	call CheckThrownEggMobOverlap
+	jr nc, .next
+	call StartEnemyBurst
+	pop af
+	call StoreWeinerRecord
+	scf
+	ret
+.next
+	pop af
+	inc a
+	ld [WeinerLoopIndex], a
+	jr .loop
+.miss
+	and a
+	ret
+
+TryThrownEggHitBurgers:
+	xor a
+	ld [BurgerLoopIndex], a
+.loop
+	ld a, [BurgerLoopIndex]
+	ld b, a
+	ld a, [BurgerCount]
+	cp a, b
+	jr z, .miss
+	ld a, b
+	push af
+	call LoadBurgerRecord
+	ld a, [BurgerState]
+	and a
+	jr z, .next
+	cp a, BURGER_STATE_BURST
+	jr z, .next
+	ld a, [BurgerX]
+	ld l, a
+	ld a, [BurgerX + 1]
+	ld h, a
+	ld a, [BurgerY]
+	sub a, 8
+	ld b, a
+	add a, 7
+	ld c, a
+	call CheckThrownEggMobOverlap
+	jr nc, .next
+	call DamageBurgerByThrownEgg
+	pop af
+	call StoreBurgerRecord
+	scf
+	ret
+.next
+	pop af
+	inc a
+	ld [BurgerLoopIndex], a
+	jr .loop
+.miss
+	and a
+	ret
+
+TryThrownEggHitPancakes:
+	xor a
+	ld [PancakeLoopIndex], a
+.loop
+	ld a, [PancakeLoopIndex]
+	ld b, a
+	ld a, [PancakeCount]
+	cp a, b
+	jr z, .miss
+	ld a, b
+	push af
+	call LoadPancakeRecord
+	ld a, [PancakeState]
+	cp a, PANCAKE_STATE_ACTIVE
+	jr nz, .next
+	ld a, [PancakeX]
+	ld l, a
+	ld a, [PancakeX + 1]
+	ld h, a
+	ld a, [PancakeY]
+	ld b, a
+	add a, 7
+	ld c, a
+	call CheckThrownEggMobOverlap
+	jr nc, .next
+	call DamagePancakeByThrownEgg
+	pop af
+	call StorePancakeRecord
+	scf
+	ret
+.next
+	pop af
+	inc a
+	ld [PancakeLoopIndex], a
+	jr .loop
+.miss
+	and a
+	ret
+
+TryThrownEggHitFriedEggs:
+	xor a
+	ld [FriedEggLoopIndex], a
+.loop
+	ld a, [FriedEggLoopIndex]
+	ld b, a
+	ld a, [FriedEggCount]
+	cp a, b
+	jr z, .miss
+	ld a, b
+	push af
+	call LoadFriedEggRecord
+	ld a, [FriedEggState]
+	and a
+	jr z, .next
+	cp a, FRIED_EGG_STATE_BURST
+	jr z, .next
+	ld a, [FriedEggX]
+	ld l, a
+	ld a, [FriedEggX + 1]
+	ld h, a
+	ld a, [FriedEggY]
+	sub a, 15
+	ld b, a
+	add a, 15
+	ld c, a
+	call CheckThrownEggMobOverlap
+	jr nc, .next
+	call DamageFriedEggByThrownEgg
+	pop af
+	call StoreFriedEggRecord
+	scf
+	ret
+.next
+	pop af
+	inc a
+	ld [FriedEggLoopIndex], a
+	jr .loop
+.miss
+	and a
+	ret
+
+TryThrownEggHitDiscoFries:
+	xor a
+	ld [DiscoFryLoopIndex], a
+.loop
+	ld a, [DiscoFryLoopIndex]
+	ld b, a
+	ld a, [DiscoFryCount]
+	cp a, b
+	jr z, .miss
+	ld a, b
+	push af
+	call LoadDiscoFryRecord
+	ld a, [DiscoFryActive]
+	cp a, DISCO_FRY_STATE_ACTIVE
+	jr nz, .next
+	ld a, [DiscoFryX]
+	ld l, a
+	ld a, [DiscoFryX + 1]
+	ld h, a
+	ld a, [DiscoFryY]
+	ld b, a
+	add a, 7
+	ld c, a
+	call CheckThrownEggMobOverlap
+	jr nc, .next
+	call DamageDiscoFryByThrownEgg
+	pop af
+	call StoreDiscoFryRecord
+	scf
+	ret
+.next
+	pop af
+	inc a
+	ld [DiscoFryLoopIndex], a
+	jr .loop
+.miss
+	and a
+	ret
+
+TryThrownEggHitIceCubes:
+	xor a
+	ld [IceCubeLoopIndex], a
+.loop
+	ld a, [IceCubeLoopIndex]
+	ld b, a
+	ld a, [IceCubeCount]
+	cp a, b
+	jr z, .miss
+	ld a, b
+	push af
+	call LoadIceCubeRecord
+	ld a, [IceCubeActive]
+	cp a, ICE_CUBE_STATE_ACTIVE
+	jr nz, .next
+	ld a, [IceCubeX]
+	ld l, a
+	ld a, [IceCubeX + 1]
+	ld h, a
+	ld a, [IceCubeY]
+	ld b, a
+	add a, 15
+	ld c, a
+	call CheckThrownEggMobOverlap
+	jr nc, .next
+	call DamageIceCubeByThrownEgg
+	pop af
+	call StoreIceCubeRecord
+	scf
+	ret
+.next
+	pop af
+	inc a
+	ld [IceCubeLoopIndex], a
+	jr .loop
+.miss
+	and a
+	ret
+
+CheckThrownEggMobOverlap:
+	push bc
+	ld a, l
+	add a, 15
+	ld e, a
+	ld a, h
+	adc a, 0
+	ld d, a
+	push de
+	ld a, [TreasureEggX]
+	add a, 15
+	ld c, a
+	ld a, [TreasureEggX + 1]
+	adc a, 0
+	ld b, a
+	ld a, c
+	sub a, l
+	ld a, b
+	sbc a, h
+	bit 7, a
+	jr nz, .missWithRight
+	pop de
+	ld a, [TreasureEggX]
+	ld l, a
+	ld a, [TreasureEggX + 1]
+	ld h, a
+	ld a, e
+	sub a, l
+	ld a, d
+	sbc a, h
+	bit 7, a
+	jr nz, .miss
+	pop bc
+	ld a, [TreasureEggY]
+	sub a, b
+	bit 7, a
+	jr nz, .clear
+	ld a, [TreasureEggY]
+	sub a, 15
+	ld b, a
+	ld a, c
+	sub a, b
+	bit 7, a
+	jr nz, .clear
+	scf
+	ret
+.missWithRight
+	pop de
+.miss
+	pop bc
+.clear
+	and a
+	ret
+
+DamageBurgerByThrownEgg:
+	ld a, [BurgerHealth]
+	cp a, 3
+	jp c, StartBurgerBurst
+	sub a, 2
+	ld [BurgerHealth], a
+	ld a, 12
+	ld [BurgerHitFlashTimer], a
+	jp StartBurgerKnockback
+
+DamagePancakeByThrownEgg:
+	ld a, [PancakeHealth]
+	cp a, 3
+	jp c, StartPancakeBurst
+	sub a, 2
+	ld [PancakeHealth], a
+	ld a, 12
+	ld [PancakeHitFlashTimer], a
+	jp StartPancakeKnockback
+
+DamageFriedEggByThrownEgg:
+	ld a, [FriedEggHealth]
+	cp a, 3
+	jp c, StartFriedEggBurst
+	sub a, 2
+	ld [FriedEggHealth], a
+	ld a, 12
+	ld [FriedEggHitFlashTimer], a
+	jp StartFriedEggKnockback
+
+DamageDiscoFryByThrownEgg:
+	ld a, [DiscoFryHealth]
+	cp a, 3
+	jp c, StartDiscoFryBurst
+	sub a, 2
+	ld [DiscoFryHealth], a
+	ld a, 12
+	ld [DiscoFryHitFlashTimer], a
+	ret
+
+DamageIceCubeByThrownEgg:
+	ld a, [IceCubeHealth]
+	cp a, 3
+	jp c, StartIceCubeBurst
+	sub a, 2
+	ld [IceCubeHealth], a
+	ld a, 12
+	ld [IceCubeHitFlashTimer], a
+	jp StartIceCubeKnockback
 
 PreparePlayerTileBases:
 	ld a, [PlayerTileBase]
@@ -8475,6 +8981,8 @@ StartTreasureEggThrow:
 	inc a
 .velocityReady
 	ld [TreasureEggVelocityX], a
+	xor a
+	ld [TreasureEggMobHit], a
 	pop af
 	call StoreTreasureEggRecord
 	ld a, $ff
@@ -8503,6 +9011,30 @@ LoadHeavePlaytest:
 	ld a, HIGH(HEAVE_PLAYTEST_PLAYER_X)
 	ld [GeneratedPlayerX + 1], a
 	ld a, HEAVE_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
+
+IF DEF(MOB_IMPACT_PLAYTEST)
+LoadMobImpactPlaytest:
+	ld de, MobImpactPlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(MOB_IMPACT_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, MOB_IMPACT_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
 	ret
 ENDC
@@ -8662,6 +9194,123 @@ InitializePlaytestHeave:
 	ld [TreasureEggX + 1], a
 	ld a, TREASURE_EGG_CONTENT_KEY
 	ld [TreasureEggContents], a
+	ld a, 3
+	call StoreTreasureEggRecord
+	ld a, 4
+	ld [TreasureEggCount], a
+	ret
+ENDC
+
+IF DEF(MOB_IMPACT_PLAYTEST)
+InitializeMobImpactPlaytest:
+	ld a, MOB_IMPACT_PLAYTEST_WEINER_Y
+	ld [WeinerY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_WEINER_X)
+	ld [WeinerX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_WEINER_X)
+	ld [WeinerX + 1], a
+	call InitializeWeinerScratch
+	xor a
+	call StoreWeinerRecord
+	ld a, 1
+	ld [WeinerCount], a
+
+	ld a, MOB_IMPACT_PLAYTEST_BURGER_Y
+	ld [BurgerY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_BURGER_X)
+	ld [BurgerX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_BURGER_X)
+	ld [BurgerX + 1], a
+	call InitializeBurgerScratch
+	xor a
+	call StoreBurgerRecord
+	ld a, 1
+	ld [BurgerCount], a
+
+	ld a, MOB_IMPACT_PLAYTEST_PANCAKE_Y
+	ld [PancakeY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_PANCAKE_X)
+	ld [PancakeX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_PANCAKE_X)
+	ld [PancakeX + 1], a
+	call InitializePancakeScratch
+	xor a
+	call StorePancakeRecord
+	ld a, 1
+	ld [PancakeCount], a
+
+	ld a, MOB_IMPACT_PLAYTEST_FRIED_EGG_Y
+	ld [FriedEggY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_FRIED_EGG_X)
+	ld [FriedEggX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_FRIED_EGG_X)
+	ld [FriedEggX + 1], a
+	call InitializeFriedEggScratch
+	ld a, -1
+	ld [FriedEggDirection], a
+	ld [FriedEggTargetDirection], a
+	ld a, -FRIED_EGG_MAX_HORIZONTAL_VELOCITY
+	ld [FriedEggVelocityX], a
+	xor a
+	call StoreFriedEggRecord
+	ld a, 1
+	ld [FriedEggCount], a
+
+	ld a, MOB_IMPACT_PLAYTEST_DISCO_FRY_Y
+	ld [DiscoFryY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_DISCO_FRY_X)
+	ld [DiscoFryX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_DISCO_FRY_X)
+	ld [DiscoFryX + 1], a
+	call InitializeDiscoFryScratch
+	xor a
+	call StoreDiscoFryRecord
+	ld a, 1
+	ld [DiscoFryCount], a
+
+	ld a, MOB_IMPACT_PLAYTEST_ICE_CUBE_Y
+	ld [IceCubeY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_ICE_CUBE_X)
+	ld [IceCubeX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_ICE_CUBE_X)
+	ld [IceCubeX + 1], a
+	call InitializeIceCubeScratch
+	ld a, -1
+	ld [IceCubeDirection], a
+	ld [IceCubeTargetDirection], a
+	ld a, -ICE_CUBE_MAX_HORIZONTAL_VELOCITY
+	ld [IceCubeVelocityX], a
+	xor a
+	call StoreIceCubeRecord
+	ld a, 1
+	ld [IceCubeCount], a
+
+	ld a, MOB_IMPACT_PLAYTEST_EGG_Y
+	ld [TreasureEggY], a
+	ld a, LOW(MOB_IMPACT_PLAYTEST_EGG0_X)
+	ld [TreasureEggX], a
+	ld a, HIGH(MOB_IMPACT_PLAYTEST_EGG0_X)
+	ld [TreasureEggX + 1], a
+	ld a, TREASURE_EGG_STATE_UNCRACKED
+	ld [TreasureEggState], a
+	xor a
+	ld [TreasureEggContents], a
+	ld [TreasureEggTimer], a
+	ld [TreasureEggHitThisSwing], a
+	ld [TreasureEggVelocityX], a
+	ld [TreasureEggVelocityY], a
+	ld [TreasureEggMobHit], a
+	call StoreTreasureEggRecord
+	ld a, LOW(MOB_IMPACT_PLAYTEST_EGG1_X)
+	ld [TreasureEggX], a
+	ld a, 1
+	call StoreTreasureEggRecord
+	ld a, LOW(MOB_IMPACT_PLAYTEST_EGG2_X)
+	ld [TreasureEggX], a
+	ld a, 2
+	call StoreTreasureEggRecord
+	ld a, LOW(MOB_IMPACT_PLAYTEST_EGG3_X)
+	ld [TreasureEggX], a
 	ld a, 3
 	call StoreTreasureEggRecord
 	ld a, 4
@@ -8844,6 +9493,7 @@ AdvanceTreasureEggs:
 
 AdvanceThrownTreasureEgg:
 	call MoveThrownTreasureEggHorizontal
+	call TryThrownEggHitMobs
 	ld a, [TreasureEggVelocityY]
 	bit 7, a
 	jr nz, .accelerate
@@ -8865,6 +9515,7 @@ AdvanceThrownTreasureEgg:
 	inc a
 	ld [TreasureEggY], a
 	push bc
+	call TryThrownEggHitMobs
 	call CheckTreasureEggFeetSupport
 	pop bc
 	jp z, ImpactThrownTreasureEgg
@@ -8883,6 +9534,7 @@ MoveThrownTreasureEggUp:
 	dec a
 	ld [TreasureEggY], a
 	push bc
+	call TryThrownEggHitMobs
 	call CheckTreasureEggCeiling
 	pop bc
 	jr z, .undo
@@ -10188,10 +10840,12 @@ RoomTemplateDataEnd:
 ASSERT RoomTemplateDataEnd - RoomTemplateData == 15 * 10 * 8
 
 IF DEF(ROOM_VARIANT_PLAYTEST)
+SECTION "ROOM_VARIANT Playtest Assets", ROMX
 RoomVariantPlaytestMap:
 	INCBIN "build/room_variant_playtest.tilemap"
 RoomVariantPlaytestMapEnd:
 ASSERT RoomVariantPlaytestMapEnd - RoomVariantPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+SECTION "Main Continued Playtest", ROM0
 ENDC
 
 OAMDMARoutine:
@@ -10316,6 +10970,21 @@ HeavePlaytestMap:
 	INCBIN "build/heave_playtest.tilemap"
 HeavePlaytestMapEnd:
 ASSERT HeavePlaytestMapEnd - HeavePlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(MOB_IMPACT_PLAYTEST)
+SECTION "MOB_IMPACT Playtest Map", ROM0
+MobImpactPlaytestMap:
+	INCBIN "build/mob_impact_playtest.tilemap"
+MobImpactPlaytestMapEnd:
+ASSERT MobImpactPlaytestMapEnd - MobImpactPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ASSERT BANK(AdvanceWeiners) == 1
+ASSERT BANK(AdvanceBurgers) == 1
+ASSERT BANK(AdvancePancakes) == 1
+ASSERT BANK(AdvanceFriedEggs) == 1
+ASSERT BANK(AdvanceIceCubes) == 1
+ASSERT BANK(TryThrownEggHitMobs) == 1
+SECTION "MOB_IMPACT Playtest Assets Resume", ROMX
 ENDC
 
 IF DEF(DISCO_FRY_PLAYTEST)

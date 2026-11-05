@@ -1,8 +1,8 @@
 # HEAVE implementation plan
 
-Status: accepted for staged implementation on 2026-11-05. Stages 1 through 4
-are complete. Stage 5 is implemented in the focused HEAVE fixture and awaiting
-hands-on calibration.
+Status: accepted for staged implementation on 2026-11-05. Stages 1 through 5
+are complete. Stage 6 is implemented in the focused mob-impact fixture and
+awaiting hands-on calibration.
 
 `docs/HEAVE.md` is the feature brief. This plan records the implementation
 architecture, initial calibration rules, sequencing, and regression gates.
