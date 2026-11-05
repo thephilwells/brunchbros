@@ -46,6 +46,7 @@ Aseprite are installed in `/Applications`. Verification history:
 node tools/generate-structural-pilot.mjs
 node tools/generate-dining-room.mjs
 node tools/generate-chef-attack.mjs
+node tools/generate-chef-heave.mjs
 node tools/generate-hud.mjs
 node tools/generate-weiner.mjs
 node tools/generate-enemy-destruction.mjs
@@ -78,6 +79,9 @@ rgbgfx -c dmg=E4 -o build/gravy_drop.2bpp gfx/gravy_drop.png
 rgbgfx -c dmg=E4 -o build/ice_cube_motion.2bpp gfx/ice_cube_motion.png
 rgbgfx -c dmg=E4 -o build/treasure_egg.2bpp gfx/treasure_egg.png
 rgbgfx -c dmg=E4 -o build/dropped_key.2bpp gfx/dropped_key.png
+for f in chef_heave_carry_upper chef_heave_reach_lower chef_heave_carry_idle_lower chef_heave_carry_move0_lower chef_heave_carry_move1_lower chef_heave_carry_jump_lower; do
+  rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png
+done
 node tools/verify-dining-room.mjs
 node tools/verify-dining-room-furniture.mjs
 node tools/verify-dining-room-background.mjs
