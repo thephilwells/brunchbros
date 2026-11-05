@@ -1,6 +1,7 @@
 # HEAVE implementation plan
 
-Status: accepted for staged implementation on 2026-11-05.
+Status: accepted for staged implementation on 2026-11-05. Stage 1 completed;
+see `notes/2026-11-05-heave-checkpoint.md`.
 
 `docs/HEAVE.md` is the feature brief. This plan records the implementation
 architecture, initial calibration rules, sequencing, and regression gates.

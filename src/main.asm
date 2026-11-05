@@ -762,6 +762,8 @@ DisableLCD:
 	ret
 
 IF DEF(COMBAT_PLAYTEST)
+IF DEF(BURGER_PLAYTEST)
+ELSE
 LoadCombatPlaytest:
 	ld de, CombatPlaytestMap
 	ld hl, LevelMap
@@ -783,6 +785,7 @@ LoadCombatPlaytest:
 	ld a, COMBAT_PLAYTEST_PLAYER_Y
 	ld [GeneratedPlayerY], a
 	ret
+ENDC
 ENDC
 
 IF DEF(BURGER_PLAYTEST)
@@ -7629,7 +7632,7 @@ UpdateIceCubeSprite:
 	ld [hl], a
 	ret
 
-SECTION "DISCO_FRY Runtime", ROMX
+SECTION "DISCO_FRY Runtime", ROM0
 ClearDiscoFryRecords:
 	ld hl, DiscoFryY
 	ld b, DISCO_FRY_RECORD_SIZE
@@ -8272,7 +8275,7 @@ DrawGravyDropSprite:
 	ld [hl], a
 	ret
 
-SECTION "Treasure Egg Runtime", ROM0
+SECTION "Treasure Egg Runtime", ROMX
 
 ClearTreasureEggRecords:
 	ld hl, TreasureEggY
@@ -9599,10 +9602,13 @@ IceCubeTiles:
 	INCBIN "build/ice_cube_motion.2bpp"
 
 IF DEF(COMBAT_PLAYTEST)
+IF DEF(BURGER_PLAYTEST)
+ELSE
 CombatPlaytestMap:
 	INCBIN "build/combat_playtest.tilemap"
 CombatPlaytestMapEnd:
 ASSERT CombatPlaytestMapEnd - CombatPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
 ENDC
 
 IF DEF(BURGER_PLAYTEST)
