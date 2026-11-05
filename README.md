@@ -61,6 +61,7 @@ node tools/generate-burger-playtest.mjs
 node tools/generate-pancake-playtest.mjs
 node tools/generate-fried-egg-playtest.mjs
 node tools/generate-treasure-egg-playtest.mjs
+node tools/generate-heave-playtest.mjs
 node tools/generate-disco-fry-playtest.mjs
 node tools/generate-ice-cube-playtest.mjs
 node tools/generate-room-template-fixture.mjs

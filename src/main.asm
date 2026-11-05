@@ -102,6 +102,8 @@ DEF TREASURE_EGG_STATE_CRACKED EQU 2
 DEF TREASURE_EGG_STATE_BURST EQU 3
 DEF TREASURE_EGG_STATE_HEART EQU 4
 DEF TREASURE_EGG_STATE_KEY EQU 5
+DEF TREASURE_EGG_STATE_CARRIED_UNCRACKED EQU 6
+DEF TREASURE_EGG_STATE_CARRIED_CRACKED EQU 7
 DEF TREASURE_EGG_CONTENT_EMPTY EQU 0
 DEF TREASURE_EGG_CONTENT_HEART EQU 1
 DEF TREASURE_EGG_CONTENT_KEY EQU 2
@@ -123,6 +125,19 @@ DEF ICE_CUBE_HIT_KNOCKBACK_DISTANCE EQU 8
 DEF ICE_CUBE_MAX_COUNT EQU 2
 DEF ICE_CUBE_RECORD_SIZE EQU 17
 DEF ICE_CUBE_RECORD_HIT_LATCH EQU 12
+DEF HEAVE_LIFT_DURATION EQU 12
+DEF HEAVE_CARRY_UPPER_TILE EQU 242
+DEF HEAVE_REACH_LOWER_TILE EQU 244
+DEF HEAVE_CARRY_IDLE_LOWER_TILE EQU 246
+DEF HEAVE_CARRY_MOVE0_LOWER_TILE EQU 248
+DEF HEAVE_CARRY_MOVE1_LOWER_TILE EQU 250
+DEF HEAVE_CARRY_JUMP_LOWER_TILE EQU 252
+DEF HEAVE_POSE_NONE EQU 0
+DEF HEAVE_POSE_REACH EQU 1
+DEF HEAVE_POSE_CARRY_IDLE EQU 2
+DEF HEAVE_POSE_CARRY_MOVE0 EQU 3
+DEF HEAVE_POSE_CARRY_MOVE1 EQU 4
+DEF HEAVE_POSE_CARRY_JUMP EQU 5
 DEF TREASURE_EGG_MAX_COUNT EQU 4
 DEF TREASURE_EGG_RECORD_SIZE EQU 7
 DEF TREASURE_EGG_RECORD_HIT_LATCH EQU 6
@@ -152,6 +167,9 @@ INCLUDE "build/fried_egg_playtest.inc"
 ENDC
 IF DEF(TREASURE_EGG_PLAYTEST)
 INCLUDE "build/treasure_egg_playtest.inc"
+ENDC
+IF DEF(HEAVE_PLAYTEST)
+INCLUDE "build/heave_playtest.inc"
 ENDC
 IF DEF(DISCO_FRY_PLAYTEST)
 INCLUDE "build/disco_fry_playtest.inc"
@@ -195,6 +213,12 @@ FallingPastWorld: db
 ExitAnimationTimer: db
 AttackTimer: db
 AttackPanTileBase: db
+LiftTimer: db
+LiftCandidateIndex: db
+HeldTreasureEggIndex: db
+HeavePose: db
+PlayerUpperTileBase: db
+PlayerLowerTileBase: db
 CurrentHealth: db
 PlayerInvulnerabilityTimer: db
 PlayerKnockbackRemaining: db
@@ -528,6 +552,14 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyIceCubeTiles
+	ld de, ChefHeaveTiles
+	ld c, 12 * 16
+.copyChefHeaveTiles
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyChefHeaveTiles
 
 	call LoadTitleScreen
 	xor a
@@ -619,6 +651,9 @@ ELSE
 	IF DEF(ICE_CUBE_PLAYTEST)
 	call LoadIceCubePlaytest
 	ELSE
+	IF DEF(HEAVE_PLAYTEST)
+	call LoadHeavePlaytest
+	ELSE
 	IF DEF(DISCO_FRY_PLAYTEST)
 	call LoadDiscoFryPlaytest
 	ELSE
@@ -629,6 +664,7 @@ ELSE
 	call LoadFriedEggPlaytest
 	ELSE
 	call GenerateLevel
+	ENDC
 	ENDC
 	ENDC
 	ENDC
@@ -692,6 +728,7 @@ ENDC
 	ld [ExitAnimationTimer], a
 	ld [AttackTimer], a
 	ld [AttackPanTileBase], a
+	call ClearHeaveState
 	ld [PlayerVelY], a
 	ld [LandTimer], a
 	ld [CurrentDpad], a
@@ -722,6 +759,9 @@ IF DEF(FRIED_EGG_PLAYTEST)
 ENDC
 IF DEF(TREASURE_EGG_PLAYTEST)
 	call InitializePlaytestTreasureEggs
+ENDC
+IF DEF(HEAVE_PLAYTEST)
+	call InitializePlaytestHeave
 ENDC
 IF DEF(DISCO_FRY_PLAYTEST)
 	call InitializePlaytestDiscoFry
@@ -1203,6 +1243,7 @@ PrepareSpriteBuffer:
 .gameplay
 	call UpdateCameraState
 	call UpdateHUDSprites
+	call UpdateHeldTreasureEggPosition
 	call AdvanceWeiners
 	call AdvanceBurgers
 	call AdvancePancakes
@@ -1409,6 +1450,12 @@ MainLoop:
 	ld a, [AttackTimer]
 	and a
 	jr nz, .attackInputDone
+	push bc
+	push de
+	call TryStartLift
+	pop de
+	pop bc
+	jr c, .attackInputDone
 	ld a, b
 	bit 3, a
 	jr z, .attackInputDone
@@ -1835,6 +1882,7 @@ MainLoop:
 	ld [PlayerTileBase], a
 
 .poseOverrideDone
+	call AdvanceHeavePose
 	ld a, [AttackTimer]
 	and a
 	jr z, .attackPoseDone
@@ -2118,6 +2166,7 @@ UpdateSprites:
 	ld a, [CameraX]
 	ld c, a
 	ld hl, ShadowOAM
+	call PreparePlayerTileBases
 	ld a, [FacingFlip]
 	and a, a
 	jp nz, UpdateSpritesFlipped
@@ -2129,7 +2178,7 @@ UpdateSprites:
 	ld a, [PlayerX]
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
+	ld a, [PlayerUpperTileBase]
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
@@ -2141,8 +2190,8 @@ UpdateSprites:
 	add a, 8
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
-	add a, 1
+	ld a, [PlayerUpperTileBase]
+	inc a
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
@@ -2154,8 +2203,7 @@ UpdateSprites:
 	ld a, [PlayerX]
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
-	add a, 2
+	ld a, [PlayerLowerTileBase]
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
@@ -2168,8 +2216,8 @@ UpdateSprites:
 	add a, 8
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
-	add a, 3
+	ld a, [PlayerLowerTileBase]
+	inc a
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	ld [hl+], a
@@ -8277,6 +8325,86 @@ DrawGravyDropSprite:
 
 SECTION "Treasure Egg Runtime", ROMX
 
+PreparePlayerTileBases:
+	ld a, [PlayerTileBase]
+	ld [PlayerUpperTileBase], a
+	add a, 2
+	ld [PlayerLowerTileBase], a
+	ld a, [HeavePose]
+	and a
+	ret z
+	cp a, HEAVE_POSE_REACH
+	jr nz, .carry
+	ld a, HEAVE_REACH_LOWER_TILE
+	ld [PlayerLowerTileBase], a
+	ret
+.carry
+	ld a, HEAVE_CARRY_UPPER_TILE
+	ld [PlayerUpperTileBase], a
+	ld a, [HeavePose]
+	sub a, HEAVE_POSE_CARRY_IDLE
+	add a, a
+	add a, HEAVE_CARRY_IDLE_LOWER_TILE
+	ld [PlayerLowerTileBase], a
+	ret
+
+ClearHeaveState:
+	xor a
+	ld [LiftTimer], a
+	ld [HeavePose], a
+	dec a
+	ld [LiftCandidateIndex], a
+	ld [HeldTreasureEggIndex], a
+	inc a
+	ret
+
+TryStartLift:
+	ld a, [LiftTimer]
+	and a
+	jr nz, .handled
+	ld a, e
+	bit 1, a
+	jr z, .notHandled
+	ld a, [HeldTreasureEggIndex]
+	cp a, $ff
+	jr nz, .handled
+	ld a, b
+	bit 3, a
+	jr nz, .notHandled
+	ld a, HEAVE_LIFT_DURATION
+	ld [LiftTimer], a
+	call FindTreasureEggLiftCandidate
+.handled
+	scf
+	ret
+.notHandled
+	and a
+	ret
+
+IF DEF(HEAVE_PLAYTEST)
+LoadHeavePlaytest:
+	ld de, HeavePlaytestMap
+	ld hl, LevelMap
+	ld b, 5
+.outer
+	ld c, 0
+.inner
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .inner
+	dec b
+	jr nz, .outer
+	ld a, LOW(HEAVE_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX], a
+	ld a, HIGH(HEAVE_PLAYTEST_PLAYER_X)
+	ld [GeneratedPlayerX + 1], a
+	ld a, HEAVE_PLAYTEST_PLAYER_Y
+	ld [GeneratedPlayerY], a
+	ret
+ENDC
+
 ClearTreasureEggRecords:
 	ld hl, TreasureEggY
 	ld b, TREASURE_EGG_RECORD_SIZE
@@ -8394,6 +8522,155 @@ InitializePlaytestTreasureEggs:
 	ld [CurrentHealth], a
 	ret
 ENDC
+
+IF DEF(HEAVE_PLAYTEST)
+InitializePlaytestHeave:
+	ld a, HEAVE_PLAYTEST_EGG_Y
+	ld [TreasureEggY], a
+	ld a, LOW(HEAVE_PLAYTEST_UNCRACKED_X)
+	ld [TreasureEggX], a
+	ld a, HIGH(HEAVE_PLAYTEST_UNCRACKED_X)
+	ld [TreasureEggX + 1], a
+	ld a, TREASURE_EGG_STATE_UNCRACKED
+	ld [TreasureEggState], a
+	xor a
+	ld [TreasureEggContents], a
+	ld [TreasureEggTimer], a
+	ld [TreasureEggHitThisSwing], a
+	call StoreTreasureEggRecord
+	ld a, LOW(HEAVE_PLAYTEST_CRACKED_X)
+	ld [TreasureEggX], a
+	ld a, HIGH(HEAVE_PLAYTEST_CRACKED_X)
+	ld [TreasureEggX + 1], a
+	ld a, TREASURE_EGG_STATE_CRACKED
+	ld [TreasureEggState], a
+	ld a, 1
+	call StoreTreasureEggRecord
+	ld a, 2
+	ld [TreasureEggCount], a
+	ret
+ENDC
+
+FindTreasureEggLiftCandidate:
+	ld a, $ff
+	ld [LiftCandidateIndex], a
+	xor a
+	ld [TreasureEggLoopIndex], a
+.loop
+	ld a, [TreasureEggLoopIndex]
+	ld b, a
+	ld a, [TreasureEggCount]
+	cp a, b
+	ret z
+	ld a, b
+	call LoadTreasureEggRecord
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_UNCRACKED
+	jr z, .checkContact
+	cp a, TREASURE_EGG_STATE_CRACKED
+	jr nz, .next
+.checkContact
+	call CheckTreasurePickupContact
+	jr c, .found
+.next
+	ld hl, TreasureEggLoopIndex
+	inc [hl]
+	jr .loop
+.found
+	ld a, [TreasureEggLoopIndex]
+	ld [LiftCandidateIndex], a
+	ret
+
+CommitTreasureEggLiftCandidate:
+	ld a, [LiftCandidateIndex]
+	cp a, $ff
+	ret z
+	push af
+	call LoadTreasureEggRecord
+	ld a, [TreasureEggState]
+	cp a, TREASURE_EGG_STATE_UNCRACKED
+	ld a, TREASURE_EGG_STATE_CARRIED_UNCRACKED
+	jr z, .stateReady
+	ld a, TREASURE_EGG_STATE_CARRIED_CRACKED
+.stateReady
+	ld [TreasureEggState], a
+	pop af
+	push af
+	call StoreTreasureEggRecord
+	pop af
+	ld [HeldTreasureEggIndex], a
+	ld a, $ff
+	ld [LiftCandidateIndex], a
+	ret
+
+UpdateHeldTreasureEggPosition:
+	ld a, [HeldTreasureEggIndex]
+	cp a, $ff
+	ret z
+	push af
+	call LoadTreasureEggRecord
+	ld a, [PlayerY]
+	sub a, 17
+	ld [TreasureEggY], a
+	ld a, [PlayerX]
+	sub a, 8
+	ld [TreasureEggX], a
+	ld a, [PlayerX + 1]
+	sbc a, 0
+	ld [TreasureEggX + 1], a
+	pop af
+	call StoreTreasureEggRecord
+	ret
+
+AdvanceHeavePose:
+	xor a
+	ld [HeavePose], a
+	ld a, [LiftTimer]
+	and a
+	jr z, .carried
+	cp a, 7
+	jr c, .raised
+	ld a, HEAVE_POSE_REACH
+	ld [HeavePose], a
+	ld hl, LiftTimer
+	dec [hl]
+	ret
+.raised
+	cp a, 6
+	call z, CommitTreasureEggLiftCandidate
+	ld a, HEAVE_POSE_CARRY_IDLE
+	ld [HeavePose], a
+	ld hl, LiftTimer
+	dec [hl]
+	ret
+.carried
+	ld a, [HeldTreasureEggIndex]
+	cp a, $ff
+	ret z
+	ld a, [PlayerGrounded]
+	and a
+	jr z, .jump
+	ld a, [PlayerVelY]
+	and a
+	jr nz, .jump
+	ld a, [CurrentDpad]
+	and a, %00000011
+	cp a, %00000011
+	jr z, .idle
+	ld a, [AnimTimer]
+	bit 3, a
+	ld a, HEAVE_POSE_CARRY_MOVE0
+	jr z, .store
+	ld a, HEAVE_POSE_CARRY_MOVE1
+	jr .store
+.jump
+	ld a, HEAVE_POSE_CARRY_JUMP
+	jr .store
+.idle
+	ld a, HEAVE_POSE_CARRY_IDLE
+.store
+	ld [HeavePose], a
+	ret
 
 ResetTreasureEggHitLatches:
 	ld hl, TreasureEggRecords + TREASURE_EGG_RECORD_HIT_LATCH
@@ -8894,6 +9171,8 @@ UpdateTreasureEggSprite:
 	ld d, TREASURE_EGG_UNCRACKED_TILE
 	cp a, TREASURE_EGG_STATE_UNCRACKED
 	jr z, .tileReady
+	cp a, TREASURE_EGG_STATE_CARRIED_UNCRACKED
+	jr z, .tileReady
 	ld d, TREASURE_EGG_CRACKED_TILE
 	jr .tileReady
 .burst
@@ -8999,6 +9278,7 @@ StartPlayerDeath:
 	ld [DeathScreenY + 1], a
 	ld [AttackTimer], a
 	ld [AttackPanTileBase], a
+	call ClearHeaveState
 	ld [LedgeSide], a
 	ld [PlayerInvulnerabilityTimer], a
 	ld [PlayerKnockbackRemaining], a
@@ -9066,8 +9346,8 @@ UpdateSpritesFlipped:
 	ld a, [PlayerX]
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
-	add a, 1
+	ld a, [PlayerUpperTileBase]
+	inc a
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	or a, $20
@@ -9080,7 +9360,7 @@ UpdateSpritesFlipped:
 	add a, 8
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
+	ld a, [PlayerUpperTileBase]
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	or a, $20
@@ -9093,8 +9373,8 @@ UpdateSpritesFlipped:
 	ld a, [PlayerX]
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
-	add a, 3
+	ld a, [PlayerLowerTileBase]
+	inc a
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	or a, $20
@@ -9108,8 +9388,7 @@ UpdateSpritesFlipped:
 	add a, 8
 	sub a, c
 	ld [hl+], a
-	ld a, [PlayerTileBase]
-	add a, 2
+	ld a, [PlayerLowerTileBase]
 	ld [hl+], a
 	ld a, [PlayerSpriteAttributes]
 	or a, $20
@@ -9601,6 +9880,14 @@ GravyDropTile:
 IceCubeTiles:
 	INCBIN "build/ice_cube_motion.2bpp"
 
+ChefHeaveTiles:
+	INCBIN "build/chef_heave_carry_upper.2bpp"
+	INCBIN "build/chef_heave_reach_lower.2bpp"
+	INCBIN "build/chef_heave_carry_idle_lower.2bpp"
+	INCBIN "build/chef_heave_carry_move0_lower.2bpp"
+	INCBIN "build/chef_heave_carry_move1_lower.2bpp"
+	INCBIN "build/chef_heave_carry_jump_lower.2bpp"
+
 IF DEF(COMBAT_PLAYTEST)
 IF DEF(BURGER_PLAYTEST)
 ELSE
@@ -9637,6 +9924,13 @@ TreasureEggPlaytestMap:
 	INCBIN "build/treasure_egg_playtest.tilemap"
 TreasureEggPlaytestMapEnd:
 ASSERT TreasureEggPlaytestMapEnd - TreasureEggPlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
+ENDC
+
+IF DEF(HEAVE_PLAYTEST)
+HeavePlaytestMap:
+	INCBIN "build/heave_playtest.tilemap"
+HeavePlaytestMapEnd:
+ASSERT HeavePlaytestMapEnd - HeavePlaytestMap == LEVEL_WIDTH_TILES * LEVEL_HEIGHT_TILES
 ENDC
 
 IF DEF(DISCO_FRY_PLAYTEST)
