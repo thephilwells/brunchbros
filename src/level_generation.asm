@@ -146,7 +146,7 @@ ENDC
 	call PlaceDiningRoomWallpaper
 	call PlaceDiningRoomMobs
 	call PlaceDiningRoomTreasure
-IF DEF(FURNITURE_PARITY_TEST)
+IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 	call VerifyFurnitureParity
 	call VerifyMobParity
 	call VerifyTreasureParity
@@ -4618,7 +4618,7 @@ CreateSelectedTreasureEgg:
 	ld c, a
 	jp CreateTreasureEggAtTile
 
-IF DEF(FURNITURE_PARITY_TEST)
+IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 VerifyMobParity:
 	ld hl, MobParityData
 	ld a, [WeinerCount]
@@ -4869,7 +4869,7 @@ ENDC
 
 SECTION "Level Generation Continued", ROM0
 
-IF DEF(FURNITURE_PARITY_TEST)
+IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 VerifyFurnitureParity:
 	ld hl, LevelMap
 	ld de, FurnitureParityMap
@@ -4933,7 +4933,7 @@ INCLUDE "build/dining_room_wallpaper.inc"
 INCLUDE "build/dining_room_mobs.inc"
 INCLUDE "build/dining_room_treasure.inc"
 
-IF DEF(FURNITURE_PARITY_TEST)
+IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 FurnitureParityMap:
 	INCBIN "build/runtime_level_parity.tilemap"
 MobParityData:

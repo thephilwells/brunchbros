@@ -107,6 +107,27 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate Chef HEAVE",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-chef-heave.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate HEAVE Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-heave-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate Mob Impact Playtest",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-mob-impact-playtest.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate DISCO_FRY Playtest",
       "type": "shell",
       "command": "node",
@@ -195,6 +216,12 @@
       "type": "shell",
       "command": "rgbgfx",
       "args": ["-c", "dmg=E4", "-o", "build/treasure_egg.2bpp", "gfx/treasure_egg.png"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Convert Chef HEAVE",
+      "type": "shell",
+      "command": "for f in chef_heave_carry_idle_lower chef_heave_carry_jump_lower chef_heave_carry_move0_lower chef_heave_carry_move1_lower chef_heave_carry_upper chef_heave_reach_lower; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
       "problemMatcher": []
     },
     {
@@ -328,7 +355,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate Treasure Egg", "Generate Treasure Egg Playtest", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Convert Treasure Egg", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate Treasure Egg", "Generate Treasure Egg Playtest", "Generate Chef HEAVE", "Generate HEAVE Playtest", "Generate Mob Impact Playtest", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Convert Treasure Egg", "Convert Chef HEAVE", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
       "group": {
         "kind": "build",
         "isDefault": true

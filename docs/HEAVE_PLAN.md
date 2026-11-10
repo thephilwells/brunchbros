@@ -1,8 +1,8 @@
 # HEAVE implementation plan
 
-Status: accepted for staged implementation on 2026-11-05. Stages 1 through 5
-are complete. Stage 6 is implemented in the focused mob-impact fixture and
-awaiting hands-on calibration.
+Status: accepted for staged implementation on 2026-11-05. Stages 1 through 6
+are complete. Stage 7 automated verification is complete; the final production
+playtest across both Dining Room level kinds remains.
 
 `docs/HEAVE.md` is the feature brief. This plan records the implementation
 architecture, initial calibration rules, sequencing, and regression gates.
@@ -57,6 +57,9 @@ existing flash, knockback, stun, and cloudburst behavior.
 
 These are calibration defaults. Hands-on fixture testing may revise timing,
 range, collision bounds, and interruption behavior.
+
+The current flatter toss remains provisional. Revisit its arc during final
+performance and close-quarters production playtesting.
 
 ## Implementation sequence
 
@@ -142,3 +145,12 @@ The production map at planning time reports:
 The tile budget is the first implementation constraint. Do not begin full-body
 carrying-frame production until the arm-overlay review establishes whether the
 compact approach is visually acceptable.
+
+After production integration on 2026-11-10:
+
+- ROM0: 14,828 bytes used, 1,556 free
+- ROMX: 16,094 bytes used, 290 free
+- WRAM0: 2,732 bytes used, 1,364 free
+- HRAM: 10 bytes used, 117 free
+- OBJ VRAM: 2 unused tile indices
+- Shadow OAM: 12 reserved entries, 28 dynamic entries

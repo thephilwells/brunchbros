@@ -188,6 +188,7 @@ ENDC
 IF DEF(ICE_CUBE_PLAYTEST)
 INCLUDE "build/ice_cube_playtest.inc"
 ENDC
+DEF FOCUSED_PLAYTEST EQU DEF(ROOM_VARIANT_PLAYTEST) || DEF(EXIT_ANIMATION_PLAYTEST) || DEF(COMBAT_PLAYTEST) || DEF(PANCAKE_PLAYTEST) || DEF(FRIED_EGG_PLAYTEST) || DEF(TREASURE_EGG_PLAYTEST) || DEF(HEAVE_PLAYTEST) || DEF(MOB_IMPACT_PLAYTEST) || DEF(DISCO_FRY_PLAYTEST) || DEF(ICE_CUBE_PLAYTEST)
 DEF TITLE_BLANK_TILE EQU 17
 DEF TITLE_A_TILE EQU 116
 DEF TITLE_B_TILE EQU 117
@@ -384,10 +385,14 @@ Start:
 	ld sp, $fffe
 
 ; Must be in VBlank before disabling the LCD
+	ldh a, [$ff40]
+	bit 7, a
+	jr z, .bootLCDReady
 .waitBootVBlank:
 	ldh a, [$ff44]
 	cp a, 144
 	jr c, .waitBootVBlank
+.bootLCDReady:
 
 ; LCD off so we can freely write VRAM/OAM below
 	ld hl, $ff40
@@ -579,6 +584,10 @@ Start:
 	dec c
 	jr nz, .copyChefHeaveTiles
 
+IF DEF(FURNITURE_PARITY_TEST)
+TitleLoop:
+	jp StartGame
+ELSE
 	call LoadTitleScreen
 	xor a
 	ld [TitleSeedCounter], a
@@ -588,10 +597,6 @@ Start:
 
 	ld a, %10000001
 	ldh [$ff40], a
-
-IF DEF(FURNITURE_PARITY_TEST)
-	jp StartGame
-ENDC
 
 TitleLoop:
 .waitTitleNotVBlank
@@ -646,6 +651,7 @@ TitleLoop:
 	ld [SelectedSeed], a
 	ld a, [GenerationRandomState + 1]
 	ld [SelectedSeed + 1], a
+ENDC
 
 StartGame:
 	ld a, HUD_MAX_HEALTH
@@ -1953,14 +1959,12 @@ MainLoop:
 	ld a, [PlayerInvulnerabilityTimer]
 	and a
 	jr nz, .contactsDone
-IF !DEF(MOB_IMPACT_PLAYTEST)
 	call TryWeinerContacts
 	call TryBurgerContacts
 	call TryPancakeContacts
 	call TryFriedEggContacts
 	call TryGravyDropContacts
 	call TryIceCubeContacts
-ENDC
 .contactsDone
 	call TryCollectTreasureHearts
 	call TryCollectTreasureKeys
