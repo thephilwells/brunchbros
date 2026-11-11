@@ -119,6 +119,7 @@ DEF DISCO_FRY_STATE_BURST EQU 2
 DEF DISCO_FRY_MAX_COUNT EQU 2
 DEF DISCO_FRY_RECORD_SIZE EQU 15
 DEF ICE_CUBE_FIRST_TILE EQU 234
+DEF ICE_CUBE_CRACKED_FOREHEAD_TILE EQU 254
 DEF ICE_CUBE_FRAME_DURATION EQU 8
 DEF ICE_CUBE_TERMINAL_VELOCITY EQU 8
 DEF ICE_CUBE_MAX_HORIZONTAL_VELOCITY EQU 20
@@ -583,6 +584,14 @@ Start:
 	inc de
 	dec c
 	jr nz, .copyChefHeaveTiles
+	ld de, IceCubeCrackedForeheadTile
+	ld c, 16
+.copyIceCubeCrackedForeheadTile
+	ld a, [de]
+	ld [hl+], a
+	inc de
+	dec c
+	jr nz, .copyIceCubeCrackedForeheadTile
 
 IF DEF(FURNITURE_PARITY_TEST)
 TitleLoop:
@@ -7703,6 +7712,11 @@ UpdateIceCubeSprite:
 	jr z, .topLeftReady
 	inc a
 .topLeftReady
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	call nz, SelectIceCubeCrackedForeheadTile
 	ld [hl+], a
 	ld a, d
 	ld [hl+], a
@@ -7719,6 +7733,11 @@ UpdateIceCubeSprite:
 	jr nz, .topRightReady
 	inc a
 .topRightReady
+	ld b, a
+	ld a, d
+	and a
+	ld a, b
+	call z, SelectIceCubeCrackedForeheadTile
 	ld [hl+], a
 	ld a, d
 	ld [hl+], a
@@ -7757,6 +7776,20 @@ UpdateIceCubeSprite:
 	ld [hl+], a
 	ld a, d
 	ld [hl], a
+	ret
+
+SelectIceCubeCrackedForeheadTile:
+	ld b, a
+	ld a, [IceCubeActive]
+	cp a, ICE_CUBE_STATE_ACTIVE
+	ld a, b
+	ret nz
+	ld b, a
+	ld a, [IceCubeHealth]
+	cp a, 5
+	ld a, b
+	ret nc
+	ld a, ICE_CUBE_CRACKED_FOREHEAD_TILE
 	ret
 
 HideIceCubeSprite:
@@ -10930,6 +10963,9 @@ ChefHeaveTiles:
 	INCBIN "build/chef_heave_carry_move0_lower.2bpp"
 	INCBIN "build/chef_heave_carry_move1_lower.2bpp"
 	INCBIN "build/chef_heave_carry_jump_lower.2bpp"
+
+IceCubeCrackedForeheadTile:
+	INCBIN "build/ice_cube_cracked_forehead.2bpp"
 
 IF DEF(COMBAT_PLAYTEST)
 IF DEF(BURGER_PLAYTEST)

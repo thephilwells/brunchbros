@@ -65,6 +65,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Generate ICE_CUBE",
+      "type": "shell",
+      "command": "node",
+      "args": ["tools/generate-ice-cube.mjs"],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate Treasure Egg",
       "type": "shell",
       "command": "node",
@@ -212,6 +219,12 @@
       "problemMatcher": []
     },
     {
+      "label": "Convert ICE_CUBE",
+      "type": "shell",
+      "command": "for f in ice_cube_motion ice_cube_cracked_forehead; do rgbgfx -c dmg=E4 -o build/$f.2bpp gfx/$f.png; done",
+      "problemMatcher": []
+    },
+    {
       "label": "Convert Treasure Egg",
       "type": "shell",
       "command": "rgbgfx",
@@ -355,7 +368,7 @@
     {
       "label": "Build ROM",
       "dependsOrder": "sequence",
-      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate Treasure Egg", "Generate Treasure Egg Playtest", "Generate Chef HEAVE", "Generate HEAVE Playtest", "Generate Mob Impact Playtest", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Convert Treasure Egg", "Convert Chef HEAVE", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
+      "dependsOn": ["Generate Structural Pilot", "Generate Dining Room", "Generate Chef Attack", "Generate HUD", "Generate WEINER", "Generate Enemy Destruction", "Generate BURGER", "Generate PANCAKE", "Generate FRIED_EGG", "Generate ICE_CUBE", "Generate Treasure Egg", "Generate Treasure Egg Playtest", "Generate Chef HEAVE", "Generate HEAVE Playtest", "Generate Mob Impact Playtest", "Generate Room Template Fixture", "Generate Room Template Playtest", "Generate Seeded Level", "Generate Room Variant Playtest", "Convert Dining Room", "Convert HUD", "Convert WEINER", "Convert Enemy Destruction", "Convert BURGER", "Convert PANCAKE", "Convert FRIED_EGG", "Convert ICE_CUBE", "Convert Treasure Egg", "Convert Chef HEAVE", "Verify Dining Room", "Verify Dining Room Furniture", "Verify Dining Room Background", "Verify Dining Room Wallpaper", "Verify Dining Room Composition", "Verify Room Templates", "Verify Room Template Playtest", "Verify Seeded Level", "Verify Room Variant Playtest", "Convert Chef Frames", "Assemble", "Link", "Fix", "Verify Runtime Mob Selector"],
       "group": {
         "kind": "build",
         "isDefault": true

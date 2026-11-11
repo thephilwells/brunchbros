@@ -79,6 +79,7 @@ rgbgfx -c dmg=E4 -o build/fried_egg_motion.2bpp gfx/fried_egg_motion.png
 rgbgfx -c dmg=E4 -o build/disco_fry_motion.2bpp gfx/disco_fry_motion.png
 rgbgfx -c dmg=E4 -o build/gravy_drop.2bpp gfx/gravy_drop.png
 rgbgfx -c dmg=E4 -o build/ice_cube_motion.2bpp gfx/ice_cube_motion.png
+rgbgfx -c dmg=E4 -o build/ice_cube_cracked_forehead.2bpp gfx/ice_cube_cracked_forehead.png
 rgbgfx -c dmg=E4 -o build/treasure_egg.2bpp gfx/treasure_egg.png
 rgbgfx -c dmg=E4 -o build/dropped_key.2bpp gfx/dropped_key.png
 for f in chef_heave_carry_upper chef_heave_reach_lower chef_heave_carry_idle_lower chef_heave_carry_move0_lower chef_heave_carry_move1_lower chef_heave_carry_jump_lower; do

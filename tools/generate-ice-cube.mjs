@@ -42,6 +42,11 @@ const poses = [
   ],
 ];
 
+const crackedPose = poses[0].map(row => [...row]);
+for (const [x, y] of [[9, 4], [9, 5], [8, 6]]) crackedPose[y][x] = '#';
+const crackedRows = crackedPose.map(row => row.join(''));
+const crackedForehead = crackedRows.slice(0, 8).map(row => row.slice(8, 16));
+
 let crcTable;
 function crc32(buffer) {
   if (!crcTable) {
@@ -101,6 +106,8 @@ for (const pose of poses) {
   if (pose.length !== 16 || pose.some(row => row.length !== 16)) throw new Error('ICE_CUBE poses must be 16x16');
 }
 
-const review = poses[0].map((_, y) => poses.map(pose => pose[y]).join('  '));
+const reviewPoses = [...poses, crackedRows];
+const review = poses[0].map((_, y) => reviewPoses.map(pose => pose[y]).join('  '));
 writeFileSync('gfx/ice_cube_motion.png', encodePng(poses.flat()));
+writeFileSync('gfx/ice_cube_cracked_forehead.png', encodePng(crackedForehead));
 writeFileSync('gfx/ice_cube_motion_review.png', encodePng(scaleRows(review, 4)));
