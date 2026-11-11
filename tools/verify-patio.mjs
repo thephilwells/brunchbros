@@ -1,0 +1,81 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { inflateSync } from 'node:zlib';
+
+function readPng(path) {
+  const png = readFileSync(path);
+  const chunks = [];
+  let width;
+  let height;
+  for (let offset = 8; offset < png.length;) {
+    const length = png.readUInt32BE(offset);
+    const type = png.toString('ascii', offset + 4, offset + 8);
+    if (type === 'IHDR') {
+      width = png.readUInt32BE(offset + 8);
+      height = png.readUInt32BE(offset + 12);
+    }
+    if (type === 'IDAT') chunks.push(png.subarray(offset + 8, offset + 8 + length));
+    offset += length + 12;
+  }
+  const rows = inflateSync(Buffer.concat(chunks));
+  const pixels = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * (1 + width * 4);
+    assert.equal(rows[rowOffset], 0);
+    rows.copy(pixels, y * width * 4, rowOffset + 1, rowOffset + 1 + width * 4);
+  }
+  return { width, height, pixels };
+}
+
+function tile(png, id) {
+  const result = Buffer.alloc(8 * 8 * 4);
+  const tileX = (id % 16) * 8;
+  const tileY = Math.floor(id / 16) * 8;
+  for (let y = 0; y < 8; y++) {
+    const source = ((tileY + y) * png.width + tileX) * 4;
+    png.pixels.copy(result, y * 32, source, source + 32);
+  }
+  return result;
+}
+
+const patio = readPng('gfx/patio.png');
+const dining = readPng('gfx/dining_room.png');
+const review = readPng('gfx/patio_fixture_review.png');
+const collision = readFileSync('build/patio_collision.bin');
+const map = readFileSync('build/patio_fixture.tilemap');
+const tsx = readFileSync('gfx/patio.tsx', 'utf8');
+const tiles = [...tsx.matchAll(/<tile id="(\d+)"><properties>(.*?)<\/properties><\/tile>/g)];
+const usedShades = new Set();
+
+assert.deepEqual([patio.width, patio.height], [128, 64]);
+assert.deepEqual([review.width, review.height], [320, 256]);
+assert.equal(collision.length, 128);
+assert.equal(map.length, 1280);
+assert.equal(tiles.length, 128);
+assert.match(readFileSync('gfx/patio_fixture.tmx', 'utf8'), /width="40" height="32"/);
+
+for (let offset = 0; offset < patio.pixels.length; offset += 4) {
+  assert.equal(patio.pixels[offset], patio.pixels[offset + 1]);
+  assert.equal(patio.pixels[offset], patio.pixels[offset + 2]);
+  assert.equal(patio.pixels[offset + 3], 255);
+  usedShades.add(patio.pixels[offset]);
+}
+assert.deepEqual([...usedShades].sort((a, b) => a - b), [0, 85, 170, 255]);
+
+for (let id = 1; id <= 16; id++) {
+  assert.equal(collision[id], 1);
+  assert.match(tiles[id][2], new RegExp(`neighbor_mask" type="int" value="${id - 1}"`));
+}
+for (let id = 17; id < 128; id++) assert.equal(collision[id], 0);
+
+for (const id of [...Array.from({ length: 6 }, (_, index) => 25 + index), ...Array.from({ length: 6 }, (_, index) => 81 + index), ...Array.from({ length: 12 }, (_, index) => 116 + index)]) {
+  assert.deepEqual(tile(patio, id), tile(dining, id));
+}
+
+for (const id of [17, 18, 19, 20, 31, 34, 35, 36, 37, 39, 40, 41, 42]) assert(map.includes(id));
+for (let id = 25; id <= 30; id++) assert(map.includes(id));
+for (const [, id, properties] of tiles) {
+  if (properties.includes('role" value="reserved"')) assert(!map.includes(Number(id)));
+}
+
+console.log('Patio atlas, shared tile contracts, collision data, and full-world fixture verified.');
