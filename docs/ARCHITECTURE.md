@@ -89,10 +89,12 @@ maps live in fixed ROM bank 1:
   walk frames diagonally for 32 frames. OAM background priority lets nonzero
   doorway pixels mask the Chef while the color-0 opening remains transparent.
   The finished state hides the Chef. The next frame advances the xorshift state
-  and `LevelProgressionIndex`, loads the corresponding `CurrentLevelKind`, and
+  and `LevelProgressionIndex`, loads the corresponding `CurrentLevelKind` and
+  `CurrentBiome`, and
   calls `LoadCurrentLevel`. The current progression table alternates
-  `DINING_ROOM_1` and `DINING_ROOM_2`; both use the Dining Room generator but
-  select different encounter rosters.
+  `PATIO_1`, `PATIO_2`, `DINING_ROOM_1`, and `DINING_ROOM_2`. Patio temporarily
+  uses the Dining Room visual and generation profiles while selecting its own
+  encounter rosters.
 - **`UpdateSprites`** — projects `PlayerX`/`PlayerY` (world coordinates)
   into the four shadow-OAM entries that make up the 16×16 player and, while attacking,
   the adjacent four-entry pan composite, converting to
@@ -163,7 +165,7 @@ WRAM0 is uninitialized at power-on and set explicitly during startup:
 | `PlayerInvulnerabilityTimer` | Remaining contact-damage immunity frames; also drives four-frame flicker blocks |
 | `PlayerKnockbackRemaining` / `PlayerKnockbackDirection` | Remaining one-pixel solid-aware push steps and signed horizontal direction |
 | `DeathState` / `DeathHoldTimer` / `DeathScreenY` / `DeathVelocity` | Death/Game Over phase, stare hold, and collision-free 16-bit screen-space death arc |
-| `LevelProgressionIndex` / `CurrentLevelKind` | Position in the ordered level-kind queue and the encounter/generator identity selected for the current level |
+| `LevelProgressionIndex` / `CurrentLevelKind` / `CurrentBiome` | Position in the ordered level-kind queue, current level identity, and owning biome |
 | `WeinerY` / `WeinerX` | Active-record WEINER top-left position in world coordinates |
 | `WeinerAnimTimer` / `WeinerTileBase` | Eight-frame motion or four-frame cloudburst cadence and the active four-tile pose |
 | `WeinerActive` / `WeinerHitThisSwing` | Inactive, live, or bursting state and per-swing repeat-hit latch |
@@ -203,11 +205,12 @@ all 128 slots there, with IDs 0–30, 32–75, 80–86, and 112–127 authored. 
 a maximum compatible matching of reciprocal horizontal and vertical domino
 seams, at most one generated ledge-catch room, and the shared descent exit.
 Exit descent reloads a freshly seeded level through the shared level-load path.
-`LevelProgression` is the ordered queue of level kinds, while
-`DiningRoomMobRosterPointers` maps the current kind to its encounter roster.
-Future biome generators can dispatch from `CurrentLevelKind`; only the shared
-Dining Room generator exists today. See `specs/background-assets.md` for the
-remaining VRAM allocation.
+`data/biomes.json` owns the ordered queue, biome profiles, and level-specific
+encounter eligibility. Generated `LevelProgression` and
+`LevelMobRosterPointers` tables map each global level kind to its biome and
+encounter roster. Patio currently dispatches to the shared Dining Room
+generator as an explicit prototype profile. See
+`notes/2026-11-11-biome-architecture-budget.md` for the bank migration plan.
 
 ## World vs. screen coordinates
 
@@ -222,7 +225,8 @@ pixels.
 
 ## Not yet in place
 
-- No ROM banking (everything fits in `ROM0`/bank 0 so far).
+- ROMX bank 1 is linked but never switched dynamically. MBC5 switching begins
+  with the first Patio content bank.
 - External runtime dumps for multiple golden seeds remain pending. Kitchen,
   patio, and deep-freezer art remain unstarted.
 - Audio, collectible items, and non-dining biomes remain unimplemented.

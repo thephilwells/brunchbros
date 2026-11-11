@@ -6,16 +6,21 @@ not determine the minimum or the total number of enemies in a level. A weight
 of 8 is the common baseline: WEINER should appear with roughly the regularity
 of Spelunky's SNAKE. These initial weights remain tuning values.
 
-Production alternates between `DINING_ROOM_1` and `DINING_ROOM_2`, generating a
-new seed at each exit and selecting only the mobs eligible for the next level
-kind. Safe placement is required, but a generated seed need not fit two of
-every eligible mob. New mobs should be added only to the level rosters named by
-`BIOMES`. Performance tuning remains deferred until these representative
-populations have been playtested.
+Production advances through `PATIO_1`, `PATIO_2`, `DINING_ROOM_1`, and
+`DINING_ROOM_2`, generating a new seed at each exit and selecting only the mobs
+eligible for the next level kind. Safe placement is required, but a generated
+seed need not fit two of every eligible mob. New mobs should be added only to
+the level rosters named by `BIOMES`. Performance tuning remains deferred until
+these representative populations have been playtested.
+
+# Patio population
+
+- `PATIO_1`: WEINER
+- `PATIO_2`: WEINER, BURGER
 
 # Dining Room population
 
-The current progression loops through these explicit level rosters:
+The Dining Room portion of the progression uses these explicit rosters:
 
 - `DINING_ROOM_1`: WEINER, PANCAKE, FRIED_EGG
 - `DINING_ROOM_2`: BURGER, PANCAKE, FRIED_EGG, ICE_CUBE

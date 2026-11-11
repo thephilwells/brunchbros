@@ -16,13 +16,16 @@ DEF DINING_DISCO_FRY_MINIMUM EQU 2
 DEF DINING_ICE_CUBE_FREQUENCY EQU 5
 DEF DINING_ICE_CUBE_MINIMUM EQU 2
 DEF DINING_MOB_TOTAL_FREQUENCY EQU 23
-DEF DINING_ROOM_LEVEL_KIND_COUNT EQU 2
-DiningRoomMobRosterPointers:
-	dw DiningRoomMobRoster_dining_room_1
-	dw DiningRoomMobRoster_dining_room_2
-DEF LEVEL_KIND_DINING_ROOM_1 EQU 0
-DiningRoomMobRoster_dining_room_1:
+LevelMobRosterPointers:
+	dw LevelMobRoster_patio_1
+	dw LevelMobRoster_patio_2
+	dw LevelMobRoster_dining_room_1
+	dw LevelMobRoster_dining_room_2
+LevelMobRoster_patio_1:
+	db 3, 2, $ff
+LevelMobRoster_patio_2:
+	db 1, 2, 3, 2, $ff
+LevelMobRoster_dining_room_1:
 	db 2, 2, 0, 2, 3, 2, $ff
-DEF LEVEL_KIND_DINING_ROOM_2 EQU 1
-DiningRoomMobRoster_dining_room_2:
+LevelMobRoster_dining_room_2:
 	db 5, 2, 2, 2, 0, 2, 1, 2, $ff

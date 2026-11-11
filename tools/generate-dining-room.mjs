@@ -8,6 +8,7 @@ const furnitureManifest = JSON.parse(readFileSync('data/dining-room-furniture.js
 const backgroundManifest = JSON.parse(readFileSync('data/dining-room-background.json', 'utf8'));
 const wallpaperManifest = JSON.parse(readFileSync('data/dining-room-wallpaper.json', 'utf8'));
 const mobManifest = JSON.parse(readFileSync('data/dining-room-mobs.json', 'utf8'));
+const biomeManifest = JSON.parse(readFileSync('data/biomes.json', 'utf8'));
 const treasureManifest = JSON.parse(readFileSync('data/dining-room-treasure.json', 'utf8'));
 const pilot = readFileSync('gfx/structural_pilot.png');
 const compressed = [];
@@ -469,13 +470,13 @@ writeFileSync('build/dining_room_wallpaper.inc', [
   '',
 ].join('\n'));
 const mobById = new Map(mobManifest.mobs.map(mob => [mob.id, mob]));
-const levelKindName = id => `LEVEL_KIND_${id.toUpperCase()}`;
-const rosterLabel = id => `DiningRoomMobRoster_${id}`;
-const mobRosterLines = mobManifest.levelKinds.flatMap((levelKind, index) => {
+const levelKindsById = new Map(biomeManifest.biomes.flatMap(biome => biome.levelKinds.map(levelKind => [levelKind.id, levelKind])));
+const levelKinds = biomeManifest.runSequence.map(id => levelKindsById.get(id));
+const rosterLabel = id => `LevelMobRoster_${id}`;
+const mobRosterLines = levelKinds.flatMap(levelKind => {
   const eligible = new Set(levelKind.mobs);
   const ordered = mobManifest.population.placementOrder.filter(id => eligible.has(id)).map(id => mobById.get(id));
   return [
-    `DEF ${levelKindName(levelKind.id)} EQU ${index}`,
     `${rosterLabel(levelKind.id)}:`,
     `\tdb ${ordered.flatMap(mob => [mob.runtimeType, mob.minimum]).join(', ')}, $ff`,
   ];
@@ -499,9 +500,8 @@ writeFileSync('build/dining_room_mobs.inc', [
   `DEF DINING_ICE_CUBE_FREQUENCY EQU ${mobManifest.mobs.find(mob => mob.id === 'ice_cube').frequency}`,
   `DEF DINING_ICE_CUBE_MINIMUM EQU ${mobManifest.mobs.find(mob => mob.id === 'ice_cube').minimum}`,
   `DEF DINING_MOB_TOTAL_FREQUENCY EQU ${mobManifest.mobs.reduce((total, mob) => total + mob.frequency, 0)}`,
-  `DEF DINING_ROOM_LEVEL_KIND_COUNT EQU ${mobManifest.levelKinds.length}`,
-  'DiningRoomMobRosterPointers:',
-  ...mobManifest.levelKinds.map(levelKind => `\tdw ${rosterLabel(levelKind.id)}`),
+  'LevelMobRosterPointers:',
+  ...levelKinds.map(levelKind => `\tdw ${rosterLabel(levelKind.id)}`),
   ...mobRosterLines,
   '',
 ].join('\n'));

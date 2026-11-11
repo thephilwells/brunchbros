@@ -44,6 +44,7 @@ Aseprite are installed in `/Applications`. Verification history:
 
 ```sh
 node tools/generate-structural-pilot.mjs
+node tools/generate-biome-profiles.mjs
 node tools/generate-dining-room.mjs
 node tools/generate-chef-attack.mjs
 node tools/generate-chef-heave.mjs

@@ -7,16 +7,6 @@
     "typeSalt": 61937,
     "placementOrder": ["ice_cube", "disco_fry", "fried_egg", "pancake", "burger", "weiner"]
   },
-  "levelKinds": [
-    {
-      "id": "dining_room_1",
-      "mobs": ["weiner", "pancake", "fried_egg"]
-    },
-    {
-      "id": "dining_room_2",
-      "mobs": ["burger", "pancake", "fried_egg", "ice_cube"]
-    }
-  ],
   "mobs": [
     {
       "id": "weiner",

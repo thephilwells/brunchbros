@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import {
   generateLevel,
@@ -8,8 +8,11 @@ import {
 } from './lib/level-generation.mjs';
 import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
+const biomeManifest = JSON.parse(readFileSync('data/biomes.json', 'utf8'));
+const levelKinds = new Set(biomeManifest.runSequence);
+
 function readArguments(args) {
-  const options = { biome: 'dining_room', levelKind: 'alternating', seed: 0, count: 256, out: 'build/level-gallery' };
+  const options = { biome: 'prototype', levelKind: 'progression', seed: 0, count: 256, out: 'build/level-gallery' };
   for (let index = 0; index < args.length; index += 2) {
     const name = args[index];
     const value = args[index + 1];
@@ -21,8 +24,8 @@ function readArguments(args) {
     else if (name === '--out') options.out = value;
     else throw new Error(`Unknown argument ${name}`);
   }
-  if (options.biome !== 'dining_room') throw new Error('Only dining_room is available');
-  if (!['alternating', 'dining_room_1', 'dining_room_2'].includes(options.levelKind)) throw new Error('Level kind must be alternating, dining_room_1, or dining_room_2');
+  if (!['prototype', 'dining_room'].includes(options.biome)) throw new Error('Only prototype and dining_room presentation profiles are available');
+  if (options.levelKind !== 'progression' && options.levelKind !== 'alternating' && !levelKinds.has(options.levelKind)) throw new Error(`Unknown level kind ${options.levelKind}`);
   if (!Number.isInteger(options.seed) || options.seed < 0 || options.seed > 0xffff) throw new Error('Seed must be an integer from 0 through 65535');
   if (!Number.isInteger(options.count) || options.count < 1 || options.count > 0x10000) throw new Error('Count must be an integer from 1 through 65536');
   return options;
@@ -65,7 +68,9 @@ const tilesetSource = relative(levelsDirectory, resolve('gfx/dining_room.tsx')).
 const levels = [];
 for (let offset = 0; offset < options.count; offset++) {
   const seed = (options.seed + offset) & 0xffff;
-  const levelKind = options.levelKind === 'alternating' ? `dining_room_${offset % 2 + 1}` : options.levelKind;
+  const levelKind = options.levelKind === 'progression'
+    ? biomeManifest.runSequence[offset % biomeManifest.runSequence.length]
+    : options.levelKind === 'alternating' ? `dining_room_${offset % 2 + 1}` : options.levelKind;
   const level = composeDiningRoom(generateLevel(seed), levelKind);
   levels.push(level);
   const name = String(seed).padStart(5, '0');

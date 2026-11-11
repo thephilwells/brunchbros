@@ -17,8 +17,9 @@ const BACKGROUND_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-r
 const BACKGROUND_BY_ID = new Map(BACKGROUND_MANIFEST.components.map(component => [component.id, component]));
 const WALLPAPER_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-wallpaper.json', import.meta.url), 'utf8'));
 const MOB_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-mobs.json', import.meta.url), 'utf8'));
+const BIOME_MANIFEST = JSON.parse(readFileSync(new URL('../../data/biomes.json', import.meta.url), 'utf8'));
 const MOB_BY_ID = new Map(MOB_MANIFEST.mobs.map(mob => [mob.id, mob]));
-const MOB_ROSTERS = new Map(MOB_MANIFEST.levelKinds.map(levelKind => [levelKind.id, levelKind.mobs]));
+const MOB_ROSTERS = new Map(BIOME_MANIFEST.biomes.flatMap(biome => biome.levelKinds.map(levelKind => [levelKind.id, levelKind.mobs])));
 const TREASURE_MANIFEST = JSON.parse(readFileSync(new URL('../../data/dining-room-treasure.json', import.meta.url), 'utf8'));
 
 function componentLayouts(component) {
@@ -462,7 +463,7 @@ function mobSelections(level, levelKind) {
 }
 
 export function addDiningRoomMobs(level, levelKind = 'dining_room_1') {
-  if (!MOB_ROSTERS.has(levelKind)) throw new Error(`Unknown Dining Room level kind ${levelKind}`);
+  if (!MOB_ROSTERS.has(levelKind)) throw new Error(`Unknown level kind ${levelKind}`);
   const selection = mobSelections(level, levelKind);
   return {
     ...level,
@@ -590,7 +591,7 @@ export function composeDiningRoom(level, levelKind = 'dining_room_1') {
 export function validateDiningRoomComposition(level) {
   const errors = [...validateDiningRoomPlacementReservations(level).errors];
   const eligibleMobs = new Set(MOB_ROSTERS.get(level.levelKind) ?? []);
-  if (!MOB_ROSTERS.has(level.levelKind)) errors.push(`unknown Dining Room level kind ${level.levelKind}`);
+  if (!MOB_ROSTERS.has(level.levelKind)) errors.push(`unknown level kind ${level.levelKind}`);
   if (!Array.isArray(level.structuralTiles) || level.structuralTiles.length !== LEVEL_WIDTH * LEVEL_HEIGHT) errors.push('structural tile snapshot must contain 1,280 cells');
   if (!Array.isArray(level.roomBackgroundCandidateCounts) || level.roomBackgroundCandidateCounts.length !== 16) errors.push('room background candidate counts must contain 16 entries');
   if (!Array.isArray(level.roomFurnitureCandidateCounts) || level.roomFurnitureCandidateCounts.length !== 16) errors.push('room furniture candidate counts must contain 16 entries');

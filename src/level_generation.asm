@@ -144,7 +144,7 @@ ENDC
 	call PlaceDiningRoomBackground
 	call PlaceDiningRoomFurniture
 	call PlaceDiningRoomWallpaper
-	call PlaceDiningRoomMobs
+	call PlaceLevelMobs
 	call PlaceDiningRoomTreasure
 IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 	call VerifyFurnitureParity
@@ -3100,7 +3100,7 @@ WallpaperSelectionRandomModulo:
 	jp BackgroundSelectionModulo
 
 SECTION "Dining Room Mob Generation", ROMX
-PlaceDiningRoomMobs:
+PlaceLevelMobs:
 	ld hl, MobOccupiedTiles
 	ld b, 160
 	xor a
@@ -3112,7 +3112,7 @@ PlaceDiningRoomMobs:
 	add a, a
 	ld e, a
 	ld d, 0
-	ld hl, DiningRoomMobRosterPointers
+	ld hl, LevelMobRosterPointers
 	add hl, de
 	ld a, [hl+]
 	ld b, [hl]

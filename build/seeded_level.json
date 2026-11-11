@@ -6183,67 +6183,27 @@
       "tile": 80
     }
   ],
-  "levelKind": "dining_room_1",
+  "levelKind": "patio_1",
   "roomMobCandidateCounts": [
-    10,
-    8,
-    8,
+    5,
+    4,
+    4,
     0,
     0,
     0,
     0,
-    10,
+    5,
     0,
-    14,
-    8,
-    0,
-    0,
+    7,
+    4,
     0,
     0,
-    12
+    0,
+    0,
+    5
   ],
-  "mobPopulationTarget": 6,
+  "mobPopulationTarget": 2,
   "mobPlacements": [
-    {
-      "room": 9,
-      "mob": "fried_egg",
-      "frequency": 2,
-      "direction": "right",
-      "x": 13,
-      "y": 21,
-      "width": 2,
-      "height": 2
-    },
-    {
-      "room": 9,
-      "mob": "fried_egg",
-      "frequency": 2,
-      "direction": "right",
-      "x": 15,
-      "y": 21,
-      "width": 2,
-      "height": 2
-    },
-    {
-      "room": 9,
-      "mob": "pancake",
-      "frequency": 3,
-      "direction": "right",
-      "x": 14,
-      "y": 18,
-      "width": 2,
-      "height": 1
-    },
-    {
-      "room": 7,
-      "mob": "pancake",
-      "frequency": 3,
-      "direction": "right",
-      "x": 32,
-      "y": 10,
-      "width": 2,
-      "height": 1
-    },
     {
       "room": 10,
       "mob": "weiner",
@@ -6275,7 +6235,7 @@
     1,
     2,
     1,
-    0,
+    3,
     0,
     0,
     1,

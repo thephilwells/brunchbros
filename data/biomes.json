@@ -1,0 +1,55 @@
+{
+  "generationProfiles": {
+    "shared_4x4": {
+      "levelWidth": 40,
+      "levelHeight": 32,
+      "roomColumns": 4,
+      "roomRows": 4,
+      "roomWidth": 10,
+      "roomHeight": 8,
+      "maximumLedgeCatchRooms": 1,
+      "wideSeams": "maximum_matching"
+    }
+  },
+  "biomes": [
+    {
+      "id": "patio",
+      "profiles": {
+        "tiles": "dining_room_prototype",
+        "dressing": "dining_room_prototype",
+        "roomTemplates": "dining_room_prototype",
+        "generation": "shared_4x4"
+      },
+      "levelKinds": [
+        {
+          "id": "patio_1",
+          "mobs": ["weiner"]
+        },
+        {
+          "id": "patio_2",
+          "mobs": ["weiner", "burger"]
+        }
+      ]
+    },
+    {
+      "id": "dining_room",
+      "profiles": {
+        "tiles": "dining_room",
+        "dressing": "dining_room",
+        "roomTemplates": "dining_room",
+        "generation": "shared_4x4"
+      },
+      "levelKinds": [
+        {
+          "id": "dining_room_1",
+          "mobs": ["weiner", "pancake", "fried_egg"]
+        },
+        {
+          "id": "dining_room_2",
+          "mobs": ["burger", "pancake", "fried_egg", "ice_cube"]
+        }
+      ]
+    }
+  ],
+  "runSequence": ["patio_1", "patio_2", "dining_room_1", "dining_room_2"]
+}

@@ -3,7 +3,7 @@ import { generateLevel, levelToTmx } from './lib/level-generation.mjs';
 import { composeDiningRoom } from './lib/dining-room-composition.mjs';
 
 let seed = 0;
-let levelKind = 'dining_room_1';
+let levelKind = 'patio_1';
 for (let index = 2; index < process.argv.length; index += 2) {
   const name = process.argv[index];
   const value = process.argv[index + 1];
@@ -13,9 +13,9 @@ for (let index = 2; index < process.argv.length; index += 2) {
   else throw new Error(`Unknown argument ${name}`);
 }
 if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff) throw new Error('Seed must be an integer from 0 through 65535');
-const mobManifest = JSON.parse(readFileSync('data/dining-room-mobs.json', 'utf8'));
-const levelKindIndex = mobManifest.levelKinds.findIndex(candidate => candidate.id === levelKind);
-if (levelKindIndex < 0) throw new Error(`Unknown Dining Room level kind ${levelKind}`);
+const biomeManifest = JSON.parse(readFileSync('data/biomes.json', 'utf8'));
+const levelKindIndex = biomeManifest.runSequence.indexOf(levelKind);
+if (levelKindIndex < 0) throw new Error(`Unknown level kind ${levelKind}`);
 
 const generatedLevel = generateLevel(seed);
 const level = composeDiningRoom(generatedLevel, levelKind);

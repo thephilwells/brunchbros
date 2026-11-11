@@ -4,6 +4,22 @@ Short, dated records of engineering decisions actually made. Newest first.
 
 ---
 
+## 2026-11-11 — Level progression and biome profiles are data-driven
+
+**Decision:** `data/biomes.json` owns the ordered run queue, biome ownership,
+visual/generation profile names, and level-specific mob eligibility. The first
+implemented queue is Patio 1 → Patio 2 → Dining Room 1 → Dining Room 2. Patio
+uses Dining Room presentation only as a temporary progression prototype.
+
+**Why:** Level kinds need stable global identities before new biome assets are
+banked. Keeping progression and encounter eligibility in one manifest prevents
+runtime, host generation, and parity tooling from assigning different meanings
+to the same level-kind index.
+
+**Status:** Implemented. The first Patio content pass will introduce MBC5 and
+the bank ownership recorded in
+`notes/2026-11-11-biome-architecture-budget.md`.
+
 ## 2026-10-27 — Every level exit requires one egg-dropped key
 
 **Decision:** Every generated level contains exactly one key-bearing treasure

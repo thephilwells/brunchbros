@@ -222,7 +222,11 @@ combined change. Keep the gallery → review → runtime → parity → playtest
 5. **Expand the biome vocabulary.** Reuse the proven generation/composition
    contracts for Patio, Kitchen, and Freezer, reviewing assets in small groups.
    Freezer sliding, boss-arena exceptions, and the final boss remain explicit
-   later work.
+   later work. The runtime queue now begins Patio 1 → Patio 2 → Dining Room 1 →
+   Dining Room 2, with generated biome and roster profiles sourced from
+   `data/biomes.json`. Patio deliberately reuses Dining Room presentation until
+   its visual pilot is approved. Bank 1 is frozen at 241 free bytes; the first
+   Patio content pass will introduce the documented MBC5 bank layout.
 
 Do not replace free-floating traversal platforms wholesale while dressing rooms.
 Floor-level furniture cannot supply the same ascent routes; replacing those

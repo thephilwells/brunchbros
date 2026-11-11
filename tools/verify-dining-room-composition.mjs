@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   addDiningRoomPlacementReservations,
   composeDiningRoom,
@@ -45,10 +46,11 @@ let wallpaperExample;
 let mobExample;
 let treasureExample;
 const seedCount = 0x10000;
+const biomeManifest = JSON.parse(readFileSync('data/biomes.json', 'utf8'));
 
 for (let seed = 0; seed < seedCount; seed++) {
   const generated = generateLevel(seed);
-  const levelKind = `dining_room_${seed % 2 + 1}`;
+  const levelKind = biomeManifest.runSequence[seed % biomeManifest.runSequence.length];
   const first = composeDiningRoom(generated, levelKind);
   const second = composeDiningRoom(generateLevel(seed), levelKind);
   assert.equal(first.validation.valid, true, `Seed ${seed}: ${first.validation.errors.join(', ')}`);
@@ -270,4 +272,4 @@ const averageBackgroundPlacements = (totalBackgroundPlacements / seedCount).toFi
 const averageWallpaperPlacements = (totalWallpaperPlacements / seedCount).toFixed(2);
 const averageMobPlacements = (totalMobPlacements / seedCount).toFixed(2);
 const averageTreasurePlacements = (totalTreasurePlacements / seedCount).toFixed(2);
-console.log(`Dining-room composition verified across all 65,536 seeds with alternating level-specific rosters; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} mob spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels); ${minimumTreasurePlacements}–${maximumTreasurePlacements} treasure eggs (${averageTreasurePlacements} average, ${totalHeartEggs} heart-bearing, ${totalKeyEggs} key-bearing, ${totalEmptyEggs} empty).`);
+console.log(`Dining-room presentation verified across all 65,536 seeds with progression-specific rosters; ${minimumReservedCells}–${maximumReservedCells} cells reserved; ${minimumBackgroundPlacements}–${maximumBackgroundPlacements} background fixtures (${averageBackgroundPlacements} average, ${levelsWithBackground} decorated levels); ${minimumPlacements}–${maximumPlacements} furniture placements (${averagePlacements} average, ${levelsWithFurniture} furnished levels); ${minimumWallpaperPlacements}–${maximumWallpaperPlacements} wallpaper motifs (${averageWallpaperPlacements} average, ${levelsWithWallpaper} patterned levels); ${minimumMobPlacements}–${maximumMobPlacements} mob spawns (${averageMobPlacements} average, ${levelsWithMobs} populated levels); ${minimumTreasurePlacements}–${maximumTreasurePlacements} treasure eggs (${averageTreasurePlacements} average, ${totalHeartEggs} heart-bearing, ${totalKeyEggs} key-bearing, ${totalEmptyEggs} empty).`);

@@ -1,3 +1,5 @@
+INCLUDE "build/biome_profiles.inc"
+
 DEF PLAYER_HITBOX_LEFT EQU 6
 DEF PLAYER_HITBOX_RIGHT EQU 5
 DEF PLAYER_HITBOX_TOP EQU 16
@@ -243,6 +245,7 @@ DeathVelocity: db
 DeathHoldTimer: db
 LevelProgressionIndex: db
 CurrentLevelKind: db
+CurrentBiome: db
 WeinerY: db
 WeinerX: dw
 WeinerAnimTimer: db
@@ -1047,11 +1050,20 @@ LoadLevelKindFromProgression:
 	add hl, de
 	ld a, [hl]
 	ld [CurrentLevelKind], a
+	ld e, a
+	ld d, 0
+	ld hl, LevelKindBiomes
+	add hl, de
+	ld a, [hl]
+	ld [CurrentBiome], a
 	ret
 
 LevelProgression:
-	db LEVEL_KIND_DINING_ROOM_1, LEVEL_KIND_DINING_ROOM_2
+	EMIT_LEVEL_PROGRESSION
 LevelProgressionEnd:
+
+LevelKindBiomes:
+	EMIT_LEVEL_KIND_BIOMES
 
 IF DEF(ROOM_VARIANT_PLAYTEST)
 LoadRoomVariantPlaytest:

@@ -63,6 +63,7 @@ than front-loading a full hardware manual before it's relevant.
   VRAM background map cannot extend the first one horizontally; `LCDC` selects
   one whole map at a time. Bidirectional horizontal streaming is implemented
   for the static dining-room fixture.
-- **ROM banking, precise CPU/VBlank cycle timing, and audio channels: not
-  yet touched.** Everything so far fits in `ROM0`; no cycle-critical code
-  or sound has been written.
+- **ROM banking is planned but not switched dynamically yet.** ROM0 has 1,516
+  free bytes and the fixed ROMX bank 1 has 241. The first Patio content pass
+  will move to MBC5 and assign shared generation to bank 2 and Patio content to
+  bank 3. Precise CPU/VBlank cycle timing and audio channels remain pending.
