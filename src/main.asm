@@ -9,6 +9,10 @@ DEF LEDGE_LEFT EQU 2
 DEF LEVEL_WIDTH_TILES EQU 40
 DEF LEVEL_HEIGHT_TILES EQU 32
 DEF STREAMED_COLUMN_COUNT EQU 8
+DEF ROM_BANK_RUNTIME EQU 1
+DEF ROM_BANK_GENERATION EQU 2
+DEF MBC5_ROM_BANK_LOW EQU $2000
+DEF MBC5_ROM_BANK_HIGH EQU $3000
 DEF EXIT_ANIMATION_FRAMES EQU 32
 DEF EXIT_ANIMATION_FINISHED EQU $ff
 DEF EXIT_OPEN_TILE_BASE EQU 81
@@ -246,6 +250,7 @@ DeathHoldTimer: db
 LevelProgressionIndex: db
 CurrentLevelKind: db
 CurrentBiome: db
+CurrentROMBank: db
 WeinerY: db
 WeinerX: dw
 WeinerAnimTimer: db
@@ -387,6 +392,11 @@ SECTION "Main", ROM0[$150]
 ; --- One-time setup: runs once at boot, falls through into MainLoop ---
 Start:
 	ld sp, $fffe
+	xor a
+	ld [MBC5_ROM_BANK_HIGH], a
+	ld a, ROM_BANK_RUNTIME
+	ld [MBC5_ROM_BANK_LOW], a
+	ld [CurrentROMBank], a
 
 ; Must be in VBlank before disabling the LCD
 	ldh a, [$ff40]
@@ -702,7 +712,7 @@ ELSE
 	IF DEF(FRIED_EGG_PLAYTEST)
 	call LoadFriedEggPlaytest
 	ELSE
-	call GenerateLevel
+	call GenerateLevelBanked
 	ENDC
 	ENDC
 	ENDC
@@ -10861,7 +10871,153 @@ TryLedgeCatch:
 	and a
 	ret
 
+NextGenerationRandom:
+	ld b, 7
+	call XorGenerationLeft
+	ld b, 9
+	call XorGenerationRight
+	ld b, 8
+	jp XorGenerationLeft
+
+XorGenerationLeft:
+	ld a, [GenerationRandomState]
+	ld [GenerationShift], a
+	ld a, [GenerationRandomState + 1]
+	ld [GenerationShift + 1], a
+	ld hl, GenerationShift
+.shift
+	sla [hl]
+	inc hl
+	rl [hl]
+	dec hl
+	dec b
+	jr nz, .shift
+	ld a, [GenerationShift]
+	ld hl, GenerationRandomState
+	xor a, [hl]
+	ld [hl+], a
+	ld a, [GenerationShift + 1]
+	xor a, [hl]
+	ld [hl], a
+	ret
+
+XorGenerationRight:
+	ld a, [GenerationRandomState]
+	ld [GenerationShift], a
+	ld a, [GenerationRandomState + 1]
+	ld [GenerationShift + 1], a
+	ld hl, GenerationShift + 1
+.shift
+	srl [hl]
+	dec hl
+	rr [hl]
+	inc hl
+	dec b
+	jr nz, .shift
+	ld a, [GenerationShift]
+	ld hl, GenerationRandomState
+	xor a, [hl]
+	ld [hl+], a
+	ld a, [GenerationShift + 1]
+	xor a, [hl]
+	ld [hl], a
+	ret
+
+GetMapTilePointer:
+	ld hl, LevelMap
+	ld de, 40
+	ld a, c
+	and a
+	jr z, .rowsReady
+.rowLoop
+	add hl, de
+	dec c
+	jr nz, .rowLoop
+.rowsReady
+	ld e, b
+	ld d, 0
+	add hl, de
+	ret
+
+SwitchROMBank:
+	ld [MBC5_ROM_BANK_LOW], a
+	ld [CurrentROMBank], a
+	ret
+
+GenerateLevelBanked:
+	ld a, [CurrentROMBank]
+	push af
+	ld a, ROM_BANK_GENERATION
+	call SwitchROMBank
+	call GenerateLevel
+	pop af
+	jp SwitchROMBank
+
+CreateWeinerAtTileFromGeneration:
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	call CreateWeinerAtTile
+	ld a, ROM_BANK_GENERATION
+	jp SwitchROMBank
+
+GetWeinerRecordPointerFromGeneration:
+	push af
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	pop af
+	call GetWeinerRecordPointer
+	ld a, ROM_BANK_GENERATION
+	call SwitchROMBank
+	ret
+
+CreateBurgerAtTileFromGeneration:
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	call CreateBurgerAtTile
+	ld a, ROM_BANK_GENERATION
+	jp SwitchROMBank
+
+CreatePancakeAtTileFromGeneration:
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	call CreatePancakeAtTile
+	ld a, ROM_BANK_GENERATION
+	jp SwitchROMBank
+
+CreateFriedEggAtTileFromGeneration:
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	call CreateFriedEggAtTile
+	ld a, ROM_BANK_GENERATION
+	jp SwitchROMBank
+
+CreateIceCubeAtTileFromGeneration:
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	call CreateIceCubeAtTile
+	ld a, ROM_BANK_GENERATION
+	jp SwitchROMBank
+
+CreateTreasureEggAtTileFromGeneration:
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	call CreateTreasureEggAtTile
+	ld a, ROM_BANK_GENERATION
+	jp SwitchROMBank
+
+GetTreasureEggRecordPointerFromGeneration:
+	push af
+	ld a, ROM_BANK_RUNTIME
+	call SwitchROMBank
+	pop af
+	call GetTreasureEggRecordPointer
+	ld a, ROM_BANK_GENERATION
+	call SwitchROMBank
+	ret
+
 INCLUDE "src/level_generation.asm"
+
+SECTION "Main Data", ROM0
 
 TileData:
 	INCBIN "build/dining_room.2bpp"

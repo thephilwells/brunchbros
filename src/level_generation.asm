@@ -105,7 +105,7 @@ TreasureBestUsed: db
 TreasureKeyIndex: db
 TreasureRelaxPass: db
 
-SECTION "Level Generation", ROM0
+SECTION "Level Generation", ROMX, BANK[2]
 GenerateLevel:
 IF DEF(FURNITURE_PARITY_TEST)
 	ld a, GENERATED_LEVEL_KIND
@@ -167,58 +167,6 @@ GenerateRouteColumns:
 	ld [hl+], a
 	dec b
 	jr nz, .loop
-	ret
-
-NextGenerationRandom:
-	ld b, 7
-	call XorGenerationLeft
-	ld b, 9
-	call XorGenerationRight
-	ld b, 8
-	jp XorGenerationLeft
-
-XorGenerationLeft:
-	ld a, [GenerationRandomState]
-	ld [GenerationShift], a
-	ld a, [GenerationRandomState + 1]
-	ld [GenerationShift + 1], a
-	ld hl, GenerationShift
-.shift
-	sla [hl]
-	inc hl
-	rl [hl]
-	dec hl
-	dec b
-	jr nz, .shift
-	ld a, [GenerationShift]
-	ld hl, GenerationRandomState
-	xor a, [hl]
-	ld [hl+], a
-	ld a, [GenerationShift + 1]
-	xor a, [hl]
-	ld [hl], a
-	ret
-
-XorGenerationRight:
-	ld a, [GenerationRandomState]
-	ld [GenerationShift], a
-	ld a, [GenerationRandomState + 1]
-	ld [GenerationShift + 1], a
-	ld hl, GenerationShift + 1
-.shift
-	srl [hl]
-	dec hl
-	rr [hl]
-	inc hl
-	dec b
-	jr nz, .shift
-	ld a, [GenerationShift]
-	ld hl, GenerationRandomState
-	xor a, [hl]
-	ld [hl+], a
-	ld a, [GenerationShift + 1]
-	xor a, [hl]
-	ld [hl], a
 	ret
 
 BuildCriticalRoute:
@@ -3099,7 +3047,7 @@ WallpaperSelectionRandomModulo:
 	ld de, DINING_WALLPAPER_SELECTION_SALT
 	jp BackgroundSelectionModulo
 
-SECTION "Dining Room Mob Generation", ROMX
+SECTION "Dining Room Mob Generation", ROMX, BANK[2]
 PlaceLevelMobs:
 	ld hl, MobOccupiedTiles
 	ld b, 160
@@ -3902,10 +3850,10 @@ CreateSelectedWeiner:
 	ld a, [MobLocalY]
 	add a, c
 	ld c, a
-	call CreateWeinerAtTile
+	call CreateWeinerAtTileFromGeneration
 	ld a, [WeinerCount]
 	dec a
-	call GetWeinerRecordPointer
+	call GetWeinerRecordPointerFromGeneration
 	ld de, 7
 	add hl, de
 	ld a, [MobCandidateDirection]
@@ -3935,7 +3883,7 @@ CreateSelectedBurger:
 	ld a, [MobLocalY]
 	add a, c
 	ld c, a
-	jp CreateBurgerAtTile
+	jp CreateBurgerAtTileFromGeneration
 
 CreateSelectedPancake:
 	ld a, [GenerationRoom]
@@ -3960,7 +3908,7 @@ CreateSelectedPancake:
 	ld a, [MobLocalY]
 	add a, c
 	ld c, a
-	jp CreatePancakeAtTile
+	jp CreatePancakeAtTileFromGeneration
 
 CreateSelectedFriedEgg:
 	ld a, [GenerationRoom]
@@ -3985,7 +3933,7 @@ CreateSelectedFriedEgg:
 	ld a, [MobLocalY]
 	add a, c
 	ld c, a
-	jp CreateFriedEggAtTile
+	jp CreateFriedEggAtTileFromGeneration
 
 CreateSelectedDiscoFry:
 	ld a, [GenerationRoom]
@@ -4035,7 +3983,7 @@ CreateSelectedIceCube:
 	ld a, [MobLocalY]
 	add a, c
 	ld c, a
-	jp CreateIceCubeAtTile
+	jp CreateIceCubeAtTileFromGeneration
 
 LoadMobSelectionSalt:
 	push af
@@ -4124,7 +4072,7 @@ MobResultModulo:
 	jr nz, .loop
 	ret
 
-SECTION "Dining Room Treasure Generation", ROMX
+SECTION "Dining Room Treasure Generation", ROMX, BANK[2]
 PlaceDiningRoomTreasure:
 	ld hl, TreasureRoomUsed
 	ld b, 16
@@ -4223,7 +4171,7 @@ PlaceDiningRoomTreasure:
 	ld c, a
 	call MobResultModulo
 	ld [TreasureKeyIndex], a
-	call GetTreasureEggRecordPointer
+	call GetTreasureEggRecordPointerFromGeneration
 	ld de, 4
 	add hl, de
 	ld [hl], TREASURE_EGG_CONTENT_KEY
@@ -4236,7 +4184,7 @@ PlaceDiningRoomTreasure:
 	cp a, b
 	jr z, .nextHeart
 	ld a, b
-	call GetTreasureEggRecordPointer
+	call GetTreasureEggRecordPointerFromGeneration
 	ld de, 4
 	add hl, de
 	ld a, [hl]
@@ -4264,7 +4212,7 @@ PlaceDiningRoomTreasure:
 	inc b
 .promotionReady
 	ld a, b
-	call GetTreasureEggRecordPointer
+	call GetTreasureEggRecordPointerFromGeneration
 	ld de, 4
 	add hl, de
 	ld [hl], TREASURE_EGG_CONTENT_HEART
@@ -4616,7 +4564,7 @@ CreateSelectedTreasureEgg:
 	add a, c
 	add a, DINING_TREASURE_HEIGHT
 	ld c, a
-	jp CreateTreasureEggAtTile
+	jp CreateTreasureEggAtTileFromGeneration
 
 IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 VerifyMobParity:
@@ -4867,7 +4815,7 @@ VerifyTreasureParity:
 	jr .failed
 ENDC
 
-SECTION "Level Generation Continued", ROM0
+SECTION "Level Generation Continued", ROMX, BANK[2]
 
 IF DEF(FURNITURE_PARITY_TEST) && !FOCUSED_PLAYTEST
 VerifyFurnitureParity:
@@ -4890,22 +4838,6 @@ VerifyFurnitureParity:
 .failed
 	jr .failed
 ENDC
-
-GetMapTilePointer:
-	ld hl, LevelMap
-	ld de, 40
-	ld a, c
-	and a
-	jr z, .rowsReady
-.rowLoop
-	add hl, de
-	dec c
-	jr nz, .rowLoop
-.rowsReady
-	ld e, b
-	ld d, 0
-	add hl, de
-	ret
 
 BitMasks:
 	db 1, 2, 4, 8, 16, 32, 64, 128

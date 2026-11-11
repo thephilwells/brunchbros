@@ -100,7 +100,7 @@ for f in chef_idle0 chef_idle1 chef_walk0 chef_walk1 chef_walk2 chef_walk3 chef_
 done
 rgbasm -o build/main.o src/main.asm
 rgblink -o build/brunchbros.gb -m build/main.map -n build/main.sym build/main.o
-rgbfix -v -p 0xFF build/brunchbros.gb
+rgbfix -m MBC5 -v -p 0xFF build/brunchbros.gb
 node tools/verify-runtime-mob-selector.mjs
 ```
 

@@ -8,9 +8,9 @@ before.
 ## Source layout
 
 The runtime is split between `src/main.asm` and the included
-`src/level_generation.asm`. Runtime code and shared assets remain in ROM0;
-WEINER and BURGER art, the generic enemy cloudburst, and the combat fixture
-maps live in fixed ROM bank 1:
+`src/level_generation.asm`. Main-loop code and shared background data remain
+in ROM0, most actor runtime and OBJ assets live in bank 1, and shared level
+generation lives in bank 2:
 
 - **WRAM0 state** — see Memory map below.
 - **Entry point (`$100`)** — the fixed `jp Start` + header padding every GB
@@ -25,11 +25,13 @@ maps live in fixed ROM bank 1:
   frames. Start timing and the divider register
   seed xorshift16; the selected state is preserved in `SelectedSeed`. Startup
   then calls `LoadCurrentLevel` before entering `MainLoop`.
-- **`LoadCurrentLevel`** — waits for a safe LCD-disable point, generates the
+- **`LoadCurrentLevel`** — waits for a safe LCD-disable point, enters bank 2
+  through `GenerateLevelBanked`, generates the
   dining room, loads its first 32 columns into the background tile map, resets
   player, input-edge, camera, and streaming state, places the Chef at the
   generated spawn, and restores the LCD. Boot and exit descent share this path.
-- **`GenerateLevel`** — reproduces the host xorshift16 draw order, builds the
+- **`GenerateLevel`** — runs in bank 2, reproduces the host xorshift16 draw
+  order, builds the
   directed route and optional-room tree, computes a maximum matching of
   compatible horizontal and vertical domino seams, selects an eligible
   ledge-catch room, copies semantic room templates into WRAM, applies variants
@@ -210,7 +212,7 @@ encounter eligibility. Generated `LevelProgression` and
 `LevelMobRosterPointers` tables map each global level kind to its biome and
 encounter roster. Patio currently dispatches to the shared Dining Room
 generator as an explicit prototype profile. See
-`notes/2026-11-11-biome-architecture-budget.md` for the bank migration plan.
+`notes/2026-11-11-biome-architecture-budget.md` for the current bank budget.
 
 ## World vs. screen coordinates
 
@@ -225,8 +227,6 @@ pixels.
 
 ## Not yet in place
 
-- ROMX bank 1 is linked but never switched dynamically. MBC5 switching begins
-  with the first Patio content bank.
 - External runtime dumps for multiple golden seeds remain pending. Kitchen,
   patio, and deep-freezer art remain unstarted.
 - Audio, collectible items, and non-dining biomes remain unimplemented.

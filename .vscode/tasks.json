@@ -358,6 +358,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -427,6 +429,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -486,6 +490,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -544,6 +550,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -603,6 +611,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -663,6 +673,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -722,6 +734,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -781,6 +795,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",
@@ -840,6 +856,8 @@
       "type": "shell",
       "command": "rgbfix",
       "args": [
+        "-m",
+        "MBC5",
         "-v",
         "-p",
         "0xFF",

@@ -21,19 +21,29 @@ Patio 2 uses WEINER and BURGER.
 Bank 1 is frozen except for fixes to code already resident there. New biome
 content must not be appended to it.
 
-## ROM banking plan
+## MBC5 migration
 
-The first Patio content pass will change the cartridge from ROM-only to MBC5
-without external RAM. ROM0 will own bank switching, interrupts, the main loop,
-transitions, and cross-bank entry trampolines. A call must enter banked code
-through ROM0 and restore the previously selected bank before returning.
+The cartridge now uses MBC5 without external RAM. ROM0 owns bank switching,
+interrupts, the main loop, transitions, and cross-bank entry trampolines.
+`GenerateLevelBanked` restores the previously selected bank before returning.
+Generation-specific actor trampolines temporarily select bank 1 and restore
+bank 2.
 
-- Bank 1 remains the accepted actor/runtime baseline during migration.
-- Bank 2 receives shared level-generation code and generated room/template
-  data moved out of bank 1.
-- Bank 3 receives Patio tiles, dressing data, and Patio-specific templates.
+- Bank 1 contains the accepted actor/runtime baseline.
+- Bank 2 contains shared level-generation code and generated room/template
+  data.
+- Bank 3 is reserved for Patio tiles, dressing data, and Patio-specific
+  templates.
 - Later biome banks are assigned only when their reviewed assets exist.
 
-Adding bank 2 makes the physical ROM 64 KiB because Game Boy ROM sizes are
-powers of two; bank 3 is therefore available in the same first expansion. No
-bank switch or cartridge-header change occurs in this architecture-only pass.
+The physical ROM is 64 KiB because Game Boy ROM sizes are powers of two; bank
+3 is available in the same expansion.
+
+## Budget after migration
+
+- ROM0: 10,030 bytes used, 6,354 free
+- ROMX bank 1: 13,673 bytes used, 2,711 free
+- ROMX bank 2: 7,453 bytes used, 8,931 free
+- ROMX bank 3: 0 bytes used, 16,384 free
+- WRAM0: 2,734 bytes used, 1,362 free
+- HRAM: 10 bytes used, 117 free
