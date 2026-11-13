@@ -22,6 +22,18 @@ function fill(id, shade) {
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) paint(id, x, y, shade);
 }
 
+function mirrorTile(source, destination) {
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    const sourceX = (source % 16) * 8 + 7 - x;
+    const sourceY = Math.floor(source / 16) * 8 + y;
+    const destinationX = (destination % 16) * 8 + x;
+    const destinationY = Math.floor(destination / 16) * 8 + y;
+    const sourceOffset = (sourceY * atlasWidth + sourceX) * 4;
+    const destinationOffset = (destinationY * atlasWidth + destinationX) * 4;
+    pixels.copy(pixels, destinationOffset, sourceOffset, sourceOffset + 4);
+  }
+}
+
 function readPng(path) {
   const png = readFileSync(path);
   const chunks = [];
@@ -141,6 +153,93 @@ for (let x = 0; x < 8; x++) {
 for (const [x, y] of [[2, 7], [3, 6], [4, 6], [5, 7]]) paint(42, x, y, 1);
 paint(42, 3, 7, 2);
 paint(42, 4, 7, 2);
+
+for (let id = 43; id <= 45; id++) {
+  fill(id, 0);
+  for (let x = 0; x < 8; x++) {
+    paint(id, x, 0, 3);
+    paint(id, x, 2, 1);
+  }
+}
+paint(43, 0, 0, 0);
+paint(43, 0, 1, 3);
+paint(45, 7, 0, 0);
+paint(45, 7, 1, 3);
+for (const id of [43, 44, 45]) for (const x of [2, 6]) paint(id, x, 2, 2);
+for (let y = 4; y < 8; y++) {
+  paint(44, 3, y, 2);
+  paint(44, 4, y, 2);
+}
+fill(46, 0);
+for (let y = 0; y < 7; y++) {
+  paint(46, 3, y, 2);
+  paint(46, 4, y, 2);
+}
+for (let x = 2; x < 6; x++) paint(46, x, 7, 3);
+
+for (let id = 47; id <= 49; id++) fill(id, 0);
+for (let y = 0; y < 8; y++) {
+  paint(47, 5, y, 2);
+  paint(47, 6, y, 2);
+}
+for (const y of [1, 4]) for (let x = 1; x < 6; x++) paint(47, x, y, 1);
+for (const id of [48, 49]) for (let x = 0; x < 8; x++) {
+  paint(id, x, 0, 3);
+  paint(id, x, 1, 1);
+}
+for (let y = 2; y < 8; y++) {
+  paint(48, 1, y, 2);
+  paint(48, 2, y, 2);
+  paint(49, 5, y, 2);
+  paint(49, 6, y, 2);
+}
+mirrorTile(47, 50);
+mirrorTile(49, 51);
+mirrorTile(48, 52);
+
+for (let id = 53; id <= 55; id++) {
+  fill(id, 0);
+  for (const y of [1, 4]) for (let x = 0; x < 8; x++) paint(id, x, y, y === 1 ? 3 : 1);
+}
+for (let y = 1; y < 8; y++) {
+  paint(53, 1, y, 2);
+  paint(55, 6, y, 2);
+}
+fill(56, 0);
+for (let x = 0; x < 8; x++) {
+  paint(56, x, 0, 3);
+  paint(56, x, 1, 0);
+  paint(56, x, 2, 1);
+}
+for (let y = 3; y < 8; y++) {
+  paint(56, 3, y, 2);
+  paint(56, 4, y, 2);
+}
+for (let x = 2; x < 6; x++) paint(56, x, 7, 3);
+
+for (const [id, heights] of [
+  [57, [7, 5, 3, 2, 3, 4, 3, 2]],
+  [58, [3, 2, 4, 2, 3, 2, 4, 3]],
+]) {
+  fill(id, 0);
+  for (let x = 0; x < 8; x++) for (let y = heights[x]; y < 8; y++) paint(id, x, y, 1);
+  for (const [x, y] of [[2, 6], [6, 5]]) paint(id, x, y, 2);
+}
+mirrorTile(57, 59);
+for (let id = 60; id <= 62; id++) {
+  fill(id, 2);
+  for (let x = 0; x < 8; x++) {
+    paint(id, x, 0, 3);
+    paint(id, x, 1, 0);
+    paint(id, x, 2, 1);
+    paint(id, x, 5, 1);
+  }
+}
+for (let y = 0; y < 8; y++) {
+  paint(60, 0, y, 3);
+  paint(62, 7, y, 3);
+}
+for (let y = 3; y < 5; y++) paint(61, 4, y, 1);
 
 const dining = readPng('gfx/dining_room.png');
 for (const id of [...Array.from({ length: 6 }, (_, index) => 25 + index), ...Array.from({ length: 6 }, (_, index) => 81 + index), ...Array.from({ length: 12 }, (_, index) => 116 + index)]) copyTile(dining, id);
@@ -277,17 +376,40 @@ for (let y = 0; y < fixtureHeight; y++) for (let x = 0; x < fixtureWidth; x++) {
 }
 for (let row = 0; row < 3; row++) for (let column = 0; column < 2; column++) fixture[27 + row][19 + column] = 25 + row * 2 + column;
 
-const fixturePixels = Buffer.alloc(fixtureWidth * 8 * fixtureHeight * 8 * 4);
-for (let tileY = 0; tileY < fixtureHeight; tileY++) for (let tileX = 0; tileX < fixtureWidth; tileX++) {
-  const id = fixture[tileY][tileX];
-  const atlasX = (id % 16) * 8;
-  const atlasY = Math.floor(id / 16) * 8;
-  for (let y = 0; y < 8; y++) {
-    const sourceOffset = ((atlasY + y) * atlasWidth + atlasX) * 4;
-    const targetOffset = (((tileY * 8 + y) * fixtureWidth * 8) + tileX * 8) * 4;
-    pixels.copy(fixturePixels, targetOffset, sourceOffset, sourceOffset + 32);
+function renderTilemap(tilemap, width, height) {
+  const result = Buffer.alloc(width * 8 * height * 8 * 4);
+  for (let tileY = 0; tileY < height; tileY++) for (let tileX = 0; tileX < width; tileX++) {
+    const id = tilemap[tileY][tileX];
+    const atlasX = (id % 16) * 8;
+    const atlasY = Math.floor(id / 16) * 8;
+    for (let y = 0; y < 8; y++) {
+      const sourceOffset = ((atlasY + y) * atlasWidth + atlasX) * 4;
+      const targetOffset = (((tileY * 8 + y) * width * 8) + tileX * 8) * 4;
+      pixels.copy(result, targetOffset, sourceOffset, sourceOffset + 32);
+    }
   }
+  return result;
 }
+
+function stamp(target, tiles, x, y) {
+  for (let row = 0; row < tiles.length; row++) for (let column = 0; column < tiles[row].length; column++) target[y + row][x + column] = tiles[row][column];
+}
+
+const furnitureWidth = 40;
+const furnitureHeight = 18;
+const furnitureFixture = Array.from({ length: furnitureHeight }, () => Array(furnitureWidth).fill(17));
+for (let y = 16; y < 18; y++) for (let x = 0; x < furnitureWidth; x++) {
+  const mask = (y > 16 ? 1 : 0) | (x < furnitureWidth - 1 ? 2 : 0) | (y < 17 ? 4 : 0) | (x > 0 ? 8 : 0);
+  furnitureFixture[y][x] = 1 + mask;
+}
+stamp(furnitureFixture, furnitureManifest.components[0].tiles, 2, 14);
+stamp(furnitureFixture, furnitureManifest.components[1].orientations[0].tiles, 8, 14);
+stamp(furnitureFixture, furnitureManifest.components[1].orientations[1].tiles, 11, 14);
+stamp(furnitureFixture, furnitureManifest.components[2].tiles, 15, 14);
+stamp(furnitureFixture, furnitureManifest.components[3].tiles, 23, 14);
+
+const fixturePixels = renderTilemap(fixture, fixtureWidth, fixtureHeight);
+const furniturePixels = renderTilemap(furnitureFixture, furnitureWidth, furnitureHeight);
 
 writeFileSync('gfx/patio.png', encodePng(atlasWidth, atlasHeight, pixels));
 writeFileSync('gfx/patio.tsx', [
@@ -312,5 +434,19 @@ writeFileSync('gfx/patio_fixture.tmx', [
 ].join('\n'));
 writeFileSync('gfx/patio_fixture_review.png', encodePng(fixtureWidth * 8, fixtureHeight * 8, fixturePixels));
 writeFileSync('build/patio_fixture.tilemap', Buffer.from(fixture.flat()));
+writeFileSync('gfx/patio_furniture_fixture.tmx', [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  `<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="${furnitureWidth}" height="${furnitureHeight}" tilewidth="8" tileheight="8" infinite="0" backgroundcolor="#ffffff">`,
+  ' <tileset firstgid="1" source="patio.tsx"/>',
+  ` <layer id="1" name="Furniture" width="${furnitureWidth}" height="${furnitureHeight}">`,
+  '  <data encoding="csv">',
+  furnitureFixture.map(row => row.map(id => id + 1).join(',')).join(',\n'),
+  '  </data>',
+  ' </layer>',
+  '</map>',
+  '',
+].join('\n'));
+writeFileSync('gfx/patio_furniture_fixture_review.png', encodePng(furnitureWidth * 8, furnitureHeight * 8, furniturePixels));
+writeFileSync('build/patio_furniture_fixture.tilemap', Buffer.from(furnitureFixture.flat()));
 const collisionKinds = { empty: 0, solid: 1, one_way: 2 };
 writeFileSync('build/patio_collision.bin', Buffer.from(Array.from({ length: 128 }, (_, id) => collisionKinds[metadata.get(id)?.[1] ?? 'empty'])));
