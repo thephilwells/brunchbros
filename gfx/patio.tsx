@@ -44,62 +44,62 @@
  <tile id="40"><properties><property name="name" value="foliage_top_post_rail"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
  <tile id="41"><properties><property name="name" value="foliage_fill_post_rail"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
  <tile id="42"><properties><property name="name" value="foliage_divot_rail"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
- <tile id="43"><properties><property name="name" value="reserved_43"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="44"><properties><property name="name" value="reserved_44"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="45"><properties><property name="name" value="reserved_45"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="46"><properties><property name="name" value="reserved_46"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="47"><properties><property name="name" value="reserved_47"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="48"><properties><property name="name" value="reserved_48"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="49"><properties><property name="name" value="reserved_49"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="50"><properties><property name="name" value="reserved_50"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="51"><properties><property name="name" value="reserved_51"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="52"><properties><property name="name" value="reserved_52"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="53"><properties><property name="name" value="reserved_53"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="54"><properties><property name="name" value="reserved_54"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="55"><properties><property name="name" value="reserved_55"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="56"><properties><property name="name" value="reserved_56"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="57"><properties><property name="name" value="reserved_57"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="58"><properties><property name="name" value="reserved_58"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="59"><properties><property name="name" value="reserved_59"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="60"><properties><property name="name" value="reserved_60"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="61"><properties><property name="name" value="reserved_61"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="62"><properties><property name="name" value="reserved_62"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="63"><properties><property name="name" value="reserved_63"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="64"><properties><property name="name" value="reserved_64"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="65"><properties><property name="name" value="reserved_65"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="66"><properties><property name="name" value="reserved_66"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="67"><properties><property name="name" value="reserved_67"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="68"><properties><property name="name" value="reserved_68"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="69"><properties><property name="name" value="reserved_69"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="70"><properties><property name="name" value="reserved_70"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="71"><properties><property name="name" value="reserved_71"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="72"><properties><property name="name" value="reserved_72"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="73"><properties><property name="name" value="reserved_73"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="74"><properties><property name="name" value="reserved_74"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="75"><properties><property name="name" value="reserved_75"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="76"><properties><property name="name" value="reserved_76"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="77"><properties><property name="name" value="reserved_77"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="78"><properties><property name="name" value="reserved_78"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="79"><properties><property name="name" value="reserved_79"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="80"><properties><property name="name" value="reserved_80"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="43"><properties><property name="name" value="patio_cafe_table_left"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="44"><properties><property name="name" value="patio_cafe_table_middle"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="45"><properties><property name="name" value="patio_cafe_table_right"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="46"><properties><property name="name" value="patio_cafe_table_leg"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="47"><properties><property name="name" value="patio_chair_back_right"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="48"><properties><property name="name" value="patio_chair_seat_right"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="49"><properties><property name="name" value="patio_chair_leg_right"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="50"><properties><property name="name" value="patio_chair_back_left"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="51"><properties><property name="name" value="patio_chair_leg_left"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="52"><properties><property name="name" value="patio_chair_seat_left"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="53"><properties><property name="name" value="patio_bench_back_left"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="54"><properties><property name="name" value="patio_bench_back_middle"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="55"><properties><property name="name" value="patio_bench_back_right"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="56"><properties><property name="name" value="patio_bench_seat"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="57"><properties><property name="name" value="patio_planter_foliage_left"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="58"><properties><property name="name" value="patio_planter_foliage_middle"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="59"><properties><property name="name" value="patio_planter_foliage_right"/><property name="collision" value="empty"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="60"><properties><property name="name" value="patio_planter_box_left"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="61"><properties><property name="name" value="patio_planter_box_middle"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="62"><properties><property name="name" value="patio_planter_box_right"/><property name="collision" value="one_way"/><property name="role" value="furniture"/></properties></tile>
+ <tile id="63"><properties><property name="name" value="patio_awning_top_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="64"><properties><property name="name" value="patio_awning_top_middle_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="65"><properties><property name="name" value="patio_awning_top_middle_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="66"><properties><property name="name" value="patio_awning_top_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="67"><properties><property name="name" value="patio_awning_edge_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="68"><properties><property name="name" value="patio_awning_edge_middle_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="69"><properties><property name="name" value="patio_awning_edge_middle_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="70"><properties><property name="name" value="patio_awning_edge_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="71"><properties><property name="name" value="patio_lights_cord_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="72"><properties><property name="name" value="patio_lights_cord_slope_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="73"><properties><property name="name" value="patio_lights_cord_bottom"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="74"><properties><property name="name" value="patio_lights_cord_slope_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="75"><properties><property name="name" value="patio_lights_cord_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="76"><properties><property name="name" value="patio_lights_bulb_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="77"><properties><property name="name" value="patio_lights_bulb_slope_left"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="78"><properties><property name="name" value="patio_lights_bulb_bottom"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="79"><properties><property name="name" value="patio_lights_bulb_slope_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="80"><properties><property name="name" value="patio_lights_bulb_right"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
  <tile id="81"><properties><property name="name" value="descent_exit_open_0"/><property name="collision" value="empty"/><property name="role" value="exit"/><property name="component" value="descent_exit_open"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="0"/></properties></tile>
  <tile id="82"><properties><property name="name" value="descent_exit_open_1"/><property name="collision" value="empty"/><property name="role" value="exit"/><property name="component" value="descent_exit_open"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="0"/></properties></tile>
  <tile id="83"><properties><property name="name" value="descent_exit_open_2"/><property name="collision" value="empty"/><property name="role" value="exit"/><property name="component" value="descent_exit_open"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="1"/></properties></tile>
  <tile id="84"><properties><property name="name" value="descent_exit_open_3"/><property name="collision" value="empty"/><property name="role" value="exit"/><property name="component" value="descent_exit_open"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="1"/></properties></tile>
  <tile id="85"><properties><property name="name" value="descent_exit_open_4"/><property name="collision" value="empty"/><property name="role" value="exit"/><property name="component" value="descent_exit_open"/><property name="part_x" type="int" value="0"/><property name="part_y" type="int" value="2"/></properties></tile>
  <tile id="86"><properties><property name="name" value="descent_exit_open_5"/><property name="collision" value="empty"/><property name="role" value="exit"/><property name="component" value="descent_exit_open"/><property name="part_x" type="int" value="1"/><property name="part_y" type="int" value="2"/></properties></tile>
- <tile id="87"><properties><property name="name" value="reserved_87"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="88"><properties><property name="name" value="reserved_88"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="89"><properties><property name="name" value="reserved_89"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="90"><properties><property name="name" value="reserved_90"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="91"><properties><property name="name" value="reserved_91"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="92"><properties><property name="name" value="reserved_92"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="93"><properties><property name="name" value="reserved_93"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="94"><properties><property name="name" value="reserved_94"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="95"><properties><property name="name" value="reserved_95"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="96"><properties><property name="name" value="reserved_96"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="97"><properties><property name="name" value="reserved_97"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
- <tile id="98"><properties><property name="name" value="reserved_98"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
+ <tile id="87"><properties><property name="name" value="patio_trellis_0_0"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="88"><properties><property name="name" value="patio_trellis_1_0"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="89"><properties><property name="name" value="patio_trellis_2_0"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="90"><properties><property name="name" value="patio_trellis_0_1"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="91"><properties><property name="name" value="patio_trellis_1_1"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="92"><properties><property name="name" value="patio_trellis_2_1"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="93"><properties><property name="name" value="patio_trellis_0_2"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="94"><properties><property name="name" value="patio_trellis_1_2"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="95"><properties><property name="name" value="patio_trellis_2_2"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="96"><properties><property name="name" value="patio_trellis_0_3"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="97"><properties><property name="name" value="patio_trellis_1_3"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
+ <tile id="98"><properties><property name="name" value="patio_trellis_2_3"/><property name="collision" value="empty"/><property name="role" value="rear"/></properties></tile>
  <tile id="99"><properties><property name="name" value="reserved_99"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
  <tile id="100"><properties><property name="name" value="reserved_100"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>
  <tile id="101"><properties><property name="name" value="reserved_101"/><property name="collision" value="empty"/><property name="role" value="reserved"/></properties></tile>

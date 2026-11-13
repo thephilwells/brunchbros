@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "biome": "patio",
+  "backgroundTile": 17,
+  "components": [
+    {
+      "id": "patio_exit_awning",
+      "width": 4,
+      "height": 2,
+      "tiles": [
+        [63, 64, 65, 66],
+        [67, 68, 69, 70]
+      ],
+      "tileNames": {
+        "63": "patio_awning_top_left",
+        "64": "patio_awning_top_middle_left",
+        "65": "patio_awning_top_middle_right",
+        "66": "patio_awning_top_right",
+        "67": "patio_awning_edge_left",
+        "68": "patio_awning_edge_middle_left",
+        "69": "patio_awning_edge_middle_right",
+        "70": "patio_awning_edge_right"
+      }
+    },
+    {
+      "id": "patio_string_lights",
+      "width": 5,
+      "height": 2,
+      "repeatable": true,
+      "tiles": [
+        [71, 72, 73, 74, 75],
+        [76, 77, 78, 79, 80]
+      ],
+      "tileNames": {
+        "71": "patio_lights_cord_left",
+        "72": "patio_lights_cord_slope_left",
+        "73": "patio_lights_cord_bottom",
+        "74": "patio_lights_cord_slope_right",
+        "75": "patio_lights_cord_right",
+        "76": "patio_lights_bulb_left",
+        "77": "patio_lights_bulb_slope_left",
+        "78": "patio_lights_bulb_bottom",
+        "79": "patio_lights_bulb_slope_right",
+        "80": "patio_lights_bulb_right"
+      }
+    },
+    {
+      "id": "patio_trellis_vine",
+      "width": 3,
+      "height": 4,
+      "tiles": [
+        [87, 88, 89],
+        [90, 91, 92],
+        [93, 94, 95],
+        [96, 97, 98]
+      ],
+      "tileNames": {
+        "87": "patio_trellis_0_0",
+        "88": "patio_trellis_1_0",
+        "89": "patio_trellis_2_0",
+        "90": "patio_trellis_0_1",
+        "91": "patio_trellis_1_1",
+        "92": "patio_trellis_2_1",
+        "93": "patio_trellis_0_2",
+        "94": "patio_trellis_1_2",
+        "95": "patio_trellis_2_2",
+        "96": "patio_trellis_0_3",
+        "97": "patio_trellis_1_3",
+        "98": "patio_trellis_2_3"
+      }
+    }
+  ]
+}

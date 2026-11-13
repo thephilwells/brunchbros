@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "biome": "patio",
+  "backgroundTile": 17,
+  "components": [
+    {
+      "id": "patio_cafe_table",
+      "width": 4,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [0],
+      "tiles": [
+        [43, 44, 44, 45],
+        [17, 46, 46, 17]
+      ],
+      "tileNames": {
+        "43": "patio_cafe_table_left",
+        "44": "patio_cafe_table_middle",
+        "45": "patio_cafe_table_right",
+        "46": "patio_cafe_table_leg"
+      }
+    },
+    {
+      "id": "patio_chair",
+      "width": 2,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [1],
+      "orientations": [
+        {
+          "id": "back_right",
+          "tiles": [
+            [17, 47],
+            [48, 49]
+          ]
+        },
+        {
+          "id": "back_left",
+          "tiles": [
+            [50, 17],
+            [51, 52]
+          ]
+        }
+      ],
+      "tileNames": {
+        "47": "patio_chair_back_right",
+        "48": "patio_chair_seat_right",
+        "49": "patio_chair_leg_right",
+        "50": "patio_chair_back_left",
+        "51": "patio_chair_leg_left",
+        "52": "patio_chair_seat_left"
+      }
+    },
+    {
+      "id": "patio_bench",
+      "width": 5,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [1],
+      "tiles": [
+        [53, 54, 54, 54, 55],
+        [56, 56, 56, 56, 56]
+      ],
+      "tileNames": {
+        "53": "patio_bench_back_left",
+        "54": "patio_bench_back_middle",
+        "55": "patio_bench_back_right",
+        "56": "patio_bench_seat"
+      }
+    },
+    {
+      "id": "patio_planter",
+      "width": 4,
+      "height": 2,
+      "floorAnchored": true,
+      "oneWayRows": [1],
+      "tiles": [
+        [57, 58, 58, 59],
+        [60, 61, 61, 62]
+      ],
+      "tileNames": {
+        "57": "patio_planter_foliage_left",
+        "58": "patio_planter_foliage_middle",
+        "59": "patio_planter_foliage_right",
+        "60": "patio_planter_box_left",
+        "61": "patio_planter_box_middle",
+        "62": "patio_planter_box_right"
+      }
+    }
+  ]
+}

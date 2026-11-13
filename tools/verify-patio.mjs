@@ -46,6 +46,8 @@ const map = readFileSync('build/patio_fixture.tilemap');
 const tsx = readFileSync('gfx/patio.tsx', 'utf8');
 const tiles = [...tsx.matchAll(/<tile id="(\d+)"><properties>(.*?)<\/properties><\/tile>/g)];
 const usedShades = new Set();
+const furnitureManifest = JSON.parse(readFileSync('data/patio-furniture.json', 'utf8'));
+const backgroundManifest = JSON.parse(readFileSync('data/patio-background.json', 'utf8'));
 
 assert.deepEqual([patio.width, patio.height], [128, 64]);
 assert.deepEqual([review.width, review.height], [320, 256]);
@@ -66,7 +68,30 @@ for (let id = 1; id <= 16; id++) {
   assert.equal(collision[id], 1);
   assert.match(tiles[id][2], new RegExp(`neighbor_mask" type="int" value="${id - 1}"`));
 }
-for (let id = 17; id < 128; id++) assert.equal(collision[id], 0);
+const oneWayIds = new Set(furnitureManifest.components.flatMap(component => {
+  const layouts = component.orientations?.map(orientation => orientation.tiles) ?? [component.tiles];
+  return layouts.flatMap(layout => component.oneWayRows.flatMap(row => layout[row]));
+}));
+for (let id = 17; id < 128; id++) assert.equal(collision[id], oneWayIds.has(id) ? 2 : 0);
+
+const furnitureIds = new Set(furnitureManifest.components.flatMap(component => Object.keys(component.tileNames).map(Number)));
+const backgroundIds = new Set(backgroundManifest.components.flatMap(component => Object.keys(component.tileNames).map(Number)));
+assert.deepEqual([...furnitureIds].sort((a, b) => a - b), Array.from({ length: 20 }, (_, index) => 43 + index));
+assert.deepEqual([...backgroundIds].sort((a, b) => a - b), [...Array.from({ length: 18 }, (_, index) => 63 + index), ...Array.from({ length: 12 }, (_, index) => 87 + index)]);
+for (const id of [...furnitureIds, ...backgroundIds]) assert(!((id >= 81 && id <= 86) || id >= 116));
+assert.equal(new Set([...furnitureIds, ...backgroundIds]).size, furnitureIds.size + backgroundIds.size);
+for (const component of [...furnitureManifest.components, ...backgroundManifest.components]) {
+  const layouts = component.orientations?.map(orientation => orientation.tiles) ?? [component.tiles];
+  const usedIds = new Set();
+  for (const layout of layouts) {
+    assert.equal(layout.length, component.height);
+    for (const row of layout) {
+      assert.equal(row.length, component.width);
+      for (const id of row) if (id !== 17) usedIds.add(id);
+    }
+  }
+  assert.deepEqual([...usedIds].sort((a, b) => a - b), Object.keys(component.tileNames).map(Number).sort((a, b) => a - b));
+}
 
 for (const id of [...Array.from({ length: 6 }, (_, index) => 25 + index), ...Array.from({ length: 6 }, (_, index) => 81 + index), ...Array.from({ length: 12 }, (_, index) => 116 + index)]) {
   assert.deepEqual(tile(patio, id), tile(dining, id));

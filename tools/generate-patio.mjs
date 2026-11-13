@@ -7,6 +7,8 @@ const fixtureWidth = 40;
 const fixtureHeight = 32;
 const shades = [255, 170, 85, 0];
 const pixels = Buffer.alloc(atlasWidth * atlasHeight * 4, 255);
+const furnitureManifest = JSON.parse(readFileSync('data/patio-furniture.json', 'utf8'));
+const backgroundManifest = JSON.parse(readFileSync('data/patio-background.json', 'utf8'));
 
 function paint(id, x, y, shade) {
   const pixelX = (id % 16) * 8 + x;
@@ -203,6 +205,14 @@ const metadata = new Map([
   [42, ['foliage_divot_rail', 'empty', 'rear']],
 ]);
 for (let id = 1; id <= 16; id++) metadata.set(id, [`masonry_${id - 1}`, 'solid', 'structure']);
+for (const component of furnitureManifest.components) {
+  const layouts = component.orientations?.map(orientation => orientation.tiles) ?? [component.tiles];
+  const oneWayIds = new Set(layouts.flatMap(layout => component.oneWayRows.flatMap(row => layout[row])));
+  for (const [id, name] of Object.entries(component.tileNames)) metadata.set(Number(id), [name, oneWayIds.has(Number(id)) ? 'one_way' : 'empty', 'furniture']);
+}
+for (const component of backgroundManifest.components) {
+  for (const [id, name] of Object.entries(component.tileNames)) metadata.set(Number(id), [name, 'empty', 'rear']);
+}
 for (let id = 25; id <= 30; id++) metadata.set(id, [`exit_locked_${id - 25}`, 'empty', 'exit_locked']);
 for (let id = 81; id <= 86; id++) metadata.set(id, [`exit_open_${id - 81}`, 'empty', 'exit_open']);
 for (const [index, letter] of ['A', 'B', 'C', 'E', 'H', 'N', 'O', 'P', 'R', 'S', 'T', 'U'].entries()) metadata.set(116 + index, [`title_${letter}`, 'empty', 'font']);
@@ -302,4 +312,5 @@ writeFileSync('gfx/patio_fixture.tmx', [
 ].join('\n'));
 writeFileSync('gfx/patio_fixture_review.png', encodePng(fixtureWidth * 8, fixtureHeight * 8, fixturePixels));
 writeFileSync('build/patio_fixture.tilemap', Buffer.from(fixture.flat()));
-writeFileSync('build/patio_collision.bin', Buffer.from(Array.from({ length: 128 }, (_, id) => id >= 1 && id <= 16 ? 1 : 0)));
+const collisionKinds = { empty: 0, solid: 1, one_way: 2 };
+writeFileSync('build/patio_collision.bin', Buffer.from(Array.from({ length: 128 }, (_, id) => collisionKinds[metadata.get(id)?.[1] ?? 'empty'])));

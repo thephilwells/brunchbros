@@ -1,6 +1,6 @@
 # Patio visual vocabulary
 
-Status: **pilot for visual review**
+Status: **accepted; permanent atlas allocation recorded**
 
 Patio keeps the shared structural, one-way, exit, and Treasure Egg behavior. Its
 identity comes from narrow metal silhouettes, horizontal slats, rectangular
@@ -39,3 +39,21 @@ the shared exit without changing its footprint or interaction.
 - String lights appear as one deliberate span, not scattered bulbs.
 - Trellises are occasional accents and do not repeat in every room.
 - The bottom-world fence and shrub horizon remains the dominant Patio motif.
+
+## Permanent atlas allocation
+
+| IDs | Owner | Count |
+|---|---|---:|
+| 43–46 | Café table | 4 |
+| 47–52 | Patio chair, both orientations | 6 |
+| 53–56 | Patio bench | 4 |
+| 57–62 | Planter box | 6 |
+| 63–70 | Exit awning | 8 |
+| 71–80 | String lights | 10 |
+| 81–86 | Shared open exit; unchanged | 6 |
+| 87–98 | Trellis vine | 12 |
+| 99–115 | Patio growth reserve | 17 |
+| 116–127 | Shared title and Game Over font; unchanged | 12 |
+
+`data/patio-furniture.json` and `data/patio-background.json` own the exact
+component matrices. IDs must not move when the pixel art is implemented.
